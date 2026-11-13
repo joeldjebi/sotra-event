@@ -54,3 +54,12 @@ it('signe un jeton QR vérifiable et détecte toute falsification (NF-01)', func
         // Longueur en octets (une clé binaire n'est pas une chaîne UTF-8 : toHaveLength compterait des caractères).
         ->and(strlen(base64_decode($tokens->publicKeyBase64())))->toBe(SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES);
 });
+
+it('ne produit jamais deux fois le même code pour deux événements du même mois et de la même commune', function () {
+    $first = eventOnSale();
+    $second = eventOnSale();
+    $codes = app(PassCodeGenerator::class);
+
+    expect($codes->next($first, 'YOP'))->toBe('ET-2611-0001-YOP')
+        ->and($codes->next($second, 'YOP'))->toBe('ET-2611-0002-YOP');
+});
