@@ -208,6 +208,38 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** (sortie du lot 1 CDC, avec l'étape 4) : un événement est configuré en 4 étapes, accepté par la compagnie, puis mis en vente.
 
+> **Réalisé le 13/11/2026** (136 tests verts).
+> - **Console** : liste des événements, configuration en 4 onglets et panneau latéral (statut, liste de contrôle, proposer, ouvrir la vente, fil d'échanges).
+> - **Informations** :
+>   - la commission est reprise de la compagnie ;
+>   - les chefs de projet proposés sont ceux du promoteur choisi ;
+>   - une fin prévue plus tôt que le début passe au lendemain ;
+>   - un changement de date décale les horaires des points.
+> - **Points** :
+>   - la distance au lieu est calculée par PostGIS (à vol d'oiseau), la zone en découle (RG-06 : 25 km = zone 2) ;
+>   - forçage de la zone avec justification ;
+>   - convocation = départ − 15 min ;
+>   - un retour plus tôt que l'aller passe au lendemain ;
+>   - contrôles AD-06 (aller avant le début, retour après la fin prévue) ;
+>   - pas de quota par point ;
+>   - durée de trajet estimée à 30 km/h, modifiable.
+> - **Grille** : zone × offre × type de Pass, préremplie avec l'exemple du CDC. L'aller-retour est obligatoire pour chaque zone utilisée. RG-07 est appliquée aux prix simples. La grille est journalisée en bloc (`pricing_updated`).
+> - **Publication** :
+>   - canaux (les points de vente physiques sont grisés, V2) ;
+>   - visuel et mise en avant ;
+>   - zones de dépose, reprise et accueil, chacune en cercle (centre + rayon). Une zone de dépose et une zone de reprise sont obligatoires.
+> - **Cycle de vie** (`EventWorkflow`) : brouillon → proposé → (en négociation ⇄ proposé) → accepté → en vente. Informations, points et grille sont verrouillés sauf en brouillon et en négociation.
+> - **Espace compagnie** :
+>   - Événements proposés (Direction commerciale) : détail, grille, Accepter, Négocier avec objet et message ;
+>   - Plan de transport, volet capacité (Exploitation) : bus × places par offre, flotte disponible affichée ;
+>   - accueil : propositions à valider et prochains événements.
+> - **Cloisonnement** : la compagnie ne voit pas les brouillons ; un promoteur ne voit que ses événements (`PromoterScope`).
+> - **Données de démo** : concert d'Ebimpé accepté et prêt à ouvrir, match FIF proposé, brunch en brouillon.
+> - **Reporté** :
+>   - kit de promotion (lien de vente et QR), à l'étape 4 avec le site public ;
+>   - notifications par e-mail des propositions et réponses ;
+>   - génération des missions, à l'étape 5.
+
 ### Étape 4 — Vente : site spectateur, commande, paiement, Pass
 - `PricingService` : prix par zone, offre et type ; frais 2 % ; commission 10 % ; **taux figés sur la commande** ; arrondi à l'entier (RG-11 à RG-16).
 - `CapacityService` : capacité **par offre et par segment** ; blocage de 15 min avec un verrou Redis et une contrainte en base ; libération à l'expiration (tâche chaque minute) ; pas de surréservation (RG-08, NF-05).

@@ -332,3 +332,7 @@ Un seeder reproduit l'exemple du CDC : Concert au stade d'Ebimpé, 15/11/2026, 5
 | 2026-11-13 | WhatsApp maintenu en **lot 5** ; envois WhatsApp simulés dès le lot 2 ; demande d'accès à WhatsApp Business à lancer par ACCES EVENT (Q-A1 résolue). |
 | 2026-11-13 | 10 Pass maximum par commande (réglable) ; NNNN = séquence par événement et par commune ; durée de trajet calculée + 30 %, modifiable ; objectif de charge 300 commandes par minute ; commission par défaut reprise de la fiche compagnie (Q-B1, B3, B5, B6, C4 résolues). |
 | 2026-11-13 | Pilote : agrégateur, SMS et WhatsApp simulés jusqu'à réception des accès ; cloud international (Europe de l'Ouest) ; flotte SOTRA importée par Excel ; QR fixe signé, sans rafraîchissement (Q-C5, C6, C7). |
+| 2026-11-13 | Zones (RG-06) : calculées sur la distance **à vol d'oiseau** (PostGIS) en attendant l'outil d'itinéraire ; bornes : < 15 km, 15 à 25 km inclus, > 25 km ; forçage justifié possible. |
+| 2026-11-13 | Événement verrouillé (informations, points, grille, taux) dès sa proposition à la compagnie ; à nouveau modifiable pendant une négociation. La publication (canaux, zones de dépose, visuel) reste modifiable. |
+| 2026-11-13 | Zones de dépose et de reprise : cercle centre + rayon (150 m par défaut) ; au moins une zone de dépose et une de reprise avant l'ouverture des ventes. |
+| 2026-11-13 | La compagnie peut fixer bus × places par offre dès la proposition, et jusqu'à l'ouverture des ventes. |

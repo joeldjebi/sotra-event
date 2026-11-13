@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Web\Company;
 
+use App\Enums\EventStatus;
 use App\Enums\StaffRole;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
 use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -26,6 +28,18 @@ class DashboardController extends Controller
 
         return view('company.dashboard', [
             'company' => $user->company,
+            'pendingEvents' => Event::query()
+                ->with('venue')
+                ->whereIn('status', [EventStatus::Proposed, EventStatus::Negotiating])
+                ->orderBy('starts_at')
+                ->get(),
+            'upcomingEvents' => Event::query()
+                ->with('venue')
+                ->whereIn('status', [EventStatus::Accepted, EventStatus::OnSale])
+                ->where('starts_at', '>=', now()->startOfDay())
+                ->orderBy('starts_at')
+                ->limit(5)
+                ->get(),
             'staffCounts' => collect(StaffRole::cases())->mapWithKeys(
                 fn (StaffRole $role): array => [$role->label() => (int) ($staffByRole[$role->value] ?? 0)],
             ),

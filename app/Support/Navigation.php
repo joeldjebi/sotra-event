@@ -24,7 +24,7 @@ final class Navigation
             Space::Admin => [
                 [null, [
                     ['Tableau de bord', 'home', 'admin.dashboard', Permission::PlatformDashboard],
-                    ['Événements', 'calendar', null, Permission::EventsManage],
+                    ['Événements', 'calendar', 'admin.events', Permission::EventsManage],
                     ['Lieux', 'map-pin', 'admin.venues', Permission::EventsManage],
                     ['Compagnies', 'building', 'admin.companies', Permission::CompaniesManage],
                     ['Promoteurs', 'megaphone', 'admin.promoters', Permission::PromotersManage],
@@ -38,7 +38,7 @@ final class Navigation
                 [null, [['Accueil', 'home', 'company.dashboard', null]]],
                 ['Direction commerciale', [
                     ['Ventes', 'chart', null, Permission::SalesView],
-                    ['Événements proposés', 'calendar', null, Permission::ProposedEventsRespond],
+                    ['Événements proposés', 'calendar', 'company.proposed-events', Permission::ProposedEventsRespond],
                     ['Offres & grille tarifaire', 'tag', null, Permission::PricingView],
                     ['Demande par commune', 'map-pin', null, Permission::DemandView],
                     ['Reversements', 'banknotes', null, Permission::CompanyPayoutsView],
@@ -54,7 +54,7 @@ final class Navigation
                 ]],
                 ['Exploitation', [
                     ['Exploitation en direct', 'map', null, Permission::OperationsManage],
-                    ['Plan de transport', 'route', null, Permission::OperationsManage],
+                    ['Plan de transport', 'route', 'company.transport-plan', Permission::OperationsManage],
                     ['Bus & affectations', 'bus', 'company.buses', Permission::FleetManage],
                     ['Dépôts', 'building', 'company.depots', Permission::FleetManage],
                     ['Chauffeurs & convoyeurs', 'id-card', 'company.staff', Permission::StaffManage],
@@ -92,7 +92,7 @@ final class Navigation
                     'label' => $label,
                     'icon' => $icon,
                     'url' => $exists ? route($route) : null,
-                    'active' => $exists && request()->routeIs($route),
+                    'active' => $exists && (request()->routeIs($route) || request()->routeIs($route.'.*')),
                 ];
             }
 
