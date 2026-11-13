@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureSpace;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\ResolveStaffDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'space' => EnsureSpace::class,
             'two-factor.enrolled' => EnsureTwoFactorEnrolled::class,
             'active' => EnsureUserIsActive::class,
+            'staff.device' => ResolveStaffDevice::class,
         ]);
 
         // Espace spectateur → connexion par SMS ; espaces professionnels → connexion Fortify.

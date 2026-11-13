@@ -9,6 +9,8 @@ use App\Http\Resources\Api\V1\PassResource;
 use App\Models\Customer;
 use App\Models\Pass;
 use App\Rules\ValidPhoneNumber;
+use App\Services\Operations\PassTrip;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -59,6 +61,16 @@ class PassController extends Controller
         $pass = $transfer->handle($pass, $customer, $request->string('phone')->toString());
 
         return new PassResource($pass->load(['event.venue', 'event.dropZones', 'boardingPoint']));
+    }
+
+    /**
+     * Mon trajet : étapes de l'aller et du retour, position du bus et arrivée estimée (SP-18).
+     */
+    public function trip(Request $request, Pass $pass, PassTrip $trip): JsonResponse
+    {
+        abort_unless($pass->holder_id === $this->customer($request)->id, 404);
+
+        return response()->json(['data' => $trip->forPass($pass)]);
     }
 
     private function customer(Request $request): Customer

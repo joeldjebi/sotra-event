@@ -53,6 +53,29 @@ class PassNotifier
     }
 
     /**
+     * Rappel avant le départ (SP-21) : la veille (J-1) et deux heures avant la convocation (H-2).
+     */
+    public function reminder(Pass $pass, string $kind): void
+    {
+        $point = $pass->boardingPoint;
+        $when = $kind === 'h2' ? "aujourd'hui à" : 'demain à';
+        $body = sprintf(
+            'EVENT TRANS : rappel, %s. Montée %s %s · %s. Présentez votre Pass %s au convoyeur. %s',
+            $pass->event->name,
+            $when,
+            $point->boardingCallAt()->format('H\hi'),
+            $point->commune.' · '.$point->place,
+            $pass->code,
+            self::publicUrl($pass),
+        );
+        $phone = PhoneNumber::parse($pass->holder->phone);
+
+        $this->sms->send($phone, $body);
+        $this->whatsApp->send($phone, 'pass_reminder_'.$kind, $body, ['code' => $pass->code]);
+        $this->push->send($pass->holder, $kind === 'h2' ? 'Votre bus part bientôt' : 'C\'est demain', $body, ['code' => $pass->code]);
+    }
+
+    /**
      * @param  list<Pass>  $passes
      */
     private function sendPasses(Customer $holder, array $passes, ?Customer $offeredBy): void

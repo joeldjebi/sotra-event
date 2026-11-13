@@ -119,6 +119,46 @@ class Mission extends Model
         return $this->hasMany(Pass::class, 'outbound_mission_id');
     }
 
+    /**
+     * @return HasMany<Scan, $this>
+     */
+    public function scans(): HasMany
+    {
+        return $this->hasMany(Scan::class);
+    }
+
+    /**
+     * @return HasMany<Position, $this>
+     */
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
+    }
+
+    /**
+     * Dernière position connue.
+     */
+    public function lastPosition(): ?Position
+    {
+        return $this->positions()->latest('recorded_at')->first();
+    }
+
+    /**
+     * Passagers à bord : scans acceptés (vert ou orange) de cette mission (CV-03).
+     */
+    public function onBoardCount(): int
+    {
+        return $this->scans()->whereIn('result', ['vert', 'orange'])->where('conflict', false)->count();
+    }
+
+    /**
+     * Places du bus affecté, sinon places prévues par la compagnie.
+     */
+    public function capacity(): int
+    {
+        return $this->bus->capacity ?? $this->seats;
+    }
+
     public function label(): string
     {
         return "{$this->direction->label()} · {$this->boardingPoint->commune} · {$this->offer->label()} n° {$this->sequence}";
