@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+    | Agrégateur SMS MTarget (SMS_DRIVER=mtarget). Identifiants à renseigner dans .env, jamais journalisés.
+    */
+    'mtarget' => [
+        'url' => env('MTARGET_URL'),
+        'username' => env('MTARGET_USERNAME'),
+        'password' => env('MTARGET_PASSWORD'),
+        'sender' => env('MTARGET_SENDER', 'EVENTTRANS'),
+        'timeout' => (int) env('MTARGET_TIMEOUT', 30),
+        'verify_ssl' => (bool) env('MTARGET_VERIFY_SSL', true),
+    ],
+
 ];

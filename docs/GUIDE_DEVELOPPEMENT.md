@@ -443,6 +443,17 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 - Branchement des **vrais fournisseurs** : agrégateur, SMS, WhatsApp, FCM. Il suffit de changer les variables `*_DRIVER`.
 - ACCES TICKETS et BIG ACCESS (exigences souhaitables).
 
+> **SMS réalisé le 13/11/2026** (275 tests verts). Seul l'agrégateur SMS est branché pour l'instant ; WhatsApp, push et paiement restent simulés.
+> - **Pilote MTarget** : `SMS_DRIVER=mtarget`, variables `MTARGET_URL`, `MTARGET_USERNAME`, `MTARGET_PASSWORD`, `MTARGET_SENDER`, `MTARGET_TIMEOUT`, `MTARGET_VERIFY_SSL` (`config/services.php`).
+> - **Envoi** : formulaire HTTP, numéro au format +225…, identifiant du SMS transmis en `remoteid`.
+> - **Traçabilité** : chaque SMS est tracé dans `sms_messages` : `accepted` avec le ticket et le nombre de segments, ou `failed` avec le motif.
+> - **Échecs** :
+>   - un refus ou une panne réseau n'interrompt ni un paiement ni une notification de masse ;
+>   - le code OTP, lui, renvoie `503 SMS_NOT_SENT` et le spectateur peut redemander tout de suite.
+> - **Journaux** : jamais d'identifiants ni d'URL ; le numéro y est masqué.
+> - **Diagnostic** : `php artisan sms:test 07XXXXXXXX [--message=…] [--sender=…]`.
+> - **Reste à faire** : les accusés de réception (`POST /api/v1/sms/dlr`), dès que le format des notifications MTarget sera connu.
+
 ### Étape 11 — Durcissement et mise en production (en continu, puis avant le pilote)
 - **Test de charge** : 300 commandes par minute sans double vente ; API < 500 ms pour 95 % des requêtes (NF-05, NF-06).
 - Sécurité : HTTPS, en-têtes, limitation des tentatives, revue des Policies, aucune donnée de carte stockée (PA-06).

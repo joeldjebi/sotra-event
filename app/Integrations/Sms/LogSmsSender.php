@@ -21,7 +21,7 @@ class LogSmsSender implements SmsSender
             'to' => $to->e164,
             'body' => $body,
             'driver' => 'log',
-            'status' => 'simulated',
+            'status' => SmsMessage::SIMULATED,
         ]);
     }
 }

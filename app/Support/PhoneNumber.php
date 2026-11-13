@@ -51,6 +51,14 @@ final class PhoneNumber implements Stringable
         }
     }
 
+    /**
+     * Numéro masqué pour les journaux : +22507******78.
+     */
+    public function masked(): string
+    {
+        return substr($this->e164, 0, 6).str_repeat('*', max(0, strlen($this->e164) - 8)).substr($this->e164, -2);
+    }
+
     public function equals(self $other): bool
     {
         return $this->e164 === $other->e164;

@@ -49,12 +49,19 @@ class OtpService
             ]);
         });
 
-        $this->sms->send($phone, sprintf(
+        $sms = $this->sms->send($phone, sprintf(
             '%s : votre code de connexion est %s. Il expire dans %d minutes. Ne le partagez avec personne.',
             config('eventtrans.sms.sender_name'),
             $code,
             (int) config('eventtrans.otp.ttl_minutes'),
         ));
+
+        // SMS non parti : le code est retiré pour que le spectateur puisse redemander tout de suite.
+        if ($sms->failed()) {
+            OtpCode::query()->where('phone', $phone->e164)->where('audience', $audience)->whereNull('consumed_at')->update(['consumed_at' => now()]);
+
+            throw new ApiException('Le SMS n\'a pas pu être envoyé. Réessayez dans un instant.', 'SMS_NOT_SENT', 503);
+        }
     }
 
     /**

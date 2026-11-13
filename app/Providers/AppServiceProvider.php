@@ -11,6 +11,7 @@ use App\Integrations\Messaging\LogPushSender;
 use App\Integrations\Messaging\LogWhatsAppSender;
 use App\Integrations\Payment\FakeAggregator;
 use App\Integrations\Sms\LogSmsSender;
+use App\Integrations\Sms\MtargetSmsSender;
 use App\Models\User;
 use App\Support\PhoneNumber;
 use Illuminate\Auth\Events\Login;
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SmsSender::class, function (): SmsSender {
             return match (config('eventtrans.drivers.sms')) {
                 'log' => new LogSmsSender,
+                'mtarget' => MtargetSmsSender::fromConfig(),
                 default => throw new InvalidArgumentException('Pilote SMS inconnu : '.config('eventtrans.drivers.sms')),
             };
         });
