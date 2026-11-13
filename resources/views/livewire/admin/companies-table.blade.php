@@ -16,7 +16,7 @@
         </x-slot:head>
 
         @forelse ($companies as $company)
-            <tr wire:key="company-{{ $company->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="company-{{ $company->id }}" class="hover:bg-fill-subtle">
                 <td>
                     <p class="font-medium">{{ $company->name }}</p>
                     <p class="text-[13px] text-ink-secondary">{{ $company->legal_name ?? $company->email ?? '—' }}</p>

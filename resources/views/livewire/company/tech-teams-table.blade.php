@@ -9,7 +9,7 @@
             <x-ui.card wire:key="team-{{ $team->id }}" padding="p-5">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-[22px] font-semibold tracking-tight">Équipe {{ $team->code }}</p>
+                        <p class="text-title-2">Équipe {{ $team->code }}</p>
                         <p class="text-[14px] text-ink-secondary">{{ $team->type->label() }}</p>
                     </div>
                     <x-ui.badge :tone="$team->status->tone()">{{ $team->status->label() }}</x-ui.badge>
@@ -17,14 +17,14 @@
                 <div class="mt-4 space-y-1.5">
                     @forelse ($team->members as $member)
                         <p wire:key="member-{{ $member->id }}" class="flex items-center gap-2 text-[14px]">
-                            <span class="grid size-6 place-items-center rounded-full bg-fill text-[11px] font-semibold">{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0, 1) }}</span>
+                            <span class="grid size-6 place-items-center rounded-full bg-gradient-to-b from-fill-subtle to-fill-strong text-[10px] font-semibold text-ink-secondary">{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0, 1) }}</span>
                             {{ $member->fullName() }}
                         </p>
                     @empty
                         <p class="text-[13px] text-ink-tertiary">Aucun technicien affecté.</p>
                     @endforelse
                 </div>
-                <div class="mt-5 flex items-center justify-between border-t border-hairline pt-4">
+                <div class="mt-5 flex items-center justify-between border-t border-separator pt-4">
                     <p class="text-[13px] text-ink-secondary">{{ $team->depot?->name ?? 'Sans dépôt' }}</p>
                     <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $team->id }})">Modifier</x-ui.button>
                 </div>
@@ -48,8 +48,8 @@
             <x-ui.select label="Type" name="type" wire:model="type" :options="$types" />
             <x-ui.select label="Dépôt de rattachement" name="depot_id" wire:model="depot_id" :options="$depots" placeholder="Aucun" />
             <div>
-                <p class="mb-1.5 text-[13px] font-medium text-ink-secondary">Techniciens</p>
-                <div class="max-h-72 overflow-y-auto rounded-xl bg-canvas px-3 py-2">
+                <p class="mb-1.5 px-0.5 text-footnote font-medium text-ink-secondary">Techniciens</p>
+                <div class="max-h-72 divide-y divide-separator overflow-y-auto [&>label]:rounded-none rounded-[var(--radius-card)] bg-surface px-3 py-1 shadow-[var(--shadow-card)] ring-1 ring-hairline">
                     @forelse ($technicians as $technician)
                         <x-ui.checkbox wire:key="tech-{{ $technician->id }}" :label="$technician->fullName()" value="{{ $technician->id }}" wire:model="members"
                                        :description="$technician->techTeam && $technician->techTeam->id !== $editingId ? 'Actuellement dans l\'équipe '.$technician->techTeam->code : null" />

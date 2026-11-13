@@ -14,7 +14,7 @@
             <th></th>
         </x-slot:head>
         @forelse ($devices as $device)
-            <tr wire:key="device-{{ $device->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="device-{{ $device->id }}" class="hover:bg-fill-subtle">
                 <td>
                     <p class="font-medium">{{ $device->label }}</p>
                     <p class="text-[13px] text-ink-secondary">{{ $device->model ?? '—' }} @if ($device->app_version) · app {{ $device->app_version }} @endif</p>
@@ -33,7 +33,7 @@
                     @if ($device->isBlocked())
                         <x-ui.button variant="ghost" size="sm" type="button" wire:click="unblock({{ $device->id }})" wire:confirm="Débloquer ce terminal ?">Débloquer</x-ui.button>
                     @else
-                        <x-ui.button variant="ghost" size="sm" type="button" class="text-danger" wire:click="confirmBlock({{ $device->id }})">Bloquer</x-ui.button>
+                        <x-ui.button variant="danger-tinted" size="sm" type="button" wire:click="confirmBlock({{ $device->id }})">Bloquer</x-ui.button>
                     @endif
                     <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $device->id }})">Modifier</x-ui.button>
                 </td>

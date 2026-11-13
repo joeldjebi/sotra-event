@@ -1,15 +1,15 @@
 <x-layouts.app :title="$event?->name ?? 'Nouvel événement'" subtitle="Événements">
-    <nav class="-mt-4 mb-8 flex flex-wrap gap-2" aria-label="Étapes">
+    {{-- Étapes en contrôle segmenté (capsule), l'étape courante en surbrillance. --}}
+    <nav class="ui-segmented -mt-1 mb-8 !flex w-full !rounded-full !p-1 sm:!inline-flex sm:w-auto" aria-label="Étapes">
         @foreach ($steps as $number => $label)
             @php($reachable = $event !== null || $number === 1)
             <a @if ($reachable) href="{{ $event ? route('admin.events.edit', ['event' => $event, 'etape' => $number]) : route('admin.events.create') }}" @endif
+               @if ($number === $step) aria-current="step" @endif
                @class([
-                   'inline-flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-medium transition',
-                   'bg-marine-900 text-white' => $number === $step,
-                   'bg-surface text-ink ring-1 ring-hairline hover:bg-canvas' => $number !== $step && $reachable,
-                   'cursor-not-allowed bg-fill text-ink-tertiary' => ! $reachable,
+                   'ui-segment h-8 shrink-0 !rounded-full !px-3.5',
+                   'cursor-not-allowed text-ink-tertiary' => ! $reachable,
                ])>
-                <span @class(['grid size-5 place-items-center rounded-full text-[11px]', 'bg-white/20' => $number === $step, 'bg-fill' => $number !== $step])>{{ $number }}</span>
+                <span @class(['grid size-5 place-items-center rounded-full text-[11px] font-semibold tabular-nums', 'bg-brand text-white' => $number === $step, 'bg-fill-strong text-ink-secondary' => $number !== $step])>{{ $number }}</span>
                 {{ $label }}
             </a>
         @endforeach

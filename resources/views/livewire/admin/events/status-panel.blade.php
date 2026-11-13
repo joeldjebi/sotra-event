@@ -1,16 +1,16 @@
 <div class="space-y-4 xl:sticky xl:top-8">
     <x-ui.card padding="p-5">
         <div class="flex items-center justify-between">
-            <p class="text-[13px] font-medium text-ink-secondary">Statut</p>
+            <p class="text-headline">Statut</p>
             <x-ui.badge :tone="$event->status->tone()">{{ $event->status->label() }}</x-ui.badge>
         </div>
-        <p class="mt-3 text-[13px] text-ink-secondary">{{ $event->company->name }} · {{ $event->starts_at->translatedFormat('j M Y, H\hi') }}</p>
+        <p class="mt-2 text-footnote text-ink-secondary">{{ $event->company->name }} · {{ $event->starts_at->translatedFormat('j M Y, H\hi') }}</p>
 
-        <ul class="mt-4 space-y-2.5">
+        <ul class="mt-4 space-y-3 border-t border-separator pt-4">
             @foreach ($checks as $key => $check)
                 <li wire:key="check-{{ $key }}" class="flex gap-2.5">
-                    <span @class(['mt-0.5 grid size-5 shrink-0 place-items-center rounded-full', 'bg-success text-white' => $check['ok'], 'bg-fill text-ink-tertiary' => ! $check['ok']])>
-                        @if ($check['ok'])<x-ui.icon name="check" class="size-3" />@else<span class="size-1.5 rounded-full bg-current"></span>@endif
+                    <span @class(['mt-px grid size-5 shrink-0 place-items-center rounded-full', 'bg-switch text-white' => $check['ok'], 'ring-[1.5px] ring-line-strong ring-inset' => ! $check['ok']])>
+                        @if ($check['ok'])<x-ui.icon name="check" class="size-3" stroke-width="3" />@endif
                     </span>
                     <div class="min-w-0">
                         <p @class(['text-[14px]', 'font-medium' => ! $check['ok']])>{{ $check['label'] }}</p>
@@ -41,7 +41,7 @@
     </x-ui.card>
 
     <x-ui.card padding="p-5">
-        <p class="mb-3 text-[13px] font-medium text-ink-secondary">Échanges avec la compagnie</p>
+        <p class="mb-4 text-headline">Échanges avec la compagnie</p>
         <x-ui.negotiation-thread :messages="$messages" viewer-side="acces_event" />
         @if ($canReply)
             <form wire:submit="sendReply" class="mt-4 space-y-2">

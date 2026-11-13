@@ -1,13 +1,13 @@
 <div>
-    <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <button type="button" wire:click="$set('statusFilter', '')" @class(['rounded-[var(--radius-card)] p-4 text-left ring-1 transition', 'bg-marine-900 text-white ring-marine-900' => $statusFilter === '', 'bg-surface ring-hairline hover:bg-canvas' => $statusFilter !== ''])>
-            <p @class(['text-[13px]', 'text-white/70' => $statusFilter === '', 'text-ink-secondary' => $statusFilter !== ''])>Toute la flotte</p>
-            <p class="mt-1 text-[26px] font-semibold tracking-tight tabular-nums">{{ $total }}</p>
+    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        <button type="button" wire:click="$set('statusFilter', '')" aria-pressed="{{ $statusFilter === '' ? 'true' : 'false' }}" @class(['col-span-2 rounded-[var(--radius-card)] p-4 text-left transition duration-200 active:scale-[0.98] sm:col-span-1', 'bg-inverse text-on-inverse shadow-[0_4px_16px_rgb(15_27_45/0.18)]' => $statusFilter === '', 'bg-surface shadow-[var(--shadow-card)] ring-1 ring-hairline hover:bg-fill-subtle' => $statusFilter !== ''])>
+            <p @class(['text-footnote font-semibold', 'opacity-70' => $statusFilter === '', 'text-ink-secondary' => $statusFilter !== ''])>Toute la flotte</p>
+            <p class="mt-1.5 font-rounded text-[30px] leading-none font-semibold tracking-[-0.02em] tabular-nums">{{ $total }}</p>
         </button>
         @foreach ($statuses as $value => $label)
-            <button type="button" wire:key="status-{{ $value }}" wire:click="$set('statusFilter', '{{ $value }}')" @class(['rounded-[var(--radius-card)] p-4 text-left ring-1 transition', 'bg-marine-900 text-white ring-marine-900' => $statusFilter === $value, 'bg-surface ring-hairline hover:bg-canvas' => $statusFilter !== $value])>
-                <p @class(['text-[13px]', 'text-white/70' => $statusFilter === $value, 'text-ink-secondary' => $statusFilter !== $value])>{{ $label }}</p>
-                <p class="mt-1 text-[26px] font-semibold tracking-tight tabular-nums">{{ (int) ($counts[$value] ?? 0) }}</p>
+            <button type="button" wire:key="status-{{ $value }}" wire:click="$set('statusFilter', '{{ $value }}')" aria-pressed="{{ $statusFilter === $value ? 'true' : 'false' }}" @class(['rounded-[var(--radius-card)] p-4 text-left transition duration-200 active:scale-[0.98]', 'bg-inverse text-on-inverse shadow-[0_4px_16px_rgb(15_27_45/0.18)]' => $statusFilter === $value, 'bg-surface shadow-[var(--shadow-card)] ring-1 ring-hairline hover:bg-fill-subtle' => $statusFilter !== $value])>
+                <p @class(['text-footnote font-semibold', 'opacity-70' => $statusFilter === $value, 'text-ink-secondary' => $statusFilter !== $value])>{{ $label }}</p>
+                <p class="mt-1.5 font-rounded text-[30px] leading-none font-semibold tracking-[-0.02em] tabular-nums">{{ (int) ($counts[$value] ?? 0) }}</p>
             </button>
         @endforeach
     </div>
@@ -32,7 +32,7 @@
         </x-slot:head>
 
         @forelse ($buses as $bus)
-            <tr wire:key="bus-{{ $bus->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="bus-{{ $bus->id }}" class="hover:bg-fill-subtle">
                 <td class="font-semibold">Bus {{ $bus->number }}</td>
                 <td class="font-mono text-[13px]">{{ $bus->plate }}</td>
                 <td class="text-right tabular-nums">{{ $bus->capacity }}</td>

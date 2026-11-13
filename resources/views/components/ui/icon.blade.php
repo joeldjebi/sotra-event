@@ -1,6 +1,6 @@
 @props(['name', 'class' => 'size-5'])
 @php
-    // Pictogrammes au trait fin (1.6), proches des SF Symbols.
+    // Pictogrammes au trait fin (1.7 par défaut, attribut stroke-width pour l'ajuster), proches des SF Symbols.
     $paths = [
         'home' => 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
         'calendar' => 'M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
@@ -36,8 +36,17 @@
         'sparkles' => 'M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
         'key' => 'M14.5 10a4.5 4.5 0 1 0-4 4.47V21h3v-2h2v-2h2l1.6-1.6A4.5 4.5 0 0 0 14.5 10Z',
         'mail' => 'M3 6h18v12H3zm0 0 9 7 9-7',
+        'chevron-up-down' => 'm8 9.5 4-4 4 4m-8 5 4 4 4-4',
+        'chevron-left' => 'm15 6-6 6 6 6',
+        'check-circle' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-4-9 2.8 2.8L16.5 9',
+        'exclamation' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v5m0 3.5h.01',
+        'info' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v5.5M12 7.5h.01',
+        'plus' => 'M12 5v14M5 12h14',
+        'ellipsis' => 'M5.5 12h.01M12 12h.01M18.5 12h.01',
+        'person' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0',
+        'sidebar' => 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm5 0v14',
     ];
 @endphp
-<svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<svg {{ $attributes->merge(['class' => $class, 'stroke-width' => '1.7']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="{{ $paths[$name] ?? $paths['sparkles'] }}" />
 </svg>

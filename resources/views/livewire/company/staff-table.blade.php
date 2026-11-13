@@ -2,12 +2,12 @@
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
             <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Nom, téléphone ou matricule" />
-            <div class="inline-flex rounded-[10px] bg-fill p-0.5 text-[13px] font-medium">
-                <button type="button" wire:click="$set('roleFilter', '')" @class(['rounded-[8px] px-3 py-1.5 transition', 'bg-surface shadow-sm' => $roleFilter === '', 'text-ink-secondary' => $roleFilter !== ''])>Tous <span class="text-ink-tertiary">{{ $counts->sum() }}</span></button>
+            <x-ui.segmented label="Filtrer par fonction">
+                <x-ui.segment :active="$roleFilter === ''" wire:click="$set('roleFilter', '')">Tous <span class="font-normal text-ink-tertiary tabular-nums">{{ $counts->sum() }}</span></x-ui.segment>
                 @foreach ($roles as $value => $label)
-                    <button type="button" wire:key="role-filter-{{ $value }}" wire:click="$set('roleFilter', '{{ $value }}')" @class(['rounded-[8px] px-3 py-1.5 transition', 'bg-surface shadow-sm' => $roleFilter === $value, 'text-ink-secondary' => $roleFilter !== $value])>{{ $label }}s <span class="text-ink-tertiary">{{ (int) ($counts[$value] ?? 0) }}</span></button>
+                    <x-ui.segment wire:key="role-filter-{{ $value }}" :active="$roleFilter === $value" wire:click="$set('roleFilter', '{{ $value }}')">{{ $label }}s <span class="font-normal text-ink-tertiary tabular-nums">{{ (int) ($counts[$value] ?? 0) }}</span></x-ui.segment>
                 @endforeach
-            </div>
+            </x-ui.segmented>
         </div>
         <div class="flex gap-2">
             <x-ui.button variant="secondary" type="button" wire:click="openImport" icon="document">Importer</x-ui.button>
@@ -26,7 +26,7 @@
             <th></th>
         </x-slot:head>
         @forelse ($members as $member)
-            <tr wire:key="staff-{{ $member->id }}" @class(['hover:bg-canvas/50', 'opacity-55' => ! $member->is_active])>
+            <tr wire:key="staff-{{ $member->id }}" @class(['hover:bg-fill-subtle', 'opacity-55' => ! $member->is_active])>
                 <td class="font-medium">{{ $member->fullName() }}</td>
                 <td><x-ui.badge>{{ $member->role->label() }}</x-ui.badge></td>
                 <td class="font-mono text-[13px]">{{ $member->phone }}</td>

@@ -17,9 +17,9 @@
             <th>Statut</th>
         </x-slot:head>
         @forelse ($events as $event)
-            <tr wire:key="event-{{ $event->id }}" class="cursor-pointer hover:bg-canvas/50" onclick="window.location='{{ route('admin.events.edit', $event) }}'">
+            <tr wire:key="event-{{ $event->id }}" class="cursor-pointer hover:bg-fill-subtle" onclick="window.location='{{ route('admin.events.edit', $event) }}'">
                 <td>
-                    <a href="{{ route('admin.events.edit', $event) }}" class="font-medium hover:text-brand">{{ $event->name }}</a>
+                    <a href="{{ route('admin.events.edit', $event) }}" class="font-medium hover:text-brand-text">{{ $event->name }}</a>
                     <p class="text-[13px] text-ink-secondary">{{ $event->venue->name }}</p>
                 </td>
                 <td class="whitespace-nowrap">

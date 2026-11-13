@@ -1,10 +1,11 @@
 @props(['label', 'description' => null])
-<label class="flex cursor-pointer items-start gap-3 rounded-xl px-1 py-1.5">
-    <input type="checkbox" {{ $attributes->merge(['class' => 'mt-0.5 size-[18px] rounded-[5px] border-ink-tertiary/50 text-brand focus:ring-brand/30']) }}>
-    <span>
-        <span class="block text-[15px]">{{ $label }}</span>
+{{-- Case à cocher macOS (carré arrondi rempli de l'accent). --}}
+<label class="flex cursor-pointer items-start gap-3 rounded-[10px] px-1 py-2 transition-colors hover:bg-fill-subtle">
+    <input type="checkbox" {{ $attributes->merge(['class' => 'ui-check mt-px']) }}>
+    <span class="min-w-0">
+        <span class="block text-[15px] leading-5 tracking-[-0.01em]">{{ $label }}</span>
         @if ($description)
-            <span class="block text-[13px] text-ink-secondary">{{ $description }}</span>
+            <span class="mt-0.5 block text-footnote text-ink-secondary">{{ $description }}</span>
         @endif
     </span>
 </label>

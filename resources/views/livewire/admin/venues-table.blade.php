@@ -13,14 +13,14 @@
         </x-slot:head>
 
         @forelse ($venues as $venue)
-            <tr wire:key="venue-{{ $venue->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="venue-{{ $venue->id }}" class="hover:bg-fill-subtle">
                 <td>
                     <p class="font-medium">{{ $venue->name }}</p>
                     <p class="text-[13px] text-ink-secondary">{{ $venue->address }}</p>
                 </td>
                 <td class="text-ink-secondary">{{ $venue->city }}</td>
                 <td>
-                    <a class="font-mono text-[13px] text-brand hover:underline" target="_blank" rel="noopener"
+                    <a class="font-mono text-[13px] text-brand-text hover:underline" target="_blank" rel="noopener"
                        href="https://www.openstreetmap.org/?mlat={{ $venue->location->getLatitude() }}&mlon={{ $venue->location->getLongitude() }}#map=16/{{ $venue->location->getLatitude() }}/{{ $venue->location->getLongitude() }}">
                         {{ number_format($venue->location->getLatitude(), 5) }}, {{ number_format($venue->location->getLongitude(), 5) }}
                     </a>
