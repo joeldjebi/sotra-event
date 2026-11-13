@@ -26,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $company_id
  * @property int|null $promoter_id
  * @property bool $is_active
+ * @property string $theme
  * @property-read Company|null $company
  * @property-read Promoter|null $promoter
  */
@@ -37,7 +38,7 @@ class User extends Authenticatable
     use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /** @var list<string> */
-    public array $auditExclude = ['last_login_at', 'two_factor_confirmed_at'];
+    public array $auditExclude = ['last_login_at', 'two_factor_confirmed_at', 'theme'];
 
     /**
      * Get the attributes that should be cast.

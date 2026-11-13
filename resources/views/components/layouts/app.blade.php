@@ -92,6 +92,29 @@
                         <x-ui.icon name="shield" class="size-4" /> Sécurité du compte
                     </a>
                     <div class="mx-2.5 my-1 h-px bg-separator" role="separator"></div>
+                    {{-- Apparence : Système / Clair / Sombre, appliquée immédiatement et enregistrée sur le compte. --}}
+                    <div class="px-2.5 pt-1 pb-2" x-data="{
+                            theme: window.eventTransTheme?.get() ?? 'system',
+                            choose(value) {
+                                this.theme = value;
+                                window.eventTransTheme?.set(value);
+                                fetch('{{ route('preferences.theme') }}', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                    body: JSON.stringify({ theme: value }),
+                                });
+                            },
+                        }">
+                        <p class="mb-1.5 text-[12px] font-medium text-ink-secondary">Apparence</p>
+                        <div class="grid grid-cols-3 gap-0.5 rounded-[9px] bg-fill p-0.5 text-[12px] font-medium" role="radiogroup" aria-label="Apparence">
+                            @foreach (['system' => 'Système', 'light' => 'Clair', 'dark' => 'Sombre'] as $value => $label)
+                                <button type="button" role="radio" wire:key="theme-{{ $value }}" x-on:click="choose('{{ $value }}')" :aria-checked="theme === '{{ $value }}'"
+                                        :class="theme === '{{ $value }}' ? 'bg-surface text-ink shadow-[var(--shadow-control)]' : 'text-ink-secondary hover:text-ink'"
+                                        class="rounded-[7px] py-1.5 transition">{{ $label }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="mx-2.5 my-1 h-px bg-separator" role="separator"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] text-danger transition-colors hover:bg-danger hover:text-white" role="menuitem">

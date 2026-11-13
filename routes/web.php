@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Promoter\PromoKitController;
 use App\Http\Controllers\Web\Site\PaymentSimulatorController;
 use App\Http\Controllers\Web\Site\PublicPassController;
 use App\Http\Controllers\Web\SpaceRedirectController;
+use App\Http\Controllers\Web\ThemePreferenceController;
 use App\Http\Controllers\Web\TwoFactorEnrollmentController;
 use App\Livewire\Site\Account as SiteAccount;
 use App\Livewire\Site\ChoosePass;
@@ -44,6 +45,7 @@ Route::post('/simulateur-paiement/{reference}', [PaymentSimulatorController::cla
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/espace', SpaceRedirectController::class)->name('space');
+    Route::put('/preferences/theme', ThemePreferenceController::class)->name('preferences.theme');
     Route::get('/securite/double-authentification', TwoFactorEnrollmentController::class)->name('security.two-factor');
 
     // La 2FA est obligatoire (NF-03) : la désactivation proposée par Fortify est neutralisée.

@@ -3,6 +3,10 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* Thème choisi par l'utilisateur (Système / Clair / Sombre) : data-theme est résolu en « light » ou « dark »
+   par le script du <head> (partials/head) ; la variante dark: de Tailwind suit cet attribut. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 /*
 | Design system EVENT TRANS — langage visuel Apple (apple.com, iCloud, Réglages macOS/iOS).
 | Charte « Le Pass en route » : marine #0f1b2d, orange #c2410c (couleur d'accent).
@@ -127,10 +131,11 @@
     --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Mode sombre automatique, valeurs inspirées des couleurs dynamiques d'iOS/macOS. */
+/* Mode sombre (thème « dark » choisi ou système en sombre), valeurs inspirées des couleurs dynamiques d'iOS/macOS. */
 @layer base {
-    @media (prefers-color-scheme: dark) {
-        :root {
+    @media all {
+        :root[data-theme='dark'] {
+            color-scheme: dark;
             --color-canvas: #000000;
             --color-surface: #1c1c1e;
             --color-elevated: #1c1c1e;
@@ -177,7 +182,7 @@
         }
 
         /* Surfaces surélevées (feuilles, popovers) : un cran plus clair, comme les feuilles iOS. */
-        .elevated {
+        [data-theme='dark'] .elevated {
             --color-canvas: #1c1c1e;
             --color-surface: #2c2c2e;
             --color-elevated: #2c2c2e;
@@ -186,7 +191,7 @@
     }
 
     html {
-        color-scheme: light dark;
+        color-scheme: light;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
@@ -398,12 +403,10 @@
             font-weight: 600;
         }
 
-        @media (prefers-color-scheme: dark) {
-            &[aria-pressed='true'],
-            &[aria-current] {
-                background-color: #636366;
-                color: #fff;
-            }
+        [data-theme='dark'] &[aria-pressed='true'],
+        [data-theme='dark'] &[aria-current] {
+            background-color: #636366;
+            color: #fff;
         }
     }
 
