@@ -37,7 +37,7 @@ class EventController extends Controller
     public function show(int $event): EventDetailResource
     {
         $model = $this->catalog->onSale(SalesChannel::App)
-            ->with(['venue', 'boardingPoints', 'dropZones', 'offers', 'prices'])
+            ->with(['venue', 'boardingPoints' => fn ($query) => $query->whereNull('cancelled_at'), 'dropZones', 'offers', 'prices'])
             ->findOrFail($event);
 
         return new EventDetailResource($model);

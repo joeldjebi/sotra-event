@@ -47,6 +47,10 @@ class CreateOrder
         $point = BoardingPoint::query()->where('event_id', $event->id)->find($boardingPointId)
             ?? throw new ApiException('Point d\'embarquement inconnu pour cet événement.', 'BOARDING_POINT_NOT_FOUND', 404);
 
+        if ($point->cancelled_at !== null) {
+            throw new ApiException('Ce départ est annulé.', 'DEPARTURE_CANCELLED', 409);
+        }
+
         $max = (int) config('eventtrans.sales.max_passes_per_order');
 
         if ($quantity < 1 || $quantity > $max) {

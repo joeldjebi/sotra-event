@@ -131,8 +131,13 @@ class Pass extends Model
     }
 
     /**
-     * Change le statut en respectant les transitions autorisées.
+     * @return HasOne<Refund, $this>
      */
+    public function refund(): HasOne
+    {
+        return $this->hasOne(Refund::class);
+    }
+
     /**
      * @return HasMany<Scan, $this>
      */
@@ -157,6 +162,9 @@ class Pass extends Model
         return $this->hasMany(Complaint::class);
     }
 
+    /**
+     * Change le statut en respectant les transitions autorisées.
+     */
     public function transitionTo(PassStatus $next): void
     {
         if (! $this->status->canTransitionTo($next)) {

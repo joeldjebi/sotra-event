@@ -418,6 +418,26 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** : le reversement du jeu d'essai donne exactement 90 % de la recette brute hors frais, moins les remboursements.
 
+> **Réalisé le 13/11/2026** (270 tests verts, dont le contrôle des 90 % : (12 000 − 3 000) × 90 % = 8 100).
+> - **Annulation par le spectateur** (SP-25, RG-19) :
+>   - API `POST /passes/{code}/cancel`, et bouton sur « Mon Pass » ;
+>   - possible jusqu'à 24 h avant le départ, Pass non scanné ;
+>   - 8 % du total retenus (3 060 → 245 retenus → 2 815) ;
+>   - le Pass expose `cancellation` (montants, date limite, message) et `refund`.
+> - **Effets d'une annulation** : le QR est refusé et la place libérée. Le remboursement part par l'API de l'agrégateur ; si l'opérateur ne le permet pas (Moov Money et carte dans la simulation), il rejoint la liste de traitement manuel (PA-04). Le spectateur est prévenu par SMS.
+> - **Console** :
+>   - **Pass & ventes** : annulation par le support, soit selon RG-19, soit en geste commercial (intégral), avec un motif tracé ;
+>   - **Remboursements** : échéances 48 h / 72 h et retards, relance par API, « Marquer remboursé » avec la référence de l'opération.
+> - **Annulation / report** (AD-13, depuis la fiche de l'événement), avec notification de masse par lots en file :
+>   - annuler l'événement ou un départ : remboursement intégral, frais compris (RG-17) ; la vente se ferme sur le point annulé ;
+>   - reporter : tous les horaires sont décalés (événement, points, zones, bus) ; les Pass restent valables ; le remboursement sans frais est possible sur demande (RG-18).
+> - **Reversements** (RG-14, PA-05, AD-11, CO-05) :
+>   - `payouts:generate` (chaque nuit à 3 h) clôt les événements terminés et calcule le relevé : recette brute hors frais, remboursements, commission, net ;
+>   - le relevé est recalculé jusqu'à sa validation, puis figé ;
+>   - échéance à J + 5 jours ouvrés, hors week-ends et jours fériés (`eventtrans.payouts.holidays`, fêtes mobiles à compléter chaque année) ;
+>   - validation, paiement (virement ou Mobile Money marchand, référence, justificatif obligatoire), relevé PDF.
+> - **Espace compagnie** : écran Reversements (prochain reversement, estimation des événements en vente, historique, relevé et justificatif) et encart « Prochain reversement » sur l'écran Ventes.
+
 ### Étape 10 — WhatsApp, intégrations, pilote (lot 5 CDC)
 - Bot WhatsApp sur l'API WhatsApp Business : menus, paiement, envoi du Pass, « Mes Pass » (WA-01 à WA-05).
 - Branchement des **vrais fournisseurs** : agrégateur, SMS, WhatsApp, FCM. Il suffit de changer les variables `*_DRIVER`.

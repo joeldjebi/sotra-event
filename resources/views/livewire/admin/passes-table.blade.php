@@ -94,7 +94,22 @@
                         <x-ui.input label="Transférer à un autre numéro (à la demande du détenteur)" name="transferPhone" type="tel" wire:model="transferPhone" placeholder="07 00 00 00 00" />
                     </form>
                 @endif
-                <p class="text-[12px] text-ink-tertiary">L'annulation et le remboursement suivent les règles de la section 11 (bientôt disponibles).</p>
+                @if ($viewing->refund)
+                    <section class="rounded-xl bg-fill p-4">
+                        <h3 class="font-semibold">Remboursement {{ $viewing->refund->reference }}</h3>
+                        <p class="mt-1">{{ $viewing->refund->reason->label() }} · {{ number_format($viewing->refund->amount, 0, ',', ' ') }} FCFA
+                            @if ($viewing->refund->retained_amount > 0)<span class="text-ink-secondary">({{ number_format($viewing->refund->retained_amount, 0, ',', ' ') }} retenus)</span>@endif
+                            · <x-ui.badge :tone="$viewing->refund->status->tone()">{{ $viewing->refund->status->label() }}</x-ui.badge></p>
+                    </section>
+                @elseif ($viewing->status->value === 'valide')
+                    <form id="cancel-form" wire:submit="cancelPass" class="space-y-3 rounded-xl bg-fill p-4">
+                        <h3 class="font-semibold">Annuler et rembourser</h3>
+                        <x-ui.select label="Règle" name="cancelReason" wire:model="cancelReason"
+                                     :options="['client' => 'Demande du spectateur · 8 % retenus (RG-19)', 'geste_commercial' => 'Geste commercial · remboursement intégral']" />
+                        <x-ui.input label="Motif (tracé)" name="cancelNote" wire:model="cancelNote" placeholder="Ex. : appel du spectateur, empêchement" />
+                        <x-ui.button variant="danger" size="sm" form="cancel-form" wire:confirm="Annuler ce Pass ? Son QR ne fonctionnera plus.">Annuler et rembourser</x-ui.button>
+                    </form>
+                @endif
             </div>
         @endif
         <x-slot:footer>

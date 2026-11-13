@@ -24,6 +24,20 @@
                       :hint="$report['buses_planned'] > 0 ? $report['buses_planned'].' bus · '.$report['seats_planned'].' places' : 'plan de transport à générer'" />
         </div>
 
+        {{-- CO-05 : prochain reversement de l'événement. --}}
+        <x-ui.card class="mt-4" padding="p-4 sm:px-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 text-[14px]">
+                <p>
+                    <span class="font-medium">Prochain reversement</span>
+                    <span class="text-ink-secondary">· {{ $payout ? $money($payout->net).' FCFA · '.$payout->status->label() : $money($report['company_share']).' FCFA (estimation)' }}
+                        · le {{ ($payout?->due_on ?? $dueOn)->translatedFormat('j F Y') }}, 5 jours ouvrés après l'événement</span>
+                </p>
+                @can(\App\Enums\Permission::CompanyPayoutsView->value)
+                    <a href="{{ route('company.payouts') }}" class="font-medium text-brand-text hover:underline">Historique des reversements</a>
+                @endcan
+            </div>
+        </x-ui.card>
+
         <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <x-ui.card>
                 <h2 class="text-[17px] font-semibold tracking-tight">Répartition par offre</h2>

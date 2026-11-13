@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -41,6 +42,10 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $proposed_at
  * @property Carbon|null $accepted_at
  * @property Carbon|null $sale_opened_at
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
+ * @property Carbon|null $postponed_at
+ * @property Carbon|null $original_starts_at
  * @property-read Venue $venue
  * @property-read Promoter $promoter
  * @property-read Company $company
@@ -49,7 +54,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'name', 'slug', 'description', 'venue_id', 'promoter_id', 'transport_lead_id', 'company_id',
     'starts_at', 'ends_at', 'doors_open_at', 'estimated_passes', 'commission_rate', 'fee_rate',
-    'channels', 'status', 'visual_path', 'featured', 'created_by', 'proposed_at', 'accepted_at', 'sale_opened_at',
+    'channels', 'status', 'visual_path', 'featured', 'created_by', 'proposed_at', 'accepted_at', 'sale_opened_at', 'cancelled_at', 'cancellation_reason', 'postponed_at', 'original_starts_at',
 ])]
 class Event extends Model
 {
@@ -64,6 +69,9 @@ class Event extends Model
     protected function casts(): array
     {
         return [
+            'cancelled_at' => 'datetime',
+            'postponed_at' => 'datetime',
+            'original_starts_at' => 'datetime',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'doors_open_at' => 'datetime',
@@ -168,6 +176,22 @@ class Event extends Model
     }
 
     /**
+     * @return HasOne<Payout, $this>
+     */
+    public function payout(): HasOne
+    {
+        return $this->hasOne(Payout::class);
+    }
+
+    /**
+     * @return HasMany<Refund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    /**
      * @return HasMany<Review, $this>
      */
     public function reviews(): HasMany
@@ -219,5 +243,13 @@ class Event extends Model
     public function visualUrl(): ?string
     {
         return $this->visual_path ? Storage::disk('public')->url($this->visual_path) : null;
+    }
+
+    /**
+     * @return HasMany<Pass, $this>
+     */
+    public function passes(): HasMany
+    {
+        return $this->hasMany(Pass::class);
     }
 }

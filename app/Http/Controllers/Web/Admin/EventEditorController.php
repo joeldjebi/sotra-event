@@ -34,4 +34,12 @@ class EventEditorController extends Controller
             'steps' => self::STEPS,
         ]);
     }
+
+    /**
+     * Annulation / report (AD-13).
+     */
+    public function disruption(Event $event): View
+    {
+        return view('admin.events.disruption', ['event' => $event]);
+    }
 }

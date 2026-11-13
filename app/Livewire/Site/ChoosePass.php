@@ -47,7 +47,7 @@ class ChoosePass extends Component
 
     public function mount(string $slug, EventCatalog $catalog): void
     {
-        $this->event = $catalog->onSale(SalesChannel::Web)->with(['venue', 'boardingPoints', 'offers', 'prices', 'dropZones'])->where('slug', $slug)->firstOrFail();
+        $this->event = $catalog->onSale(SalesChannel::Web)->with(['venue', 'boardingPoints' => fn ($query) => $query->whereNull('cancelled_at'), 'offers', 'prices', 'dropZones'])->where('slug', $slug)->firstOrFail();
         $this->pointId ??= $this->event->boardingPoints->first()?->id;
         $this->quantity = max(1, min($this->quantity, $this->max()));
     }

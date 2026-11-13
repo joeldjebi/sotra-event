@@ -108,6 +108,20 @@ return [
     ],
 
     /*
+    | Reversements à la compagnie (RG-14, PA-05) : J + 5 jours ouvrés après l'événement.
+    | Jours fériés ivoiriens (AAAA-MM-JJ) : les fêtes mobiles (Pâques, Ascension, Pentecôte, fêtes musulmanes)
+    | sont à compléter chaque année par ACCES EVENT.
+    */
+    'payouts' => [
+        'delay_business_days' => 5,
+        'holidays' => [
+            '2026-01-01', '2026-03-20', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-05-27',
+            '2026-08-07', '2026-08-15', '2026-08-25', '2026-11-01', '2026-11-15', '2026-12-25',
+            '2027-01-01', '2027-05-01', '2027-08-07', '2027-08-15', '2027-11-01', '2027-11-15', '2027-12-25',
+        ],
+    ],
+
+    /*
     | Paiement. Le pilote « fake » simule l'agrégateur (attente, confirmation, webhook signé).
     */
     'payment' => [

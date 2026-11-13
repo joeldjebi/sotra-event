@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Mission;
 use App\Models\Order;
 use App\Models\Pass;
+use App\Models\Refund;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\URL;
 
@@ -52,6 +53,41 @@ class PassNotifier
     {
         $this->sendPasses($pass->holder, [$pass], $from);
         $this->sms->send(PhoneNumber::parse($from->phone), "EVENT TRANS : le Pass {$pass->code} a bien été offert. Il n'est plus valable sur votre téléphone.");
+    }
+
+    /**
+     * Remboursement effectué (SP-21) : montant, retenue éventuelle et moyen de paiement d'origine.
+     */
+    public function refunded(Refund $refund): void
+    {
+        $retained = $refund->retained_amount > 0 ? ' ('.number_format($refund->retained_amount, 0, ',', ' ').' FCFA de frais d\'annulation retenus)' : '';
+        $body = sprintf(
+            'EVENT TRANS : le Pass %s est remboursé : %s FCFA sur votre %s%s. Réf. %s.',
+            $refund->pass->code,
+            number_format($refund->amount, 0, ',', ' '),
+            $refund->payment->method->label(),
+            $retained,
+            $refund->reference,
+        );
+        $phone = PhoneNumber::parse($refund->customer->phone);
+        $this->sms->send($phone, $body);
+        $this->push->send($refund->customer, 'Remboursement effectué', $body, ['code' => $refund->pass->code]);
+    }
+
+    /**
+     * Message de masse aux détenteurs (AD-13) : annulation ou report, un message par spectateur.
+     *
+     * @param  iterable<Pass>  $passes
+     */
+    public function disruption(iterable $passes, string $title, string $body, string $template): void
+    {
+        foreach (collect($passes)->unique('holder_id') as $pass) {
+            $text = "EVENT TRANS : {$body}";
+            $phone = PhoneNumber::parse($pass->holder->phone);
+            $this->sms->send($phone, $text);
+            $this->whatsApp->send($phone, $template, $text, ['event' => $pass->event_id]);
+            $this->push->send($pass->holder, $title, $body, ['event_id' => $pass->event_id]);
+        }
     }
 
     /**

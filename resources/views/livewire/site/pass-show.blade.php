@@ -15,6 +15,18 @@
         @endif
     </div>
 
+    @if ($pass->event->postponed_at && $pass->status->value === 'valide')
+        <p class="mt-5 rounded-2xl bg-warning/20 px-4 py-3 text-[14px] text-white">
+            Événement reporté au {{ $pass->event->starts_at->translatedFormat('l j F à H\hi') }}. Votre Pass reste valable ; vous pouvez aussi demander le remboursement intégral.
+        </p>
+    @endif
+
+    @if ($refund)
+        <p class="mt-5 rounded-2xl bg-white/10 px-4 py-3 text-[14px] text-white">
+            Remboursement {{ $refund->reference }} · {{ number_format($refund->amount, 0, ',', ' ') }} FCFA · {{ mb_strtolower($refund->status->label()) }}
+        </p>
+    @endif
+
     @if ($notice)
         <p class="mt-5 rounded-2xl bg-white/10 px-4 py-3 text-[14px] text-white" role="status">{{ $notice }}</p>
     @endif
@@ -55,6 +67,29 @@
             </ul>
         @endif
     </div>
+
+    @if ($cancellation['allowed'])
+        <div class="mt-4 text-center">
+            <button type="button" wire:click="$set('showCancel', true)" class="text-[14px] font-medium text-white/70 underline-offset-4 hover:text-white hover:underline">Annuler mon Pass et être remboursé</button>
+        </div>
+    @elseif ($pass->status->value === 'valide')
+        <p class="mt-4 text-center text-[13px] text-white/50">{{ $cancellation['message'] }}</p>
+    @endif
+
+    <x-ui.sheet model="showCancel" title="Annuler mon Pass" :subtitle="$cancellation['message']">
+        <dl class="space-y-3 text-[15px]">
+            <div class="flex justify-between"><dt class="text-ink-secondary">Total payé</dt><dd class="tabular-nums">{{ number_format($cancellation['paid'], 0, ',', ' ') }} FCFA</dd></div>
+            <div class="flex justify-between"><dt class="text-ink-secondary">Frais d'annulation (8 %)</dt><dd class="tabular-nums">− {{ number_format($cancellation['retained'], 0, ',', ' ') }} FCFA</dd></div>
+            <div class="flex justify-between border-t border-hairline pt-3 font-semibold"><dt>Remboursé</dt><dd class="tabular-nums">{{ number_format($cancellation['amount'], 0, ',', ' ') }} FCFA</dd></div>
+        </dl>
+        @if ($cancellation['deadline'])
+            <p class="mt-4 text-[13px] text-ink-secondary">Possible jusqu'au {{ $cancellation['deadline']->translatedFormat('j F à H\hi') }}. Votre QR cessera de fonctionner.</p>
+        @endif
+        <x-slot:footer>
+            <x-ui.button variant="secondary" type="button" x-on:click="open = false">Garder mon Pass</x-ui.button>
+            <x-ui.button variant="danger" type="button" wire:click="cancelPass">Annuler le Pass</x-ui.button>
+        </x-slot:footer>
+    </x-ui.sheet>
 
     <x-ui.sheet model="showReview" title="Donner mon avis" subtitle="Une note de 1 à 5 par critère.">
         <form id="review-form" wire:submit="sendReview" class="space-y-4">

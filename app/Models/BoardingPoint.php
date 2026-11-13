@@ -7,6 +7,7 @@ use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -26,10 +27,12 @@ use Illuminate\Support\Carbon;
  * @property Carbon $return_departure_at
  * @property int|null $travel_minutes
  * @property int $position
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
  */
 #[Fillable([
     'event_id', 'commune', 'commune_code', 'place', 'location', 'distance_km', 'zone', 'zone_forced',
-    'zone_justification', 'departure_at', 'return_departure_at', 'travel_minutes', 'position',
+    'zone_justification', 'departure_at', 'return_departure_at', 'travel_minutes', 'position', 'cancelled_at', 'cancellation_reason',
 ])]
 class BoardingPoint extends Model
 {
@@ -38,6 +41,7 @@ class BoardingPoint extends Model
     protected function casts(): array
     {
         return [
+            'cancelled_at' => 'datetime',
             'location' => Point::class,
             'distance_km' => 'decimal:2',
             'zone' => 'integer',
@@ -63,5 +67,13 @@ class BoardingPoint extends Model
     public function boardingCallAt(): Carbon
     {
         return $this->departure_at->copy()->subMinutes((int) config('eventtrans.events.boarding_lead_minutes'));
+    }
+
+    /**
+     * @return HasMany<Pass, $this>
+     */
+    public function passes(): HasMany
+    {
+        return $this->hasMany(Pass::class);
     }
 }

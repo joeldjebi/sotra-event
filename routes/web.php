@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Web\Admin\EventEditorController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Company\QualityReportController;
+use App\Http\Controllers\Web\PayoutDocumentController;
 use App\Http\Controllers\Web\Promoter\PromoKitController;
 use App\Http\Controllers\Web\Promoter\ReportController as PromoterReportController;
 use App\Http\Controllers\Web\Site\PaymentSimulatorController;
@@ -65,10 +66,17 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::middleware('can:'.Permission::EventsManage->value)->group(function () {
                 Route::get('evenements/nouveau', [EventEditorController::class, 'create'])->name('events.create');
                 Route::get('evenements/{event}', [EventEditorController::class, 'edit'])->name('events.edit');
+                Route::get('evenements/{event}/annulation', [EventEditorController::class, 'disruption'])->name('events.disruption');
             });
             LivewirePage::route('compagnies', 'companies', 'admin.companies-table', 'Compagnies', Permission::CompaniesManage);
             LivewirePage::route('promoteurs', 'promoters', 'admin.promoters-table', 'Promoteurs', Permission::PromotersManage);
             LivewirePage::route('pass', 'passes', 'admin.passes-table', 'Pass & ventes', Permission::PassesManage);
+            LivewirePage::route('remboursements', 'refunds', 'admin.refunds-table', 'Remboursements', Permission::PassesManage);
+            LivewirePage::route('reversements', 'payouts', 'admin.payouts-table', 'Reversements', Permission::PayoutsManage);
+            Route::middleware('can:'.Permission::PayoutsManage->value)->group(function () {
+                Route::get('reversements/{payout}/releve.pdf', [PayoutDocumentController::class, 'statement'])->name('payouts.statement');
+                Route::get('reversements/{payout}/justificatif', [PayoutDocumentController::class, 'proof'])->name('payouts.proof');
+            });
             LivewirePage::route('lieux', 'venues', 'admin.venues-table', 'Lieux', Permission::EventsManage);
             LivewirePage::route('utilisateurs', 'users', 'admin.users-table', 'Utilisateurs & rôles', Permission::UsersManage);
             LivewirePage::route('journal', 'audit', 'admin.audit-log-table', 'Journal d\'audit', Permission::AuditView);
@@ -82,6 +90,11 @@ Route::middleware(['auth', 'active'])->group(function () {
             LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsManage);
             LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsManage);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);
+            LivewirePage::route('reversements', 'payouts', 'company.payouts', 'Reversements', Permission::CompanyPayoutsView);
+            Route::middleware('can:'.Permission::CompanyPayoutsView->value)->group(function () {
+                Route::get('reversements/{payout}/releve.pdf', [PayoutDocumentController::class, 'statement'])->name('payouts.statement');
+                Route::get('reversements/{payout}/justificatif', [PayoutDocumentController::class, 'proof'])->name('payouts.proof');
+            });
             LivewirePage::route('affectations', 'assignments', 'company.assignments', 'Bus & affectations', Permission::FleetManage);
             LivewirePage::route('bus', 'assignments.fleet', 'company.buses-table', 'Flotte', Permission::FleetManage);
             LivewirePage::route('depots', 'depots', 'company.depots-table', 'Dépôts', Permission::FleetManage);

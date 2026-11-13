@@ -3,6 +3,7 @@
 namespace App\Contracts;
 
 use App\Data\PaymentInstructions;
+use App\Data\RefundResult;
 use App\Data\WebhookNotification;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
@@ -27,4 +28,9 @@ interface PaymentGateway
      * Vérifie la signature et décode le webhook. Lève une exception HTTP 401 si la signature est invalide.
      */
     public function parseWebhook(Request $request): WebhookNotification;
+
+    /**
+     * Rembourse tout ou partie d'un paiement sur le moyen d'origine (PA-04), si l'opérateur le permet.
+     */
+    public function refund(Payment $payment, int $amount, string $reference): RefundResult;
 }

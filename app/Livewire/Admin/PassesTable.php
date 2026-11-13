@@ -5,12 +5,16 @@ namespace App\Livewire\Admin;
 use App\Actions\Passes\TransferPass;
 use App\Enums\PassStatus;
 use App\Enums\Permission;
+use App\Enums\RefundReason;
 use App\Exceptions\ApiException;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\Pass;
+use App\Models\User;
 use App\Rules\ValidPhoneNumber;
+use App\Services\Finance\RefundService;
 use App\Support\PhoneNumber;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -18,8 +22,7 @@ use Livewire\WithPagination;
 
 /**
  * Console ACCES EVENT · Pass & ventes (AD-10) : recherche par code ou téléphone, historique des scans
- * et des transferts, réclamations, transfert à un autre numéro (support). L'annulation et le remboursement
- * suivent les règles de la section 11 (étape 9).
+ * et des transferts, réclamations, transfert à un autre numéro, annulation et remboursement (§ 11 CDC).
  */
 class PassesTable extends Component
 {
@@ -36,6 +39,11 @@ class PassesTable extends Component
     public bool $showDetails = false;
 
     public string $transferPhone = '';
+
+    /** Motif d'annulation par le support : selon RG-19 (8 % retenus) ou geste commercial (intégral). */
+    public string $cancelReason = 'client';
+
+    public string $cancelNote = '';
 
     protected function permission(): Permission
     {
@@ -81,6 +89,32 @@ class PassesTable extends Component
     }
 
     /**
+     * Annulation à la demande du spectateur (RG-19) ou geste commercial (remboursement intégral).
+     */
+    public function cancelPass(RefundService $refunds): void
+    {
+        $this->validate([
+            'cancelReason' => ['required', Rule::in([RefundReason::Customer->value, RefundReason::Goodwill->value])],
+            'cancelNote' => ['required', 'string', 'min:5', 'max:300'],
+        ], attributes: ['cancelNote' => 'motif']);
+
+        /** @var User $user */
+        $user = auth()->user();
+        $pass = Pass::query()->with('event')->findOrFail($this->viewingId);
+
+        try {
+            $refund = $refunds->cancel($pass, RefundReason::from($this->cancelReason), $user, trim($this->cancelNote));
+        } catch (ApiException $exception) {
+            $this->addError('cancelNote', $exception->getMessage());
+
+            return;
+        }
+
+        $this->reset(['cancelNote', 'cancelReason']);
+        $this->notify("Pass {$pass->code} annulé · remboursement {$refund->reference} de ".number_format($refund->amount, 0, ',', ' ').' FCFA.');
+    }
+
+    /**
      * @return Builder<Pass>
      */
     private function query(): Builder
@@ -107,7 +141,7 @@ class PassesTable extends Component
             'scans' => fn ($query) => $query->with(['mission.bus', 'mission.boardingPoint'])->orderBy('scanned_at'),
             'transfers' => fn ($query) => $query->with(['from', 'to'])->orderBy('id'),
             'complaints' => fn ($query) => $query->withoutGlobalScopes()->latest('id'),
-            'review',
+            'review', 'refund',
         ])->find($this->viewingId) : null;
 
         return view('livewire.admin.passes-table', [

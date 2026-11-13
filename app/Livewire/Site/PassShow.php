@@ -9,6 +9,8 @@ use App\Models\Customer;
 use App\Models\Pass;
 use App\Models\Review;
 use App\Rules\ValidPhoneNumber;
+use App\Services\Finance\RefundPolicy;
+use App\Services\Finance\RefundService;
 use App\Services\Quality\ComplaintService;
 use App\Services\Quality\ReviewService;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +35,8 @@ class PassShow extends Component
     public string $phone = '';
 
     public ?string $notice = null;
+
+    public bool $showCancel = false;
 
     public bool $showReview = false;
 
@@ -72,6 +76,26 @@ class PassShow extends Component
         session()->flash('flash', "Pass {$this->pass->code} offert : il a été envoyé au bénéficiaire par SMS et WhatsApp.");
 
         return $this->redirectRoute('site.passes.index');
+    }
+
+    /**
+     * Annuler le Pass et être remboursé (SP-25, RG-18, RG-19).
+     */
+    public function cancelPass(RefundPolicy $policy, RefundService $refunds): void
+    {
+        $quote = $policy->quote($this->pass);
+
+        if (! $quote['allowed'] || $quote['reason'] === null) {
+            $this->showCancel = false;
+            $this->notice = $quote['message'];
+
+            return;
+        }
+
+        $refund = $refunds->cancel($this->pass, $quote['reason']);
+        $this->pass->refresh();
+        $this->showCancel = false;
+        $this->notice = 'Pass annulé. Remboursement de '.number_format($refund->amount, 0, ',', ' ').' FCFA en cours sur votre moyen de paiement.';
     }
 
     /**
@@ -123,6 +147,8 @@ class PassShow extends Component
         return view('livewire.site.pass-show', [
             'pass' => $this->pass->load(['event.venue', 'event.dropZones', 'boardingPoint']),
             'canReview' => app(ReviewService::class)->canReview($this->pass),
+            'cancellation' => app(RefundPolicy::class)->quote($this->pass),
+            'refund' => $this->pass->refund,
             'review' => $this->pass->review,
             'complaints' => $this->pass->complaints()->withoutGlobalScopes()->latest('id')->get(),
             'criteria' => Review::CRITERIA,

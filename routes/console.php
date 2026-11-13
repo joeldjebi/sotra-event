@@ -12,3 +12,4 @@ Schedule::command('orders:expire')->everyMinute()->withoutOverlapping();
 Schedule::command('payments:reconcile')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('passes:remind')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('missions:check-delays')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('payouts:generate')->dailyAt('03:00')->withoutOverlapping();

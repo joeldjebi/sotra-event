@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api\V1;
 use App\Enums\DropZoneUsage;
 use App\Enums\PassStatus;
 use App\Models\Pass;
+use App\Services\Finance\RefundPolicy;
 use App\Services\Quality\ReviewService;
 use App\Services\Sales\PassNotifier;
 use App\Services\Sales\PassTokenService;
@@ -38,6 +39,14 @@ class PassResource extends JsonResource
                 ? app(PassTokenService::class)->sign($this->resource) : null,
             'public_url' => $this->code ? PassNotifier::publicUrl($this->resource) : null,
             'transferable' => $this->isTransferable(),
+            'cancellation' => $this->cancellation(),
+            'refund' => $this->refund ? [
+                'reference' => $this->refund->reference,
+                'amount' => $this->refund->amount,
+                'retained' => $this->refund->retained_amount,
+                'status' => $this->refund->status->value,
+                'status_label' => $this->refund->status->label(),
+            ] : null,
             'review' => [
                 'sent' => $this->review()->exists(),
                 'available' => app(ReviewService::class)->canReview($this->resource),
@@ -60,6 +69,26 @@ class PassResource extends JsonResource
                 'pickup_zone' => $pickup?->name,
                 'scanned' => in_array($this->status, [PassStatus::ReturnUsed, PassStatus::Completed], true),
             ] : null,
+        ];
+    }
+
+    /**
+     * Annulation possible (SP-25) : montants et date limite selon les règles RG-18 et RG-19.
+     *
+     * @return array<string, mixed>
+     */
+    private function cancellation(): array
+    {
+        $quote = app(RefundPolicy::class)->quote($this->resource);
+
+        return [
+            'allowed' => $quote['allowed'],
+            'reason' => $quote['reason']?->value,
+            'paid' => $quote['paid'],
+            'retained' => $quote['retained'],
+            'refund_amount' => $quote['amount'],
+            'deadline' => $quote['deadline']?->toIso8601String(),
+            'message' => $quote['message'],
         ];
     }
 }

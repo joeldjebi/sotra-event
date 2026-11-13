@@ -29,7 +29,8 @@ final class Navigation
                     ['Compagnies', 'building', 'admin.companies', Permission::CompaniesManage],
                     ['Promoteurs', 'megaphone', 'admin.promoters', Permission::PromotersManage],
                     ['Pass & ventes', 'ticket', 'admin.passes', Permission::PassesManage],
-                    ['Reversements', 'banknotes', null, Permission::PayoutsManage],
+                    ['Remboursements', 'lifebuoy', 'admin.refunds', Permission::PassesManage],
+                    ['Reversements', 'banknotes', 'admin.payouts', Permission::PayoutsManage],
                     ['Utilisateurs & rôles', 'users', 'admin.users', Permission::UsersManage],
                     ['Journal d\'audit', 'shield', 'admin.audit', Permission::AuditView],
                 ]],
@@ -41,7 +42,7 @@ final class Navigation
                     ['Événements proposés', 'calendar', 'company.proposed-events', Permission::ProposedEventsRespond],
                     ['Offres & grille tarifaire', 'tag', null, Permission::PricingView],
                     ['Demande par commune', 'map-pin', null, Permission::DemandView],
-                    ['Reversements', 'banknotes', null, Permission::CompanyPayoutsView],
+                    ['Reversements', 'banknotes', 'company.payouts', Permission::CompanyPayoutsView],
                     ['Rapports', 'document', null, Permission::ReportsView],
                 ]],
                 ['Direction qualité', [

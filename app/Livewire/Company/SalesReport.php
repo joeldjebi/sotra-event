@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Exports\EventSalesExport;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\Event;
+use App\Services\Finance\PayoutCalculator;
 use App\Services\Reporting\EventSalesReport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * Espace compagnie · Direction commerciale · Ventes (CO-01 à CO-03, CO-06).
+ * Espace compagnie · Direction commerciale · Ventes (CO-01 à CO-03, CO-05, CO-06).
  */
 class SalesReport extends Component
 {
@@ -61,6 +62,8 @@ class SalesReport extends Component
             'event' => $event,
             'eventOptions' => $this->events()->pluck('name', 'id')->all(),
             'report' => $event ? $reports->build($event) : null,
+            'payout' => $event?->payout()->first(),
+            'dueOn' => $event ? PayoutCalculator::dueOn($event->ends_at) : null,
         ]);
     }
 }

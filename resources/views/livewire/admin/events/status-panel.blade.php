@@ -31,6 +31,9 @@
                     {{ $event->status === \App\Enums\EventStatus::Negotiating ? 'Renvoyer la proposition' : 'Proposer à la compagnie' }}
                 </x-ui.button>
             @endif
+            @if (in_array($event->status, [\App\Enums\EventStatus::Accepted, \App\Enums\EventStatus::OnSale], true))
+                <x-ui.button variant="ghost" class="w-full" :href="route('admin.events.disruption', $event)">Annuler ou reporter…</x-ui.button>
+            @endif
             @if ($event->status === \App\Enums\EventStatus::Accepted)
                 <x-ui.button type="button" class="w-full" :disabled="! $canOpenSale" wire:click="openSale" wire:confirm="Ouvrir la vente des Pass ?">Ouvrir la vente</x-ui.button>
                 @unless ($canOpenSale)

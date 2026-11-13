@@ -4,7 +4,9 @@ namespace App\Integrations\Payment;
 
 use App\Contracts\PaymentGateway;
 use App\Data\PaymentInstructions;
+use App\Data\RefundResult;
 use App\Data\WebhookNotification;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use Illuminate\Http\Request;
@@ -106,5 +108,22 @@ class FakeAggregator implements PaymentGateway
     private static function stateKey(string $reference): string
     {
         return 'fake-payment:'.$reference;
+    }
+
+    /**
+     * Simulation : Orange Money, MTN MoMo et Wave remboursent par API ; Moov Money et la carte passent
+     * en traitement manuel, comme chez la plupart des agrégateurs de la sous-région.
+     */
+    public function refund(Payment $payment, int $amount, string $reference): RefundResult
+    {
+        if (in_array($payment->method, [PaymentMethod::MoovMoney, PaymentMethod::Card], true)) {
+            return RefundResult::unsupported("{$payment->method->label()} : remboursement par API non disponible.");
+        }
+
+        if ($amount > $payment->amount) {
+            return RefundResult::failed('Montant supérieur au paiement d\'origine.');
+        }
+
+        return RefundResult::refunded('FAKE-RF-'.Str::upper(Str::random(10)));
     }
 }
