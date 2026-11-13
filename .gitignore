@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Copies de travail isolées des agents (git worktree)
+/.claude/worktrees
