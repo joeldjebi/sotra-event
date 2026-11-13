@@ -14,6 +14,7 @@ use App\Models\Mission;
 use App\Models\Pass;
 use App\Models\Scan;
 use App\Models\Staff;
+use App\Services\Operations\DelayMonitor;
 use App\Services\Operations\ScanValidator;
 use App\Services\Operations\TripTracker;
 use App\Services\Sales\PassTokenService;
@@ -133,9 +134,12 @@ class MissionController extends Controller
     /**
      * Confirmer le départ du bus (CV-14) : heure réelle enregistrée pour la ponctualité, mission « En route ».
      */
-    public function depart(Request $request, Mission $mission): MissionResource
+    public function depart(Request $request, Mission $mission, DelayMonitor $delays): MissionResource
     {
-        return $this->transition($request, $mission, [MissionStatus::Planned, MissionStatus::Boarding], MissionStatus::OnRoute, ['actual_departure_at' => now()]);
+        $resource = $this->transition($request, $mission, [MissionStatus::Planned, MissionStatus::Boarding], MissionStatus::OnRoute, ['actual_departure_at' => now()]);
+        $delays->check($mission);
+
+        return $resource;
     }
 
     /**

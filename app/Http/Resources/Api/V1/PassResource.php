@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api\V1;
 use App\Enums\DropZoneUsage;
 use App\Enums\PassStatus;
 use App\Models\Pass;
+use App\Services\Quality\ReviewService;
 use App\Services\Sales\PassNotifier;
 use App\Services\Sales\PassTokenService;
 use Illuminate\Http\Request;
@@ -37,6 +38,10 @@ class PassResource extends JsonResource
                 ? app(PassTokenService::class)->sign($this->resource) : null,
             'public_url' => $this->code ? PassNotifier::publicUrl($this->resource) : null,
             'transferable' => $this->isTransferable(),
+            'review' => [
+                'sent' => $this->review()->exists(),
+                'available' => app(ReviewService::class)->canReview($this->resource),
+            ],
             'event' => [
                 'id' => $this->event->id,
                 'name' => $this->event->name,

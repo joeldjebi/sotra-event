@@ -3,6 +3,7 @@
 use App\Actions\Orders\CreateOrder;
 use App\Actions\Payments\ApplyPaymentResult;
 use App\Actions\Payments\InitiatePayment;
+use App\Enums\Direction;
 use App\Enums\DropZoneUsage;
 use App\Enums\EventStatus;
 use App\Enums\Offer;
@@ -11,13 +12,22 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Enums\SalesChannel;
+use App\Enums\StaffRole;
+use App\Models\Bus;
 use App\Models\Customer;
 use App\Models\Event;
+use App\Models\Mission;
 use App\Models\Order;
+use App\Models\Pass;
+use App\Models\Staff;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Operations\MissionPlanner;
+use App\Services\Sales\PassTokenService;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /*
@@ -85,4 +95,55 @@ function paidOrder(Event $event, int $quantity, PassType $type = PassType::Round
     app(ApplyPaymentResult::class)->handle($payment, PaymentStatus::Succeeded);
 
     return $order->fresh('passes');
+}
+
+/**
+ * Plan de transport d'un événement avec un bus, un chauffeur et un convoyeur par mission aller et retour.
+ *
+ * @return list<Mission>
+ */
+function staffedMissions(Event $event): array
+{
+    app(MissionPlanner::class)->plan($event);
+    $missions = Mission::query()->where('event_id', $event->id)->orderBy('direction')->orderBy('sequence')->get();
+
+    foreach ($missions as $index => $mission) {
+        $mission->update([
+            'bus_id' => Bus::factory()->create(['company_id' => $event->company_id, 'number' => (string) (20 + $index)])->id,
+            'driver_id' => Staff::factory()->role(StaffRole::Driver)->create(['company_id' => $event->company_id])->id,
+            'conveyor_id' => Staff::factory()->role(StaffRole::Conveyor)->create(['company_id' => $event->company_id])->id,
+        ]);
+    }
+
+    return $missions->all();
+}
+
+/**
+ * Scanne des Pass à la montée d'une mission, par l'API du convoyeur.
+ *
+ * @param  iterable<Pass>  $passes
+ */
+function boardMission(Mission $mission, iterable $passes): void
+{
+    Sanctum::actingAs(Staff::query()->findOrFail($mission->conveyor_id), ['conveyor']);
+
+    foreach ($passes as $pass) {
+        test()->postJson('/api/v1/scans', ['mission_id' => $mission->id, 'input' => app(PassTokenService::class)->sign($pass->fresh()), 'client_uuid' => (string) Str::uuid()])
+            ->assertOk();
+    }
+}
+
+/**
+ * Départ confirmé par le convoyeur (CV-14), $minutes après l'heure prévue.
+ */
+function departAfter(Mission $mission, int $minutes): void
+{
+    test()->travelTo($mission->planned_departure_at->copy()->addMinutes($minutes));
+    Sanctum::actingAs(Staff::query()->findOrFail($mission->conveyor_id), ['conveyor']);
+    test()->postJson("/api/v1/missions/{$mission->id}/depart")->assertOk();
+}
+
+function outboundMissions(Event $event): array
+{
+    return Mission::query()->where('event_id', $event->id)->where('direction', Direction::Outbound)->orderBy('sequence')->get()->all();
 }

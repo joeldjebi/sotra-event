@@ -380,12 +380,39 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 - **Promoteur** : suivi en direct (PR-01 à PR-03, graphique du flux prévu et réel avec Chart.js), messages aux spectateurs (ciblage tous / point / bus / offre, journal et plafond, PR-04, PR-08), zones de dépose, fiche événement, bilan PDF.
 - **Qualité** : indicateurs QU-01 (à l'heure ≤ +10 min), notes par critère, réclamations (Traiter), équipages, ponctualité, **rapport PDF**, bilans du pilote.
 - **Spectateur** : avis sur 5 critères (SP-22), réclamation et suivi (SP-23) ; réclamation collective automatique si un retard dépasse 20 minutes (reportée de l'étape 7).
-- Console : **tableau de bord jour J** (AD-07), **Pass & ventes** : recherche, historique des scans, transfert, annulation (AD-10).
+- Console : **tableau de bord jour J** (AD-07), **Pass & ventes** : recherche, historique des scans, transfert (AD-10) ; l'annulation est traitée à l'étape 9.
 
 **Terminé quand** (sortie du lot 4 CDC) : les indicateurs du jeu d'essai correspondent aux calculs du CDC (tests).
 
+> **Réalisé le 13/11/2026** (257 tests verts).
+> - **Spectateur** (site « Mon Pass » et API) :
+>   - avis sur 5 critères après le trajet, un par Pass, rattaché au dernier bus emprunté (`POST /passes/{code}/review`) ;
+>   - réclamation par motif et suivi du statut (`POST /passes/{code}/complaints`, `GET /me/complaints`) ;
+>   - la réponse de la compagnie est envoyée par SMS.
+> - **Réclamation collective** : un départ confirmé plus de 20 min après l'heure prévue, ou jamais confirmé (`missions:check-delays`, toutes les 5 min), ouvre une réclamation collective. Les passagers sont prévenus ; une seule réclamation par départ.
+> - **Direction qualité** (6 écrans, sélecteur d'événement) :
+>   - Qualité de service (QU-01, QU-02) ;
+>   - Avis des spectateurs ;
+>   - Réclamations avec **Traiter** (Ouverte → En cours → Traitée, QU-03) ;
+>   - Ponctualité aller et retour, avec les pannes (QU-06) ;
+>   - Équipages et leurs notes (QU-04) ;
+>   - Bilans du pilote (QU-07) ;
+>   - **rapport PDF** (QU-05).
+> - **Calculs du CDC vérifiés par les tests** :
+>   - à l'heure jusqu'à +10 min, en retard à +11 min ;
+>   - note d'un chauffeur ou d'un convoyeur = moyenne des avis de ses bus ;
+>   - Pass refusés = scans rouges + scans orange « autre bus ».
+> - **Promoteur** :
+>   - Suivi de l'événement (en-tête, appel de la coordination, 4 indicateurs, flux prévu / réel par 15 min, retards ; rafraîchi toutes les 15 s) ;
+>   - Message aux spectateurs (tous, point, bus ou offre ; notification, SMS, WhatsApp ; un envoi par numéro ; plafond de 10 par événement ; historique) ;
+>   - Fiche événement ; Zones de dépose (édition partagée avec la console) ; Bilan et son PDF.
+> - **Console** :
+>   - **Pass & ventes** (AD-10) : recherche par code ou téléphone, scans, transferts, réclamations, transfert par le support ;
+>   - carte « Jour J » complétée avec les réclamations à traiter (AD-07).
+> - **Reporté à l'étape 9** : l'annulation et le remboursement d'un Pass depuis la console, qui suivent les règles RG-17 à RG-19.
+
 ### Étape 9 — Finance : annulations, remboursements, reversements
-- `CancelPass` par le spectateur (RG-19 : 24 h avant le départ, 8 % retenus, 3 060 → 2 815) ; report (RG-18) ; annulation d'un événement ou d'un départ avec notification de masse (RG-17, AD-13).
+- `CancelPass` par le spectateur (RG-19 : 24 h avant le départ, 8 % retenus, 3 060 → 2 815) et par la console (Pass & ventes, AD-10) ; report (RG-18) ; annulation d'un événement ou d'un départ avec notification de masse (RG-17, AD-13).
 - Remboursements : par API de l'agrégateur, ou file de traitement manuel tracée (PA-04).
 - **Reversements** : relevé automatique à J + 5 jours ouvrés (jours fériés paramétrables), validation, paiement, justificatif (PA-05, AD-11, CO-05).
 

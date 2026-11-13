@@ -92,6 +92,22 @@ return [
     ],
 
     /*
+    | Qualité de service (§ 8.2 CDC) et messages du promoteur (PR-04).
+    */
+    'quality' => [
+        // Un départ est « à l'heure » s'il part au plus 10 min après l'heure prévue (QU-01).
+        'on_time_tolerance_minutes' => 10,
+        // Au-delà, une réclamation collective est ouverte pour les passagers du bus.
+        'collective_delay_minutes' => 20,
+    ],
+
+    'promoter_messages' => [
+        // Plafond de messages par événement (protection des spectateurs et du budget SMS).
+        'max_per_event' => 10,
+        'max_length' => 320,
+    ],
+
+    /*
     | Paiement. Le pilote « fake » simule l'agrégateur (attente, confirmation, webhook signé).
     */
     'payment' => [

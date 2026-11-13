@@ -147,6 +147,22 @@ class Mission extends Model
     }
 
     /**
+     * @return HasMany<Complaint, $this>
+     */
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class);
+    }
+
+    /**
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Dernière position connue.
      */
     public function lastPosition(): ?Position

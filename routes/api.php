@@ -3,6 +3,7 @@
 use App\Enums\TokenAbility;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\Customer\EventController;
+use App\Http\Controllers\Api\V1\Customer\FeedbackController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
 use App\Http\Controllers\Api\V1\Customer\PassController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -44,6 +45,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('passes/{pass}', [PassController::class, 'show'])->name('passes.show');
         Route::post('passes/{pass}/transfer', [PassController::class, 'transfer'])->middleware('throttle:10,1')->name('passes.transfer');
         Route::get('passes/{pass}/trip', [PassController::class, 'trip'])->name('passes.trip');
+        Route::post('passes/{pass}/review', [FeedbackController::class, 'review'])->middleware('throttle:10,1')->name('passes.review');
+        Route::post('passes/{pass}/complaints', [FeedbackController::class, 'complain'])->middleware('throttle:10,1')->name('passes.complaints');
+        Route::get('me/complaints', [FeedbackController::class, 'complaints'])->name('complaints.index');
     });
 
     // App convoyeur (CV-01 à CV-19) : missions, manifeste hors ligne, scans, positions.

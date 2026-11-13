@@ -319,7 +319,7 @@
                     @foreach ([
                         ['bus', 'Bus en route', $dayOf['on_route'] + $dayOf['boarding'] > 0 ? "{$dayOf['on_route']} en route · {$dayOf['boarding']} en embarquement" : 'Aucun bus en circulation', false],
                         ['wrench', 'Alertes panne', $dayOf['open_alerts'] > 0 ? "{$dayOf['open_alerts']} en cours · dont {$dayOf['urgent_alerts']} urgente(s)" : 'Aucune panne en cours', $dayOf['urgent_alerts'] > 0],
-                        ['chat', 'Réclamations', 'Disponible avec l\'espace qualité', false],
+                        ['chat', 'Réclamations', $dayOf['open_complaints'] > 0 ? "{$dayOf['open_complaints']} à traiter · dont {$dayOf['collective_complaints']} collective(s)" : 'Aucune réclamation en attente', $dayOf['collective_complaints'] > 0],
                     ] as [$icon, $label, $detail, $critical])
                         <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                             <span @class(['grid size-8 shrink-0 place-items-center rounded-[10px]', 'bg-danger-soft text-danger' => $critical, 'bg-fill text-ink-tertiary' => ! $critical])><x-ui.icon :name="$icon" class="size-[18px]" /></span>

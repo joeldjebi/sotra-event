@@ -4,8 +4,9 @@ use App\Enums\Permission;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\EventEditorController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
-use App\Http\Controllers\Web\Promoter\DashboardController as PromoterDashboardController;
+use App\Http\Controllers\Web\Company\QualityReportController;
 use App\Http\Controllers\Web\Promoter\PromoKitController;
+use App\Http\Controllers\Web\Promoter\ReportController as PromoterReportController;
 use App\Http\Controllers\Web\Site\PaymentSimulatorController;
 use App\Http\Controllers\Web\Site\PublicPassController;
 use App\Http\Controllers\Web\SpaceRedirectController;
@@ -67,6 +68,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             });
             LivewirePage::route('compagnies', 'companies', 'admin.companies-table', 'Compagnies', Permission::CompaniesManage);
             LivewirePage::route('promoteurs', 'promoters', 'admin.promoters-table', 'Promoteurs', Permission::PromotersManage);
+            LivewirePage::route('pass', 'passes', 'admin.passes-table', 'Pass & ventes', Permission::PassesManage);
             LivewirePage::route('lieux', 'venues', 'admin.venues-table', 'Lieux', Permission::EventsManage);
             LivewirePage::route('utilisateurs', 'users', 'admin.users-table', 'Utilisateurs & rôles', Permission::UsersManage);
             LivewirePage::route('journal', 'audit', 'admin.audit-log-table', 'Journal d\'audit', Permission::AuditView);
@@ -86,10 +88,23 @@ Route::middleware(['auth', 'active'])->group(function () {
             LivewirePage::route('personnel', 'staff', 'company.staff-table', 'Chauffeurs & convoyeurs', Permission::StaffManage);
             LivewirePage::route('equipes-techniques', 'tech-teams', 'company.tech-teams-table', 'Équipes service technique', Permission::TechTeamsManage);
             LivewirePage::route('terminaux', 'devices', 'company.devices-table', 'PDA & terminaux', Permission::DevicesManage);
+
+            LivewirePage::route('qualite', 'quality.overview', 'company.quality.overview', 'Qualité de service', Permission::QualityView);
+            LivewirePage::route('qualite/avis', 'quality.reviews', 'company.quality.reviews', 'Avis des spectateurs', Permission::QualityView);
+            LivewirePage::route('qualite/reclamations', 'quality.complaints', 'company.quality.complaints', 'Réclamations', Permission::ComplaintsManage);
+            LivewirePage::route('qualite/ponctualite', 'quality.punctuality', 'company.quality.punctuality', 'Ponctualité', Permission::QualityView);
+            LivewirePage::route('qualite/equipages', 'quality.crews', 'company.quality.crews', 'Équipages', Permission::QualityView);
+            LivewirePage::route('qualite/bilans', 'quality.pilot', 'company.quality.pilot-review', 'Bilans du pilote', Permission::QualityView);
+            Route::get('qualite/rapport/{event}', QualityReportController::class)->middleware('can:'.Permission::QualityView->value)->name('quality.report');
         });
 
         Route::prefix('promoteur')->name('promoter.')->middleware('space:promoter')->group(function () {
-            Route::get('/', PromoterDashboardController::class)->name('dashboard');
+            LivewirePage::route('/', 'dashboard', 'promoter.tracking', 'Suivi de l\'événement', Permission::EventTracking);
+            LivewirePage::route('evenement', 'event', 'promoter.event-sheet', 'Fiche événement', Permission::EventTracking);
+            LivewirePage::route('zones-de-depose', 'drop-zones', 'promoter.drop-zones', 'Zones de dépose', Permission::EventTracking);
+            LivewirePage::route('messages', 'messages', 'promoter.messages', 'Messages aux spectateurs', Permission::EventTracking);
+            LivewirePage::route('bilan', 'report', 'promoter.report', 'Bilan', Permission::EventTracking);
+            Route::get('bilan/{event}.pdf', PromoterReportController::class)->middleware('can:'.Permission::EventTracking->value)->name('report.pdf');
             Route::middleware('can:'.Permission::PromoKitView->value)->group(function () {
                 Route::get('kit', [PromoKitController::class, 'index'])->name('kit');
                 Route::get('kit/{event}/qr.svg', [PromoKitController::class, 'qr'])->name('kit.qr');

@@ -215,6 +215,7 @@ Les chemins reprennent ceux du CDC (§ 13), complétés.
 | POST | `/passes/{id}/transfer` | SP-19, RG-04 |
 | GET | `/missions/{id}/live` | SP-18 : position, heure d'arrivée estimée, statut |
 | POST | `/passes/{id}/review` · `/passes/{id}/complaints` · `/passes/{id}/cancel` | SP-22, SP-23, SP-25 |
+| GET | `/me/complaints` (suivi des réclamations) | SP-23 |
 | GET | `/me/notifications` · POST `/me/devices` | SP-21, jeton FCM |
 
 **Convoyeur**

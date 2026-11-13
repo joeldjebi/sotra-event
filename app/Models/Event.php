@@ -168,6 +168,30 @@ class Event extends Model
     }
 
     /**
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * @return HasMany<Complaint, $this>
+     */
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class);
+    }
+
+    /**
+     * @return HasMany<PromoterMessage, $this>
+     */
+    public function promoterMessages(): HasMany
+    {
+        return $this->hasMany(PromoterMessage::class);
+    }
+
+    /**
      * @return list<Offer>
      */
     public function activeOffers(): array

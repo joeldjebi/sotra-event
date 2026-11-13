@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use LogicException;
 
@@ -114,6 +115,14 @@ class Pass extends Model
     }
 
     /**
+     * @return BelongsTo<Mission, $this>
+     */
+    public function returnMission(): BelongsTo
+    {
+        return $this->belongsTo(Mission::class, 'return_mission_id');
+    }
+
+    /**
      * @return HasMany<PassTransfer, $this>
      */
     public function transfers(): HasMany
@@ -124,6 +133,30 @@ class Pass extends Model
     /**
      * Change le statut en respectant les transitions autorisées.
      */
+    /**
+     * @return HasMany<Scan, $this>
+     */
+    public function scans(): HasMany
+    {
+        return $this->hasMany(Scan::class);
+    }
+
+    /**
+     * @return HasOne<Review, $this>
+     */
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    /**
+     * @return HasMany<Complaint, $this>
+     */
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class);
+    }
+
     public function transitionTo(PassStatus $next): void
     {
         if (! $this->status->canTransitionTo($next)) {

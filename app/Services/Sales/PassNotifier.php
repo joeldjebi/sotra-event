@@ -7,6 +7,7 @@ use App\Contracts\SmsSender;
 use App\Contracts\WhatsAppSender;
 use App\Models\Bus;
 use App\Models\Customer;
+use App\Models\Mission;
 use App\Models\Order;
 use App\Models\Pass;
 use App\Support\PhoneNumber;
@@ -66,6 +67,21 @@ class PassNotifier
             $this->sms->send($phone, $body);
             $this->whatsApp->send($phone, 'bus_replaced', $body, ['code' => $pass->code, 'bus' => $bus->number]);
             $this->push->send($pass->holder, 'Changement de bus', $body, ['code' => $pass->code]);
+        }
+    }
+
+    /**
+     * Retard important au départ (SP-21) : les passagers sont prévenus qu'une réclamation collective est ouverte.
+     *
+     * @param  list<Pass>  $passes
+     */
+    public function busDelayed(array $passes, Mission $mission, int $minutes): void
+    {
+        foreach (collect($passes)->unique('holder_id') as $pass) {
+            $body = "EVENT TRANS : votre bus ({$mission->boardingPoint->commune}, {$mission->direction->label()}) a {$minutes} min de retard. Nous nous en excusons : une réclamation collective est ouverte, inutile d'en déposer une.";
+            $phone = PhoneNumber::parse($pass->holder->phone);
+            $this->sms->send($phone, $body);
+            $this->push->send($pass->holder, 'Retard de votre bus', $body, ['code' => $pass->code]);
         }
     }
 
