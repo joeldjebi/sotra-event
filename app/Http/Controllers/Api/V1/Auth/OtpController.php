@@ -14,14 +14,14 @@ use App\Models\Customer;
 use App\Models\Staff;
 use App\Services\OtpService;
 use App\Support\PhoneNumber;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Connexion par téléphone + code OTP : spectateurs (app), convoyeurs et techniciens (§ 2 du CDC).
- *
- * @tags Authentification
  */
+#[Group('Authentification', 'Connexion par code SMS, jeton par appareil, déconnexion. Commun aux trois applications.', weight: 1)]
 class OtpController extends Controller
 {
     public function __construct(private readonly OtpService $otp) {}

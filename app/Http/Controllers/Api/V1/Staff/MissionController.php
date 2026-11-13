@@ -18,6 +18,7 @@ use App\Services\Operations\DelayMonitor;
 use App\Services\Operations\ScanValidator;
 use App\Services\Operations\TripTracker;
 use App\Services\Sales\PassTokenService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,9 +26,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * App convoyeur : missions du jour, manifeste hors ligne, étapes de la mission, positions GPS (CV-01 à CV-05, CV-11 à CV-14).
- *
- * @tags Convoyeur
  */
+#[Group('Convoyeur', 'App convoyeur · missions du jour, manifeste hors ligne, contrôle des Pass, départ, positions, arrivée, panne.', weight: 6)]
 class MissionController extends Controller
 {
     /**

@@ -139,6 +139,9 @@ return [
         'max_queue_backlog' => 1000,
     ],
 
+    // Documentation de l'API (/docs/api, /docs/swagger) ouverte sans compte hors local : recette, pour l'équipe mobile.
+    'api_docs_public' => (bool) env('API_DOCS_PUBLIC', false),
+
     'legal' => [
         // Version des CGV et de la politique de confidentialité, enregistrée sur chaque commande (NF-14).
         'terms_version' => '2026-11',

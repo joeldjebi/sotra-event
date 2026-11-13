@@ -7,11 +7,10 @@ use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\StaffResource;
 use App\Models\Customer;
 use App\Models\Staff;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\Request;
 
-/**
- * @tags Authentification
- */
+#[Group('Authentification', 'Connexion par code SMS, jeton par appareil, déconnexion. Commun aux trois applications.', weight: 1)]
 class MeController extends Controller
 {
     /**

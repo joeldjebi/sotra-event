@@ -9,6 +9,7 @@ use App\Models\Mission;
 use App\Models\Staff;
 use App\Services\Operations\BreakdownService;
 use Clickbar\Magellan\Data\Geometries\Point;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -16,9 +17,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * Signaler une panne depuis l'app convoyeur (CV-15 à CV-18).
- *
- * @tags Convoyeur
  */
+#[Group('Convoyeur', 'App convoyeur · missions du jour, manifeste hors ligne, contrôle des Pass, départ, positions, arrivée, panne.', weight: 6)]
 class BreakdownController extends Controller
 {
     /**

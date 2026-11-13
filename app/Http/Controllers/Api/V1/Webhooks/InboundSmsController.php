@@ -10,6 +10,7 @@ use App\Models\Mission;
 use App\Models\Staff;
 use App\Services\Operations\BreakdownService;
 use App\Support\PhoneNumber;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,9 +18,8 @@ use Illuminate\Http\Request;
  * Alerte panne en mode dégradé par SMS (CV-19), quand le convoyeur n'a pas de données mobiles.
  * Format : « PANNE [n° de bus] TYPE [précisions] », ex. « PANNE 27 MOTEUR voyant rouge ».
  * Types : MOTEUR, PNEU, FREINS, ELECTRIQUE, ACCIDENT, AUTRE. Le numéro de bus peut être omis.
- *
- * @tags Webhooks
  */
+#[Group('Webhooks', 'Serveur à serveur · SMS reçus par la passerelle (alerte « PANNE » sans data).', weight: 9)]
 class InboundSmsController extends Controller
 {
     /**

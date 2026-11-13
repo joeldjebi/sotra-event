@@ -11,6 +11,7 @@ use App\Models\Pass;
 use App\Models\Review;
 use App\Services\Quality\ComplaintService;
 use App\Services\Quality\ReviewService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,9 +19,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * Avis après le trajet (SP-22) et réclamations (SP-23).
- *
- * @tags Avis et réclamations
  */
+#[Group('Avis et réclamations', 'App spectateur · avis après le trajet et réclamations, avec leur suivi.', weight: 5)]
 class FeedbackController extends Controller
 {
     /**

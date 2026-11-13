@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Api\V1\Webhooks;
 use App\Actions\Payments\HandlePaymentNotification;
 use App\Contracts\PaymentGateway;
 use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Webhook de l'agrégateur (PA-02) : seule source de confirmation d'un paiement, avec la réconciliation.
- *
- * @tags Paiement
  */
+#[Group('Paiement', 'Serveur à serveur · notification signée de l’agrégateur de paiement. Pas d’appel depuis les applications.', weight: 8)]
 class PaymentWebhookController extends Controller
 {
     /**

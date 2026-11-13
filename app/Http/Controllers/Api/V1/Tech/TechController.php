@@ -18,6 +18,7 @@ use App\Models\TechTeam;
 use App\Services\Operations\BreakdownService;
 use App\Services\ZoneResolver;
 use Clickbar\Magellan\Data\Geometries\Point;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -25,9 +26,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * App service technique (ST-01 à ST-16) : équipe, alertes, prise en charge, intervention, clôture.
- *
- * @tags Service technique
  */
+#[Group('Service technique', 'App service technique · équipe, alertes de panne, prise en charge, étapes, clôture et remplacement de bus.', weight: 7)]
 class TechController extends Controller
 {
     private const SPEED_KMH = 30;

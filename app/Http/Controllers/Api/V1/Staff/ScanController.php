@@ -10,15 +10,15 @@ use App\Models\Mission;
 use App\Models\Scan;
 use App\Models\Staff;
 use App\Services\Operations\ScanValidator;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 /**
  * Scan des Pass (CV-06 à CV-10) : en ligne, ou par lot pour les scans faits hors connexion (NF-09).
- *
- * @tags Convoyeur
  */
+#[Group('Convoyeur', 'App convoyeur · missions du jour, manifeste hors ligne, contrôle des Pass, départ, positions, arrivée, panne.', weight: 6)]
 class ScanController extends Controller
 {
     public function __construct(private readonly ScanValidator $validator) {}

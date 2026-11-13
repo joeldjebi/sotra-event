@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -14,13 +15,15 @@ use Throwable;
  * Sonde de supervision (NF-08), à interroger chaque minute par l'outil de surveillance :
  * base de données, cache Redis, stockage, retard de la file et dernier passage du planificateur.
  * Répond 503 si un élément critique est en panne. Aucune donnée sensible n'est exposée.
- *
- * @tags Supervision
  */
+#[Group('Supervision', 'Sonde de disponibilité de la plateforme, pour la surveillance.', weight: 10)]
 class HealthController extends Controller
 {
     public const string SCHEDULER_HEARTBEAT = 'health:scheduler-heartbeat';
 
+    /**
+     * État de la plateforme : base, cache, stockage, file d'attente et planificateur (200 si tout va bien, 503 sinon).
+     */
     public function __invoke(): JsonResponse
     {
         $checks = [

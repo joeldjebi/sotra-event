@@ -13,15 +13,15 @@ use App\Rules\ValidPhoneNumber;
 use App\Services\Finance\RefundPolicy;
 use App\Services\Finance\RefundService;
 use App\Services\Operations\PassTrip;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * Mes Pass, détail avec QR, et « Offrir ce Pass » (SP-14 à SP-20).
- *
- * @tags Pass
  */
+#[Group('Pass', 'App spectateur · mes Pass avec leur QR, offrir, annuler et être remboursé, suivre mon bus.', weight: 4)]
 class PassController extends Controller
 {
     /**

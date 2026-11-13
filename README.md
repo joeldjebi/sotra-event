@@ -7,7 +7,7 @@ Ce dépôt contient l'**API**, le **site spectateur**, la **console ACCES EVENT*
 - Étapes et règles de développement : [docs/GUIDE_DEVELOPPEMENT.md](docs/GUIDE_DEVELOPPEMENT.md)
 - Installation, déploiement et exploitation : [docs/INSTALLATION.md](docs/INSTALLATION.md)
 - Cahier de recette : [docs/RECETTE.md](docs/RECETTE.md)
-- Documentation de l'API pour l'équipe mobile : [docs/api-mobile.html](docs/api-mobile.html) (vraies réponses, guides, codes d'erreur) ; référence générée : `/docs/api` (Scramble)
+- Documentation de l'API mobile : `/docs/api` (guide d'intégration, appels, champs, essais en direct) et `/docs/swagger`. Export à partager : `php artisan api:docs` → [docs/api/openapi.json](docs/api/openapi.json) et [docs/api/swagger.html](docs/api/swagger.html) (s'ouvre sans serveur).
 
 ## Prérequis
 - PHP 8.3 avec les extensions `pdo_pgsql`, `sodium`, `intl`, `gd`, `pcntl`

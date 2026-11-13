@@ -7,14 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\EventDetailResource;
 use App\Http\Resources\Api\V1\EventSummaryResource;
 use App\Services\Sales\EventCatalog;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * Catalogue des événements en vente sur l'application (SP-01 à SP-05).
- *
- * @tags Événements
  */
+#[Group('Événements', 'App spectateur · événements en vente : points d’embarquement, offres, prix et places. Sans jeton.', weight: 2)]
 class EventController extends Controller
 {
     public function __construct(private readonly EventCatalog $catalog) {}

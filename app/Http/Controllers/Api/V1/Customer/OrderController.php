@@ -17,14 +17,14 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Services\Sales\EventCatalog;
 use App\Services\Sales\PricingService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Commande et paiement d'un Pass (SP-06 à SP-13).
- *
- * @tags Commandes
  */
+#[Group('Commandes', 'App spectateur · devis, réservation (places bloquées 15 min), paiement et suivi de la commande.', weight: 3)]
 class OrderController extends Controller
 {
     public function __construct(private readonly EventCatalog $catalog) {}

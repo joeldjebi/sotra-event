@@ -81,6 +81,7 @@ Elles sont lues au démarrage et ne sont jamais incluses dans l'image. Ne jamais
 | `SMS_INBOUND_SECRET` | aléatoire | SMS entrants « PANNE » (CV-19) |
 | `OPS_ALERT_EMAIL`, `OPS_SLACK_WEBHOOK` | — | Alertes Horizon (files bloquées, échecs) |
 | `PASS_SIGNING_SECRET_KEY` | générée | Clé Ed25519 des QR (`passes:generate-signing-key`) ; à défaut, dérivée de `APP_KEY` |
+| `API_DOCS_PUBLIC` | `false` | `true` en recette pour ouvrir `/docs/api` et `/docs/swagger` à l'équipe mobile sans compte ; sinon réservées au super administrateur |
 | `SECURITY_CSP` | (auto) | Forcer ou désactiver la CSP ; active par défaut en production |
 
 ---
