@@ -74,6 +74,16 @@ enum PassStatus: string
     }
 
     /**
+     * Pass vendus (payés, ni annulés ni remboursés) : base des ventes, des recettes et du plan de transport.
+     *
+     * @return list<self>
+     */
+    public static function sold(): array
+    {
+        return [self::Valid, self::OutboundUsed, self::ReturnUsed, self::Completed];
+    }
+
+    /**
      * Statuts d'un Pass utilisable ou déjà utilisé, affiché au spectateur.
      *
      * @return list<self>

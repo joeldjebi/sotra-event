@@ -286,6 +286,24 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** : le plan de transport se génère à partir des ventes et chaque mission a son équipage.
 
+> **Réalisé le 13/11/2026** (196 tests verts).
+> - **`MissionPlanner`** :
+>   - par point × offre × sens, ⌈Pass vendus ÷ places par bus⌉ missions ;
+>   - les Pass aller sont affectés dans l'ordre de paiement, une commande restant groupée dans un même bus quand c'est possible ;
+>   - retour : seul le nombre de bus est calculé, le passager monte dans n'importe quel bus de son point et de son offre (RG-05) ;
+>   - l'actualisation conserve les affectations, ne retire que les missions vides et sans équipage, et signale un besoin supérieur aux bus prévus.
+> - **Ventes après la génération** : le Pass rejoint un bus dès son paiement (`IssuePasses`), et un bus supplémentaire est créé si tous sont pleins.
+> - **`MissionAssignment`** :
+>   - bus, chauffeur, convoyeur et terminal ;
+>   - contrôles : même compagnie, bon rôle, bus utilisable et assez grand ;
+>   - pas de double affectation sur le même sens ; un même bus peut faire l'aller et le retour.
+> - **Exploitation** :
+>   - Plan de transport (volet missions : demande, bus générés / nécessaires, Générer / Actualiser) ;
+>   - **Bus & affectations** (`/compagnie/affectations`) : missions par point et par sens, enregistrement dès le choix, bus de réserve avec position d'attente ;
+>   - la liste de la flotte reste sur `/compagnie/bus`, accessible par le bouton « Flotte ».
+> - **Direction commerciale · Ventes** (`/compagnie/ventes`) : indicateurs de CO-01, répartition par offre et par canal, tableau par point, export Excel (CO-06).
+> - Également livré : le choix **Système / Clair / Sombre** dans le menu profil, enregistré sur le compte.
+
 ### Étape 6 — Jour J : API convoyeur, scan hors ligne, suivi en direct
 - API convoyeur : `/me/missions`, `/missions/{id}/manifest` (instantané versionné : Pass attendus, Pass acceptables au retour, liste noire, clé publique), `/scans/sync`, `/missions/{id}/positions`, `/depart`, `/arrive`.
 - `ValidateScan` (même logique en ligne et à la synchronisation) : vert, orange ou rouge, avec motif (CV-08) ; bus plein (CV-09) ; `client_uuid` pour l'idempotence ; conflit = le scan le plus ancien gagne et l'autre est signalé (NF-01).

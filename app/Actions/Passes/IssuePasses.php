@@ -4,6 +4,7 @@ namespace App\Actions\Passes;
 
 use App\Enums\PassStatus;
 use App\Models\Order;
+use App\Services\Operations\MissionPlanner;
 use App\Services\Sales\PassCodeGenerator;
 use App\Services\Sales\PassNotifier;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class IssuePasses
     public function __construct(
         private readonly PassCodeGenerator $codes,
         private readonly PassNotifier $notifier,
+        private readonly MissionPlanner $planner,
     ) {}
 
     public function handle(Order $order): void
@@ -39,6 +41,8 @@ class IssuePasses
         });
 
         if ($issued > 0) {
+            // Vente après la génération du plan : le Pass rejoint un bus de son point et de son offre.
+            $this->planner->assignPending($order->event);
             $this->notifier->orderPaid($order->fresh(['passes.holder', 'customer', 'event', 'boardingPoint']));
         }
     }

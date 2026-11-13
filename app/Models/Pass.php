@@ -22,6 +22,8 @@ use LogicException;
  * @property int $event_id
  * @property int $boarding_point_id
  * @property int $holder_id
+ * @property int|null $outbound_mission_id
+ * @property int|null $return_mission_id
  * @property Offer $offer
  * @property PassType $pass_type
  * @property string|null $code
@@ -38,7 +40,7 @@ use LogicException;
  * @property-read Customer $holder
  */
 #[Fillable([
-    'order_id', 'event_id', 'boarding_point_id', 'holder_id', 'offer', 'pass_type', 'code', 'token_version',
+    'order_id', 'event_id', 'boarding_point_id', 'holder_id', 'outbound_mission_id', 'return_mission_id', 'offer', 'pass_type', 'code', 'token_version',
     'status', 'price', 'fee_amount', 'commission_amount', 'company_amount', 'issued_at',
 ])]
 class Pass extends Model
@@ -101,6 +103,14 @@ class Pass extends Model
     public function holder(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'holder_id');
+    }
+
+    /**
+     * @return BelongsTo<Mission, $this>
+     */
+    public function outboundMission(): BelongsTo
+    {
+        return $this->belongsTo(Mission::class, 'outbound_mission_id');
     }
 
     /**

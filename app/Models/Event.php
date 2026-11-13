@@ -144,6 +144,22 @@ class Event extends Model
     }
 
     /**
+     * @return HasMany<Mission, $this>
+     */
+    public function missions(): HasMany
+    {
+        return $this->hasMany(Mission::class);
+    }
+
+    /**
+     * @return HasMany<EventReserveBus, $this>
+     */
+    public function reserveBuses(): HasMany
+    {
+        return $this->hasMany(EventReserveBus::class);
+    }
+
+    /**
      * @return list<Offer>
      */
     public function activeOffers(): array

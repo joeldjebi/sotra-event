@@ -49,19 +49,58 @@
         <x-ui.card padding="p-0"><x-ui.empty-state icon="route" title="Aucun événement à préparer" description="Les événements proposés ou acceptés par votre direction commerciale apparaîtront ici." /></x-ui.card>
     @endforelse
 
-    @if ($onSale->isNotEmpty())
-        <section>
-            <h2 class="mb-3 text-title-3">En vente</h2>
-            <x-ui.table>
-                <x-slot:head><th>Événement</th><th>Date</th><th>Capacité par offre</th></x-slot:head>
-                @foreach ($onSale as $event)
-                    <tr wire:key="onsale-{{ $event->id }}">
-                        <td class="font-medium">{{ $event->name }}</td>
-                        <td>{{ $event->starts_at->translatedFormat('j M Y') }}</td>
-                        <td class="text-[13px]">@foreach ($event->offers as $offer){{ $offer->offer->label() }} : {{ $offer->bus_count }} × {{ $offer->seats_per_bus }} = {{ number_format((int) $offer->capacity(), 0, ',', ' ') }}@if (! $loop->last) · @endif @endforeach</td>
-                    </tr>
-                @endforeach
-            </x-ui.table>
+    @if ($plannable->isNotEmpty())
+        <section class="space-y-4">
+            <div>
+                <h2 class="text-title-3">Missions</h2>
+                <p class="text-[13px] text-ink-secondary">Bus nécessaires = Pass vendus ÷ places par bus, arrondi au supérieur, par point, offre et sens. Au retour, chaque passager monte dans n'importe quel bus de son point et de son offre.</p>
+            </div>
+
+            @foreach ($plannable as $event)
+                <x-ui.card wire:key="missions-{{ $event->id }}">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-[17px] font-semibold tracking-tight">{{ $event->name }}</h3>
+                            <p class="text-[13px] text-ink-secondary">{{ $event->starts_at->translatedFormat('l j F Y, H\hi') }}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <x-ui.button variant="secondary" size="sm" :href="route('company.assignments', ['evenement' => $event->id])">Affecter les bus</x-ui.button>
+                            <x-ui.button size="sm" type="button" wire:click="generate({{ $event->id }})" wire:loading.attr="disabled" wire:target="generate({{ $event->id }})">
+                                {{ collect($planRows[$event->id])->sum('outbound_missions') + collect($planRows[$event->id])->sum('return_missions') > 0 ? 'Actualiser les missions' : 'Générer les missions' }}
+                            </x-ui.button>
+                        </div>
+                    </div>
+
+                    @foreach ($planWarnings[$event->id] ?? [] as $warning)
+                        <x-ui.alert tone="warning" class="mt-4" wire:key="warn-{{ $event->id }}-{{ $loop->index }}">{{ $warning }}</x-ui.alert>
+                    @endforeach
+
+                    <div class="mt-5 overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] ring-1 ring-hairline">
+                        <table class="ui-table ui-table--compact">
+                            <thead>
+                                <tr><th>Point</th><th>Offre</th><th class="text-right">Pass aller</th><th class="text-right">Bus aller</th><th class="text-right">Pass retour</th><th class="text-right">Bus retour</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($planRows[$event->id] as $row)
+                                    <tr wire:key="row-{{ $event->id }}-{{ $loop->index }}">
+                                        <td class="font-medium">{{ $row['point'] }}</td>
+                                        <td>{{ $row['offer'] }}</td>
+                                        <td class="text-right tabular-nums">{{ $row['outbound'] }}</td>
+                                        <td class="text-right tabular-nums">
+                                            {{ $row['outbound_missions'] }}<span class="text-ink-tertiary"> / {{ $row['outbound_needed'] }}</span>
+                                        </td>
+                                        <td class="text-right tabular-nums">{{ $row['return'] }}</td>
+                                        <td class="text-right tabular-nums">
+                                            {{ $row['return_missions'] }}<span class="text-ink-tertiary"> / {{ $row['return_needed'] }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-2 text-[12px] text-ink-tertiary">Bus : missions générées / nécessaires selon les ventes.</p>
+                </x-ui.card>
+            @endforeach
         </section>
     @endif
 </div>

@@ -1,11 +1,19 @@
 <?php
 
+use App\Actions\Orders\CreateOrder;
+use App\Actions\Payments\ApplyPaymentResult;
+use App\Actions\Payments\InitiatePayment;
 use App\Enums\DropZoneUsage;
 use App\Enums\EventStatus;
 use App\Enums\Offer;
 use App\Enums\PassType;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Enums\Role;
+use App\Enums\SalesChannel;
+use App\Models\Customer;
 use App\Models\Event;
+use App\Models\Order;
 use App\Models\User;
 use App\Models\Venue;
 use Clickbar\Magellan\Data\Geometries\Point;
@@ -64,4 +72,17 @@ function eventOnSale(int $seats = 10, array $attributes = []): Event
     $event->dropZones()->create(['name' => 'Parking P5 · porte Est', 'usage' => DropZoneUsage::PickUp, 'location' => Point::makeGeodetic(5.49, -4.07)]);
 
     return $event->fresh(['boardingPoints', 'venue']);
+}
+
+/**
+ * Commande payée de $quantity Pass sur l'événement.
+ */
+function paidOrder(Event $event, int $quantity, PassType $type = PassType::RoundTrip): Order
+{
+    $customer = Customer::factory()->create();
+    $order = app(CreateOrder::class)->handle($customer, $event, $event->boardingPoints->first()->id, Offer::Standard, $type, $quantity, SalesChannel::Web);
+    $payment = app(InitiatePayment::class)->handle($order, PaymentMethod::Wave, $customer->phone)['payment'];
+    app(ApplyPaymentResult::class)->handle($payment, PaymentStatus::Succeeded);
+
+    return $order->fresh('passes');
 }

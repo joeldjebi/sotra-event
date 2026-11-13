@@ -37,7 +37,7 @@ final class Navigation
             Space::Company => [
                 [null, [['Accueil', 'home', 'company.dashboard', null]]],
                 ['Direction commerciale', [
-                    ['Ventes', 'chart', null, Permission::SalesView],
+                    ['Ventes', 'chart', 'company.sales', Permission::SalesView],
                     ['Événements proposés', 'calendar', 'company.proposed-events', Permission::ProposedEventsRespond],
                     ['Offres & grille tarifaire', 'tag', null, Permission::PricingView],
                     ['Demande par commune', 'map-pin', null, Permission::DemandView],
@@ -55,7 +55,7 @@ final class Navigation
                 ['Exploitation', [
                     ['Exploitation en direct', 'map', null, Permission::OperationsManage],
                     ['Plan de transport', 'route', 'company.transport-plan', Permission::OperationsManage],
-                    ['Bus & affectations', 'bus', 'company.buses', Permission::FleetManage],
+                    ['Bus & affectations', 'bus', 'company.assignments', Permission::FleetManage],
                     ['Dépôts', 'building', 'company.depots', Permission::FleetManage],
                     ['Chauffeurs & convoyeurs', 'id-card', 'company.staff', Permission::StaffManage],
                     ['Pannes & interventions', 'wrench', null, Permission::BreakdownsManage],
