@@ -87,6 +87,9 @@ class CreateOrder
 
             $order = Order::query()->create([
                 'reference' => $this->reference(),
+                // L'acceptation des CGV est vérifiée avant l'appel (case du site, champ accept_terms de l'API).
+                'terms_accepted_at' => now(),
+                'terms_version' => (string) config('eventtrans.legal.terms_version'),
                 'customer_id' => $buyer->id,
                 'event_id' => $event->id,
                 'boarding_point_id' => $point->id,

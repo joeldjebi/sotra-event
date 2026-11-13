@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SmsMessage extends Model
 {
+    use MassPrunable;
+
     public const string SIMULATED = 'simulated';
 
     public const string ACCEPTED = 'accepted';
@@ -32,5 +36,15 @@ class SmsMessage extends Model
     public function failed(): bool
     {
         return $this->status === self::FAILED;
+    }
+
+    /**
+     * Purge nocturne (model:prune) au-delà de la durée de conservation (données personnelles, NF-12).
+     *
+     * @return Builder<self>
+     */
+    public function prunable(): Builder
+    {
+        return self::query()->where('created_at', '<', now()->subDays((int) config('eventtrans.privacy.sms_retention_days')));
     }
 }

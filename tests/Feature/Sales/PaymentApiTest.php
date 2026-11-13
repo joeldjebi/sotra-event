@@ -28,6 +28,7 @@ function apiOrder(int $quantity = 2): Order
         'offer' => 'standard',
         'pass_type' => 'aller_retour',
         'quantity' => $quantity,
+        'accept_terms' => true,
     ])->assertCreated()->json('data.reference');
 
     return Order::query()->where('reference', $reference)->sole();

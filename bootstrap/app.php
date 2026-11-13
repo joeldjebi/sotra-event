@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureSpace;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\ResolveStaffDevice;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,6 +29,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserIsActive::class,
             'staff.device' => ResolveStaffDevice::class,
         ]);
+
+        $middleware->append(SecurityHeaders::class);
+        $middleware->throttleApi();
+
+        // Derrière un répartiteur de charge ou un proxy TLS (TRUSTED_PROXIES=* ou liste d'adresses).
+        if (is_string(env('TRUSTED_PROXIES')) && env('TRUSTED_PROXIES') !== '') {
+            $middleware->trustProxies(at: env('TRUSTED_PROXIES') === '*' ? '*' : explode(',', (string) env('TRUSTED_PROXIES')));
+        }
 
         // Espace spectateur → connexion par SMS ; espaces professionnels → connexion Fortify.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->routeIs('site.*') ? route('site.login') : route('login'));

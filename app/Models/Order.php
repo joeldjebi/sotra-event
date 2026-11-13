@@ -38,6 +38,8 @@ use Illuminate\Support\Carbon;
  * @property OrderStatus $status
  * @property Carbon $expires_at
  * @property Carbon|null $paid_at
+ * @property Carbon|null $terms_accepted_at
+ * @property string|null $terms_version
  * @property-read Customer $customer
  * @property-read Event $event
  * @property-read BoardingPoint $boardingPoint
@@ -45,7 +47,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'reference', 'customer_id', 'event_id', 'boarding_point_id', 'offer', 'pass_type', 'quantity', 'beneficiary_phone',
     'unit_price', 'subtotal', 'fee_rate', 'fee_amount', 'commission_rate', 'commission_amount', 'company_amount',
-    'total', 'channel', 'status', 'expires_at', 'paid_at',
+    'total', 'channel', 'status', 'expires_at', 'paid_at', 'terms_accepted_at', 'terms_version',
 ])]
 class Order extends Model
 {
@@ -55,6 +57,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'terms_accepted_at' => 'datetime',
             'offer' => Offer::class,
             'pass_type' => PassType::class,
             'quantity' => 'integer',

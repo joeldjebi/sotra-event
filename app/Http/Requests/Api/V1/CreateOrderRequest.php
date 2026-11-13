@@ -27,6 +27,8 @@ class CreateOrderRequest extends FormRequest
             'pass_type' => ['required', Rule::enum(PassType::class)],
             'quantity' => ['required', 'integer', 'min:1', 'max:'.config('eventtrans.sales.max_passes_per_order')],
             'beneficiary_phone' => ['nullable', 'string', new ValidPhoneNumber],
+            // NF-14 : CGV et politique de confidentialité acceptées à l'achat (pas pour un simple devis).
+            'accept_terms' => $this->routeIs('api.v1.orders.store') ? ['required', 'accepted'] : ['exclude'],
         ];
     }
 }

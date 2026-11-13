@@ -5,6 +5,9 @@ Ce dépôt contient l'**API**, le **site spectateur**, la **console ACCES EVENT*
 
 - Cadrage technique : [docs/SPECIFICATIONS.md](docs/SPECIFICATIONS.md)
 - Étapes et règles de développement : [docs/GUIDE_DEVELOPPEMENT.md](docs/GUIDE_DEVELOPPEMENT.md)
+- Installation, déploiement et exploitation : [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- Cahier de recette : [docs/RECETTE.md](docs/RECETTE.md)
+- Documentation de l'API : `/docs/api` (Scramble)
 
 ## Prérequis
 - PHP 8.3 avec les extensions `pdo_pgsql`, `sodium`, `intl`, `gd`, `pcntl`

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Customer\EventController;
 use App\Http\Controllers\Api\V1\Customer\FeedbackController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
 use App\Http\Controllers\Api\V1\Customer\PassController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\Staff\BreakdownController;
 use App\Http\Controllers\Api\V1\Staff\MissionController;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Route;
 | Préfixe /api/v1. Documentation OpenAPI générée par Scramble sur /docs/api.
 */
 Route::prefix('v1')->name('api.v1.')->group(function () {
+    Route::get('health', HealthController::class)->middleware('throttle:60,1')->name('health');
+
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('otp', [OtpController::class, 'send'])->middleware('throttle:otp-send')->name('otp');
         Route::post('verify', [OtpController::class, 'verify'])->middleware('throttle:otp-verify')->name('verify');

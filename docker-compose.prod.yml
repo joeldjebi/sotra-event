@@ -1,0 +1,79 @@
+# Déploiement EVENT TRANS (recette ou production) sur un hôte Docker.
+# Les variables viennent du fichier .env de l'hôte (voir docs/INSTALLATION.md), jamais de l'image.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# PostgreSQL et Redis peuvent être remplacés par des services managés : supprimer les blocs pgsql / redis
+# et renseigner DB_HOST / REDIS_HOST.
+x-app: &app
+  build: .
+  image: eventtrans:${APP_VERSION:-latest}
+  env_file: .env
+  environment:
+    TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
+  restart: unless-stopped
+  volumes:
+    - app-storage:/var/www/html/storage/app
+    - app-logs:/var/www/html/storage/logs
+  depends_on:
+    pgsql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  web:
+    <<: *app
+    command: web
+    environment:
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      retries: 3
+
+  horizon:
+    <<: *app
+    command: horizon
+
+  scheduler:
+    <<: *app
+    command: scheduler
+
+  reverb:
+    <<: *app
+    command: reverb
+    ports:
+      - "${REVERB_PUBLIC_PORT:-8081}:8081"
+
+  pgsql:
+    image: imresamu/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  app-storage:
+  app-logs:
+  pgsql-data:
+  redis-data:

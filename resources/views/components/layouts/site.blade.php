@@ -40,7 +40,11 @@
     </main>
 
     <footer class="mx-auto hidden max-w-5xl px-6 py-10 text-[13px] text-ink-tertiary sm:block">
-        © {{ date('Y') }} ACCES EVENT · EVENT TRANS · <a href="{{ route('login') }}" class="hover:text-ink">Espace professionnel</a>
+        © {{ date('Y') }} ACCES EVENT · EVENT TRANS
+        · <a href="{{ route('legal.terms') }}" class="hover:text-ink">CGV</a>
+        · <a href="{{ route('legal.privacy') }}" class="hover:text-ink">Confidentialité</a>
+        · <a href="{{ route('legal.notice') }}" class="hover:text-ink">Mentions légales</a>
+        · <a href="{{ route('login') }}" class="hover:text-ink">Espace professionnel</a>
     </footer>
 
     {{-- Barre d'onglets façon application (SP : Événements · Mes Pass · Mon trajet · Profil) --}}

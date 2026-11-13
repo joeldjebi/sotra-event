@@ -35,6 +35,11 @@ Route::get('/connexion', SiteLogin::class)->middleware('guest:customer')->name('
 Route::get('/pass/{pass}', PublicPassController::class)->middleware('signed')->name('site.passes.public');
 Route::get('/mon-trajet', SiteTrip::class)->name('site.trip');
 
+// Textes légaux (NF-12, NF-14).
+Route::view('/cgv', 'site.legal.terms')->name('legal.terms');
+Route::view('/confidentialite', 'site.legal.privacy')->name('legal.privacy');
+Route::view('/mentions-legales', 'site.legal.notice')->name('legal.notice');
+
 Route::middleware('auth:customer')->group(function () {
     Route::get('/commande/{order}/paiement', PayOrder::class)->name('site.orders.pay');
     Route::get('/mes-pass', PassesIndex::class)->name('site.passes.index');

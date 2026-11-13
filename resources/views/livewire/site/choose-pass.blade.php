@@ -68,6 +68,12 @@
             <span class="text-ink-secondary">Total (frais de paiement {{ rtrim(rtrim($event->fee_rate, '0'), '.') }} % inclus)</span>
             <span class="text-[19px] font-semibold tabular-nums">{{ $quote ? number_format($quote->total(), 0, ',', ' ').' FCFA' : '—' }}</span>
         </div>
+        <label class="mt-3 flex items-start gap-2.5 text-[13px] text-ink-secondary">
+            <input type="checkbox" wire:model="acceptTerms" class="mt-0.5 size-4 shrink-0 rounded accent-[var(--color-brand)]">
+            <span>J'accepte les <a href="{{ route('legal.terms') }}" target="_blank" class="font-medium text-brand-text underline-offset-2 hover:underline">conditions générales de vente</a>
+                et la <a href="{{ route('legal.privacy') }}" target="_blank" class="font-medium text-brand-text underline-offset-2 hover:underline">politique de confidentialité</a>.</span>
+        </label>
+        @error('acceptTerms')<p class="mt-1 text-[13px] text-danger">{{ $message }}</p>@enderror
         <div class="mt-3 grid gap-2 {{ $gift ? '' : 'sm:grid-cols-2' }}">
             <x-ui.button size="lg" type="button" wire:click="pay" :disabled="! $quote" wire:loading.attr="disabled">{{ $gift ? 'Payer et offrir' : 'Payer' }}</x-ui.button>
             @unless ($gift)

@@ -36,6 +36,12 @@ class EventDetailResource extends JsonResource
             'visual_url' => $this->visualUrl(),
             'fee_rate' => (float) $this->fee_rate,
             'max_passes_per_order' => (int) config('eventtrans.sales.max_passes_per_order'),
+            // NF-14 : à faire accepter avant l'achat (champ accept_terms de POST /orders).
+            'terms' => [
+                'version' => (string) config('eventtrans.legal.terms_version'),
+                'terms_url' => route('legal.terms'),
+                'privacy_url' => route('legal.privacy'),
+            ],
             'boarding_points' => $this->boardingPoints->map(fn (BoardingPoint $point) => [
                 'id' => $point->id,
                 'commune' => $point->commune,

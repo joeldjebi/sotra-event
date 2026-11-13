@@ -462,6 +462,30 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 - Docker, environnements recette et production, déploiement automatisé.
 - Livrables : documentation API, manuel d'installation, guides utilisateurs, cahier de recette.
 
+> **Réalisé le 13/11/2026** (284 tests verts).
+> - **Test de charge** (`loadtest:orders`) : 300 commandes simultanées pour 250 places.
+>   - Exactement 250 places vendues, 50 refus (409), aucune erreur.
+>   - 1 289 commandes par minute ; p95 de 375 ms pour les commandes et de 284 ms pour les lectures.
+>   - Mesure faite avec le serveur PHP de développement à 16 processus, sur un poste local.
+> - **Sécurité** (NF-03) :
+>   - en-têtes `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` ;
+>   - HSTS en HTTPS, et CSP en production ;
+>   - HTTPS forcé en production, proxys de confiance (`TRUSTED_PROXIES`) ;
+>   - limite globale de l'API : 300 requêtes par minute par compte, 600 par IP ;
+>   - aucune donnée de carte stockée, vérifié par un test (PA-06).
+> - **Données personnelles** (NF-12, NF-14) :
+>   - positions GPS conservées seulement de l'embarquement à l'arrivée ;
+>   - purge nocturne : positions 90 jours après l'événement, OTP 30 jours, SMS 180 jours ;
+>   - CGV et politique de confidentialité acceptées à l'achat (case sur le site, `accept_terms` dans l'API, version enregistrée sur la commande) ;
+>   - pages `/cgv`, `/confidentialite`, `/mentions-legales`, en projet de texte à faire valider.
+> - **Supervision** (NF-08) :
+>   - sonde `/api/v1/health` (base, cache, stockage, retard de file, battement du planificateur) ;
+>   - Horizon réservé au super administrateur, alertes par e-mail ou Slack.
+> - **Sauvegardes** : `scripts/backup-database.sh` (quotidienne, 30 jours, empreinte SHA-256) et `scripts/restore-test.sh`, testés sur la base locale.
+> - **Déploiement** : `Dockerfile` multi-étapes (nginx + PHP-FPM, même image pour Horizon, le planificateur et Reverb), `docker-compose.prod.yml`, commandes `users:create-admin` et `passes:generate-signing-key`.
+> - **Livrables** : `docs/INSTALLATION.md` (installation et exploitation) et `docs/RECETTE.md` (scénarios par lot, reliés aux tests). La documentation de l'API est servie par Scramble sur `/docs/api`.
+> - **Restent à faire**, faute d'informations : choix de l'hébergeur (NF-13) et pipeline de déploiement, guides utilisateurs, validation juridique des textes et déclaration à l'ARTCI.
+
 ---
 
 ## 5. Règles de travail

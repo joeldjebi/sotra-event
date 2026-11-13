@@ -45,6 +45,9 @@ class ChoosePass extends Component
 
     public string $beneficiaryPhone = '';
 
+    /** NF-14 : CGV et politique de confidentialité acceptées à l'achat. */
+    public bool $acceptTerms = false;
+
     public function mount(string $slug, EventCatalog $catalog): void
     {
         $this->event = $catalog->onSale(SalesChannel::Web)->with(['venue', 'boardingPoints' => fn ($query) => $query->whereNull('cancelled_at'), 'offers', 'prices', 'dropZones'])->where('slug', $slug)->firstOrFail();
@@ -71,6 +74,8 @@ class ChoosePass extends Component
 
             return $this->redirectRoute('site.login');
         }
+
+        $this->validate(['acceptTerms' => ['accepted']], ['acceptTerms.accepted' => 'Acceptez les conditions générales de vente pour continuer.']);
 
         if ($this->gift) {
             $this->validate(['beneficiaryPhone' => ['required', 'string', new ValidPhoneNumber]], attributes: ['beneficiaryPhone' => 'numéro du bénéficiaire']);

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\OtpAudience;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -20,6 +22,8 @@ use Illuminate\Support\Carbon;
  */
 class OtpCode extends Model
 {
+    use MassPrunable;
+
     protected $guarded = ['id'];
 
     protected function casts(): array
@@ -35,5 +39,15 @@ class OtpCode extends Model
     public function isExpired(): bool
     {
         return $this->expires_at->isPast();
+    }
+
+    /**
+     * Purge nocturne (model:prune) au-delà de la durée de conservation (données personnelles, NF-12).
+     *
+     * @return Builder<self>
+     */
+    public function prunable(): Builder
+    {
+        return self::query()->where('created_at', '<', now()->subDays((int) config('eventtrans.privacy.otp_retention_days')));
     }
 }

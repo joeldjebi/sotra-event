@@ -32,6 +32,10 @@ class TripTracker
         $stored = 0;
 
         foreach ($points as $point) {
+            if (! $this->duringMission($mission, Carbon::parse($point['recorded_at']))) {
+                continue;
+            }
+
             $mission->positions()->create([
                 'recorded_at' => Carbon::parse($point['recorded_at']),
                 'location' => Point::makeGeodetic($point['latitude'], $point['longitude']),
@@ -68,6 +72,19 @@ class TripTracker
             ->where('id', $mission->boarding_point_id)
             ->whereRaw('ST_DWithin(location, ST_GeogFromText(?), ?)', [$wkt, self::RETURN_ARRIVAL_RADIUS_M])
             ->exists();
+    }
+
+    /**
+     * NF-12 (loi n° 2013-450) : la position du convoyeur n'est conservée que pendant la mission,
+     * de l'embarquement à l'arrivée (une file hors ligne envoyée plus tard reste acceptée pour cette période).
+     */
+    private function duringMission(Mission $mission, Carbon $recordedAt): bool
+    {
+        if (in_array($mission->status, [MissionStatus::Planned, MissionStatus::Finished], true)) {
+            return false;
+        }
+
+        return $mission->arrived_at === null || $recordedAt->lessThanOrEqualTo($mission->arrived_at->copy()->addMinutes(5));
     }
 
     /**

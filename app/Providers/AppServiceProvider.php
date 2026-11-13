@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use InvalidArgumentException;
@@ -68,6 +69,11 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+        // HTTPS partout en production (NF-03).
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
+
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
 
         $this->configureRateLimiting();
@@ -85,6 +91,12 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(20)->by('otp-send-ip:'.$request->ip()),
             ];
         });
+
+        // Limite globale de l'API (NF-03) : par compte authentifié, sinon par adresse IP. Large pour les IP
+        // partagées des opérateurs mobiles (NAT) ; les routes sensibles ont leur propre limite plus stricte.
+        RateLimiter::for('api', fn (Request $request): Limit => $request->user('sanctum')
+            ? Limit::perMinute(300)->by('api-user:'.$request->user('sanctum')->getMorphClass().':'.$request->user('sanctum')->getAuthIdentifier())
+            : Limit::perMinute(600)->by('api-ip:'.$request->ip()));
 
         RateLimiter::for('otp-verify', fn (Request $request): Limit => Limit::perMinute(10)->by('otp-verify-ip:'.$request->ip()));
     }

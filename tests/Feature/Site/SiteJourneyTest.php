@@ -53,6 +53,9 @@ it('achète un Pass sur le site, paie et l\'affiche (P2 sur le web)', function (
         ->assertSee('3 000 FCFA')
         ->call('increment')
         ->assertSee('6 120 FCFA')
+        ->call('pay')
+        ->assertHasErrors('acceptTerms')
+        ->set('acceptTerms', true)
         ->call('pay');
 
     $order = Order::query()->sole();

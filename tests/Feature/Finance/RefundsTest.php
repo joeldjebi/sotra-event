@@ -72,11 +72,11 @@ it('refuse l\'annulation à moins de 24 h du départ ou après le scan', functio
 it('libère la place et invalide le QR du Pass annulé', function () {
     $this->event->offers()->update(['seats_per_bus' => 2]);
     Sanctum::actingAs($this->pass->holder, ['customer']);
-    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $this->event->boardingPoints->first()->id, 'offer' => 'standard', 'pass_type' => 'aller_retour', 'quantity' => 1])
+    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $this->event->boardingPoints->first()->id, 'offer' => 'standard', 'pass_type' => 'aller_retour', 'quantity' => 1, 'accept_terms' => true])
         ->assertStatus(409);
 
     $this->postJson("/api/v1/passes/{$this->pass->code}/cancel")->assertOk();
-    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $this->event->boardingPoints->first()->id, 'offer' => 'standard', 'pass_type' => 'aller_retour', 'quantity' => 1])
+    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $this->event->boardingPoints->first()->id, 'offer' => 'standard', 'pass_type' => 'aller_retour', 'quantity' => 1, 'accept_terms' => true])
         ->assertCreated();
 });
 
@@ -172,6 +172,6 @@ it('annule un départ : ses Pass remboursés et la vente fermée sur ce point', 
     expect(Refund::query()->where('reason', RefundReason::DepartureCancelled)->count())->toBe(2);
 
     Sanctum::actingAs($this->pass->holder, ['customer']);
-    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $point->id, 'offer' => Offer::Standard->value, 'pass_type' => PassType::RoundTrip->value, 'quantity' => 1])
+    $this->postJson('/api/v1/orders', ['event_id' => $this->event->id, 'boarding_point_id' => $point->id, 'offer' => Offer::Standard->value, 'pass_type' => PassType::RoundTrip->value, 'quantity' => 1, 'accept_terms' => true])
         ->assertStatus(409)->assertJsonPath('code', 'DEPARTURE_CANCELLED');
 });

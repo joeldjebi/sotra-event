@@ -122,6 +122,36 @@ return [
     ],
 
     /*
+    | Sécurité (NF-03) et données personnelles (NF-12, loi ivoirienne n° 2013-450).
+    */
+    'security' => [
+        // Politique de sécurité du contenu : active en production (désactivée en local pour le serveur Vite).
+        'csp' => env('SECURITY_CSP', env('APP_ENV') === 'production'),
+    ],
+
+    /*
+    | Exploitation (NF-08) : destinataires des alertes de supervision.
+    */
+    'ops' => [
+        'alert_email' => env('OPS_ALERT_EMAIL'),
+        'slack_webhook' => env('OPS_SLACK_WEBHOOK'),
+        // Au-delà, la file est signalée en retard par /api/v1/health.
+        'max_queue_backlog' => 1000,
+    ],
+
+    'legal' => [
+        // Version des CGV et de la politique de confidentialité, enregistrée sur chaque commande (NF-14).
+        'terms_version' => '2026-11',
+    ],
+
+    'privacy' => [
+        // Durées de conservation, purgées chaque nuit (model:prune).
+        'positions_retention_days' => 90,
+        'otp_retention_days' => 30,
+        'sms_retention_days' => 180,
+    ],
+
+    /*
     | Paiement. Le pilote « fake » simule l'agrégateur (attente, confirmation, webhook signé).
     */
     'payment' => [
