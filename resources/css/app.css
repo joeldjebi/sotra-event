@@ -3,17 +3,59 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-/* Charte EVENT TRANS « Le Pass en route » : marine et orange (NF-15). */
+/*
+| Design EVENT TRANS, inspiré d'Apple : typographie système, fonds gris clair, surfaces blanches,
+| coins arrondis généreux, filets fins, flou de transparence. Charte « Le Pass en route » : marine et orange.
+*/
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+
+    --color-canvas: #f5f5f7;
+    --color-surface: #ffffff;
+    --color-ink: #1d1d1f;
+    --color-ink-secondary: #6e6e73;
+    --color-ink-tertiary: #86868b;
+    --color-hairline: rgb(0 0 0 / 0.08);
+    --color-fill: rgb(120 120 128 / 0.12);
 
     --color-marine-950: #0b1422;
     --color-marine-900: #0f1b2d;
     --color-marine-800: #1b2a40;
-    --color-orange-brand: #c2410c;
-    --color-orange-soft: #fde8dc;
-    --color-success: #047857;
-    --color-danger: #b91c1c;
-    --color-warning: #b45309;
+
+    --color-brand: #c2410c;
+    --color-brand-hover: #a7380b;
+    --color-brand-soft: #fdeee6;
+
+    --color-success: #1f8a4c;
+    --color-success-soft: #e3f5ea;
+    --color-warning: #b25e00;
+    --color-warning-soft: #fdf1df;
+    --color-danger: #d70015;
+    --color-danger-soft: #fde7e9;
+
+    --radius-card: 1.25rem;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
+    --shadow-float: 0 12px 40px rgb(0 0 0 / 0.12);
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
+    body {
+        @apply bg-canvas text-ink;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    ::selection {
+        @apply bg-brand/20;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
 }

@@ -25,6 +25,22 @@ Les conteneurs exposent PostgreSQL sur le port **5450** et Redis sur le port **6
 composer dev       # serveur web, Horizon (files), Reverb (temps réel), Vite
 ```
 
+### Comptes de démonstration (local)
+`php artisan migrate:fresh --seed` crée les comptes suivants (mot de passe : `password`) :
+
+| Profil | E-mail |
+|---|---|
+| Super admin ACCES EVENT | admin@eventtrans.test |
+| Opérateur ACCES EVENT | operateur@eventtrans.test |
+| Direction commerciale SOTRA | commercial@sotra.test |
+| Direction qualité SOTRA | qualite@sotra.test |
+| Exploitation SOTRA | exploitation@sotra.test |
+| Chef de projet transport | chef.projet@promoteur.test |
+
+La double authentification est obligatoire : à la première connexion, scannez le QR code avec une application d'authentification. En local, on peut la désactiver avec `TWO_FACTOR_ENFORCED=false`.
+
+Personnel terrain SOTRA (connexion mobile par OTP) : convoyeurs `0700000001` et `0700000002`, technicien `0700000003`. Les codes OTP simulés s'affichent sur **/dev/sms**.
+
 ## Qualité
 ```bash
 composer check     # Pint (style) + Larastan niveau 6 (analyse) + Pest (tests)

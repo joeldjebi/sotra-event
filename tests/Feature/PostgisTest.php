@@ -1,9 +1,6 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-
-uses(RefreshDatabase::class);
 
 it('active l\'extension PostGIS', function () {
     $version = DB::scalar('SELECT postgis_version()');

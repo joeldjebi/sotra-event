@@ -151,6 +151,17 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Tests** : un commercial SOTRA ne voit pas une autre compagnie ; l'OTP expire ; la 2FA est exigée.
 
+> **Réalisé le 13/11/2026** (63 tests verts).
+> - **Modèles** : `User` (web), `Customer` et `Staff` (jetons Sanctum), `Company`, `Promoter`, `OtpCode`, `SmsMessage`, `AuditLog`.
+> - **Enums** : `Role`, `Permission`, `Space`, `StaffRole`, `TokenAbility`, `OtpAudience`. Le seeder `RolesAndPermissionsSeeder` les reprend et peut être relancé sans risque.
+> - **Web** : Fortify sans inscription publique ni passkeys. Mot de passe de 12 caractères minimum (lettres et chiffres). 2FA obligatoire, désactivable en local avec `TWO_FACTOR_ENFORCED=false`. Une fois connecté, `/espace` redirige vers `/admin`, `/compagnie` ou `/promoteur`.
+> - **API** : `POST /api/v1/auth/otp`, `POST /api/v1/auth/verify`, `POST /api/v1/auth/logout`, `GET /api/v1/me`. Les erreurs renvoient `{message, code}` avec les codes `OTP_INVALID`, `OTP_EXPIRED`, `OTP_TOO_MANY_ATTEMPTS`, `OTP_NOT_FOUND`, `OTP_RESEND_TOO_SOON` et `ACCOUNT_NOT_ALLOWED`.
+> - **Cloisonnement** : trait `BelongsToCompany` (scope global + rattachement automatique à la création) et middleware `space:*`.
+> - **Audit** : trait `Auditable` ; table `audit_logs` protégée par un déclencheur PostgreSQL qui interdit UPDATE et DELETE.
+> - **Design** : inspiré d'Apple (police système, fond `#f5f5f7`, cartes blanches très arrondies, barre latérale translucide). Composants dans `resources/views/components/ui`.
+> - **Local** : comptes de démonstration créés par `DemoSeeder`, voir le README ; boîte d'envoi des SMS simulés sur `/dev/sms`.
+> - Les éléments de menu des étapes suivantes sont affichés avec la mention « Bientôt ».
+
 ### Étape 2 — Référentiels (console + espace Exploitation)
 - Console : **Compagnies** (contrat, commission par défaut, compte de reversement), **Promoteurs** (contacts, chefs de projet), **Lieux** (position), **Utilisateurs & rôles** (AD-08, AD-09, AD-12).
 - Exploitation : **Bus** (numéro, immatriculation, capacité, statut), **Chauffeurs & convoyeurs**, **Équipes techniques** (code, type léger / lourd, membres), **Dépôts**, **PDA & terminaux** (inventaire, attribution, blocage).

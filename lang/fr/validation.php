@@ -1,0 +1,82 @@
+<?php
+
+return [
+    'accepted' => 'Le champ :attribute doit être accepté.',
+    'array' => 'Le champ :attribute doit être une liste.',
+    'between' => [
+        'numeric' => 'Le champ :attribute doit être compris entre :min et :max.',
+        'string' => 'Le champ :attribute doit contenir entre :min et :max caractères.',
+        'array' => 'Le champ :attribute doit contenir entre :min et :max éléments.',
+    ],
+    'boolean' => 'Le champ :attribute doit être vrai ou faux.',
+    'confirmed' => 'La confirmation du champ :attribute ne correspond pas.',
+    'date' => 'Le champ :attribute doit être une date valide.',
+    'date_format' => 'Le champ :attribute doit respecter le format :format.',
+    'decimal' => 'Le champ :attribute doit avoir :decimal décimales.',
+    'different' => 'Les champs :attribute et :other doivent être différents.',
+    'digits' => 'Le champ :attribute doit contenir :digits chiffres.',
+    'digits_between' => 'Le champ :attribute doit contenir entre :min et :max chiffres.',
+    'email' => 'Le champ :attribute doit être une adresse e-mail valide.',
+    'enum' => 'La valeur du champ :attribute est invalide.',
+    'exists' => 'La valeur du champ :attribute est invalide.',
+    'file' => 'Le champ :attribute doit être un fichier.',
+    'gt' => [
+        'numeric' => 'Le champ :attribute doit être supérieur à :value.',
+    ],
+    'gte' => [
+        'numeric' => 'Le champ :attribute doit être supérieur ou égal à :value.',
+    ],
+    'image' => 'Le champ :attribute doit être une image.',
+    'in' => 'La valeur du champ :attribute est invalide.',
+    'integer' => 'Le champ :attribute doit être un nombre entier.',
+    'lt' => [
+        'numeric' => 'Le champ :attribute doit être inférieur à :value.',
+    ],
+    'lte' => [
+        'numeric' => 'Le champ :attribute doit être inférieur ou égal à :value.',
+    ],
+    'max' => [
+        'numeric' => 'Le champ :attribute ne doit pas dépasser :max.',
+        'string' => 'Le champ :attribute ne doit pas dépasser :max caractères.',
+        'array' => 'Le champ :attribute ne doit pas contenir plus de :max éléments.',
+        'file' => 'Le fichier :attribute ne doit pas dépasser :max Ko.',
+    ],
+    'mimes' => 'Le champ :attribute doit être un fichier de type : :values.',
+    'min' => [
+        'numeric' => 'Le champ :attribute doit être au moins :min.',
+        'string' => 'Le champ :attribute doit contenir au moins :min caractères.',
+        'array' => 'Le champ :attribute doit contenir au moins :min éléments.',
+        'file' => 'Le fichier :attribute doit faire au moins :min Ko.',
+    ],
+    'numeric' => 'Le champ :attribute doit être un nombre.',
+    'password' => [
+        'letters' => 'Le champ :attribute doit contenir au moins une lettre.',
+        'mixed' => 'Le champ :attribute doit contenir au moins une majuscule et une minuscule.',
+        'numbers' => 'Le champ :attribute doit contenir au moins un chiffre.',
+        'symbols' => 'Le champ :attribute doit contenir au moins un symbole.',
+        'uncompromised' => 'Ce :attribute est apparu dans une fuite de données. Choisissez-en un autre.',
+    ],
+    'regex' => 'Le format du champ :attribute est invalide.',
+    'required' => 'Le champ :attribute est obligatoire.',
+    'required_if' => 'Le champ :attribute est obligatoire quand :other vaut :value.',
+    'required_with' => 'Le champ :attribute est obligatoire quand :values est renseigné.',
+    'same' => 'Les champs :attribute et :other doivent être identiques.',
+    'size' => [
+        'numeric' => 'Le champ :attribute doit valoir :size.',
+        'string' => 'Le champ :attribute doit contenir :size caractères.',
+    ],
+    'string' => 'Le champ :attribute doit être une chaîne de caractères.',
+    'unique' => 'Cette valeur du champ :attribute est déjà utilisée.',
+    'url' => 'Le champ :attribute doit être une URL valide.',
+    'uuid' => 'Le champ :attribute doit être un UUID valide.',
+
+    'attributes' => [
+        'email' => 'adresse e-mail',
+        'password' => 'mot de passe',
+        'phone' => 'téléphone',
+        'code' => 'code',
+        'audience' => 'type de compte',
+        'device_name' => 'nom de l\'appareil',
+        'name' => 'nom',
+    ],
+];
