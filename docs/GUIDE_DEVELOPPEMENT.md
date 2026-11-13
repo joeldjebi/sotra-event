@@ -128,6 +128,12 @@ Les couleurs (marine `#0F1B2D`, orange `#C2410C`, vert de validation, rouge d'al
 
 **Terminé quand** : `composer check` passe, `php artisan migrate --seed` fonctionne sur PostgreSQL, et la CI est verte.
 
+> **Réalisé le 13/11/2026.**
+> - Image Docker `imresamu/postgis:17-3.5`, une version multi-architecture qui fonctionne aussi sur les Mac Apple Silicon. Ports 5450 (PostgreSQL) et 6395 (Redis).
+> - Client Redis : `predis`, car l'extension phpredis n'est pas requise.
+> - Node 20 imposé par `.nvmrc`, car Vite 8 l'exige.
+> - Le seeder de démo `DemoEventSeeder` est reporté aux étapes 3 et 4 : il a besoin des tables métier, qui n'existent pas encore.
+
 ---
 
 ## 4. Étapes de développement
