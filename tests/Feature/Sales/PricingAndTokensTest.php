@@ -51,5 +51,6 @@ it('signe un jeton QR vérifiable et détecte toute falsification (NF-01)', func
 
     expect($tokens->verify("{$prefix}.{$forged}.{$signature}"))->toBeNull()
         ->and($tokens->verify('n\'importe quoi'))->toBeNull()
-        ->and(base64_decode($tokens->publicKeyBase64()))->toHaveLength(SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES);
+        // Longueur en octets (une clé binaire n'est pas une chaîne UTF-8 : toHaveLength compterait des caractères).
+        ->and(strlen(base64_decode($tokens->publicKeyBase64())))->toBe(SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES);
 });
