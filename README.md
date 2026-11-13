@@ -7,7 +7,7 @@ Ce dépôt contient l'**API**, le **site spectateur**, la **console ACCES EVENT*
 - Étapes et règles de développement : [docs/GUIDE_DEVELOPPEMENT.md](docs/GUIDE_DEVELOPPEMENT.md)
 - Installation, déploiement et exploitation : [docs/INSTALLATION.md](docs/INSTALLATION.md)
 - Cahier de recette : [docs/RECETTE.md](docs/RECETTE.md)
-- Documentation de l'API : `/docs/api` (Scramble)
+- Documentation de l'API pour l'équipe mobile : [docs/api-mobile.html](docs/api-mobile.html) (vraies réponses, guides, codes d'erreur) ; référence générée : `/docs/api` (Scramble)
 
 ## Prérequis
 - PHP 8.3 avec les extensions `pdo_pgsql`, `sodium`, `intl`, `gd`, `pcntl`
