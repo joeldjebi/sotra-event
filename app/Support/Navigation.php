@@ -53,7 +53,7 @@ final class Navigation
                     ['Bilans du pilote', 'document', null, Permission::QualityView],
                 ]],
                 ['Exploitation', [
-                    ['Exploitation en direct', 'map', null, Permission::OperationsManage],
+                    ['Exploitation en direct', 'map', 'company.live', Permission::OperationsManage],
                     ['Plan de transport', 'route', 'company.transport-plan', Permission::OperationsManage],
                     ['Bus & affectations', 'bus', 'company.assignments', Permission::FleetManage],
                     ['Dépôts', 'building', 'company.depots', Permission::FleetManage],

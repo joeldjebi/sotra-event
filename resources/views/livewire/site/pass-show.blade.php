@@ -9,7 +9,7 @@
     </div>
 
     <div class="mt-6 grid grid-cols-2 gap-3">
-        <x-ui.button size="lg" :href="route('site.trip')">Suivre mon bus</x-ui.button>
+        <x-ui.button size="lg" :href="route('site.trip', ['pass' => $pass->code])">Suivre mon bus</x-ui.button>
         @if ($pass->isTransferable())
             <button type="button" wire:click="$set('showGift', true)" class="h-12 rounded-full text-[15px] font-medium text-white ring-1 ring-white/30 hover:bg-white/10">Offrir ce Pass</button>
         @endif

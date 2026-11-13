@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Mon trajet · EVENT TRANS</title>
+
+<script>
+    (() => {
+        const root = document.documentElement;
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const stored = (() => { try { return localStorage.getItem('eventtrans-theme'); } catch (e) { return null; } })();
+        const apply = (preference) => {
+            root.dataset.themePreference = preference;
+            root.dataset.theme = preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
+        };
+        window.eventTransTheme = {
+            get: () => root.dataset.themePreference,
+            set: (preference) => { try { localStorage.setItem('eventtrans-theme', preference); } catch (e) {} apply(preference); },
+        };
+        apply(null ?? stored ?? 'system');
+        media.addEventListener('change', () => root.dataset.themePreference === 'system' && apply('system'));
+    })();
+</script>
+<link rel="preload" as="style" href="/build/assets/app-Cb7fvm_K.css" /><link rel="preload" as="style" href="/build/assets/app-1DTFk8zz.css" /><link rel="modulepreload" as="script" href="/build/assets/app-dbyA0-jl.js" /><link rel="stylesheet" href="/build/assets/app-Cb7fvm_K.css" data-navigate-track="reload" /><link rel="stylesheet" href="/build/assets/app-1DTFk8zz.css" data-navigate-track="reload" /><script type="module" src="/build/assets/app-dbyA0-jl.js" data-navigate-track="reload"></script><!-- Livewire Styles --><style >[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.list-item][wire\:loading\.list-item], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak="x-cloak"],[x-cloak=""] {display: none !important;}[wire\:cloak="wire:cloak"],[wire\:cloak=""] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}</style>
+<script id="browser-logger-active">
+(function() {
+    const ENDPOINT = '/_boost/browser-logs';
+    const logQueue = [];
+    let flushTimeout = null;
+    const captureTypes = ["error","warning","info","log","debug","table"];
+
+    console.log('🔍 Browser logger active (MCP server detected). Posting to: ' + ENDPOINT);
+
+    // Store original console methods
+    const originalConsole = {
+        log: console.log,
+        debug: console.debug,
+        info: console.info,
+        error: console.error,
+        warn: console.warn,
+        table: console.table
+    };
+
+    // Walk own enumerable keys so JSON.stringify cannot auto-invoke a proxy fake toJSON (e.g. Livewire's `$wire`) and fire a real request.
+    function toSafeValue(value, seen) {
+        if (value === null || typeof value !== 'object') {
+            return value;
+        }
+        if (value instanceof Error) {
+            return { name: value.name, message: value.message, stack: value.stack };
+        }
+        // Date has no own enumerable keys, so the walk below would collapse it to {}.
+        if (value instanceof Date) {
+            return value.toISOString();
+        }
+        if (seen.has(value)) {
+            return '[Circular]';
+        }
+        seen.add(value);
+        if (Array.isArray(value)) {
+            return value.map((item) => toSafeValue(item, seen));
+        }
+        const plain = {};
+        for (const key of Object.keys(value)) {
+            if (key === 'toJSON') continue;
+            try {
+                plain[key] = toSafeValue(value[key], seen);
+            } catch (e) {
+                plain[key] = '[Unreadable]';
+            }
+        }
+        return plain;
+    }
+
+    // Helper to safely stringify values
+    function safeStringify(obj) {
+        return JSON.stringify(toSafeValue(obj, new WeakSet()));
+    }
+
+    // Normalize log type for consistency (e.g., 'warn' to 'warning')
+    function normalizeType(type) {
+        return type === 'warn' ? 'warning' : type;
+    }
+
+    // Determine if a log type should be captured based on configured levels
+    function shouldCapture(type) {
+        return captureTypes.includes(normalizeType(type));
+    }
+
+    // Batch and send logs
+    function flushLogs() {
+        if (logQueue.length === 0) return;
+
+        const batch = logQueue.splice(0, logQueue.length);
+
+        fetch(ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ logs: batch })
+        }).catch(err => {
+            // Silently fail to avoid infinite loops
+            originalConsole.error('Failed to send logs:', err);
+        });
+    }
+
+    // Debounced flush (100ms)
+    function scheduleFlush() {
+        if (flushTimeout) clearTimeout(flushTimeout);
+        flushTimeout = setTimeout(flushLogs, 100);
+    }
+
+    // Intercept console methods
+    ['log', 'debug', 'info', 'error', 'warn', 'table'].forEach(method => {
+        console[method] = function(...args) {
+            // Call original method
+            originalConsole[method].apply(console, args);
+
+            // Capture log data
+            try {
+                if (!shouldCapture(method)) {
+                    return;
+                }
+
+                logQueue.push({
+                    type: method,
+                    timestamp: new Date().toISOString(),
+                    data: args.map(arg => {
+                        try {
+                            return typeof arg === 'object' ? JSON.parse(safeStringify(arg)) : arg;
+                        } catch (e) {
+                            return String(arg);
+                        }
+                    }),
+                    url: window.location.href,
+                    userAgent: navigator.userAgent
+                });
+
+                scheduleFlush();
+            } catch (e) {
+                // Fail silently
+            }
+        };
+    });
+
+    // Global error handlers for uncaught errors
+    const originalOnError = window.onerror;
+    window.onerror = function boostErrorHandler(errorMsg, url, lineNumber, colNumber, error) {
+        try {
+            if (shouldCapture('error')) {
+                logQueue.push({
+                    type: 'uncaught_error',
+                    timestamp: new Date().toISOString(),
+                    data: [{
+                        message: errorMsg,
+                        filename: url,
+                        lineno: lineNumber,
+                        colno: colNumber,
+                        error: error ? {
+                            name: error.name,
+                            message: error.message,
+                            stack: error.stack
+                        } : null
+                    }],
+                    url: window.location.href,
+                    userAgent: navigator.userAgent
+                });
+
+                scheduleFlush();
+            }
+
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Call original handler if it exists
+        if (originalOnError && typeof originalOnError === 'function') {
+            return originalOnError(errorMsg, url, lineNumber, colNumber, error);
+        }
+
+        // Let the error continue to propagate
+        return false;
+    }
+    window.addEventListener('error', (event) => {
+        try {
+            if (!shouldCapture('error')) {
+                return false;
+            }
+
+            logQueue.push({
+                type: 'window_error',
+                timestamp: new Date().toISOString(),
+                data: [{
+                    message: event.message,
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: event.error ? {
+                        name: event.error.name,
+                        message: event.error.message,
+                        stack: event.error.stack
+                    } : null
+                }],
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            });
+
+            scheduleFlush();
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Let the error continue to propagate
+        return false;
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        try {
+            if (!shouldCapture('error')) {
+                return false;
+            }
+
+            logQueue.push({
+                type: 'error',
+                timestamp: new Date().toISOString(),
+                data: [{
+                    message: 'Unhandled Promise Rejection',
+                    reason: toSafeValue(event.reason, new WeakSet())
+                }],
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            });
+
+            scheduleFlush();
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Let the rejection continue to propagate
+        return false;
+    });
+
+    // Flush on page unload
+    window.addEventListener('beforeunload', () => {
+        if (logQueue.length > 0) {
+            navigator.sendBeacon(ENDPOINT, JSON.stringify({ logs: logQueue }));
+        }
+    });
+})();
+</script>
+</head>
+<body class="min-h-full bg-canvas pb-24 sm:pb-0">
+    <header class="sticky top-0 z-30 border-b border-hairline bg-canvas/80 backdrop-blur-xl">
+        <div class="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+            <div class="flex items-center gap-2">
+                                <a href="http://localhost"><span class="inline-flex items-center gap-2.5">
+    <span class="size-8 rounded-[9px] relative grid shrink-0 place-items-center overflow-hidden bg-gradient-to-b from-marine-700 to-marine-950 shadow-[0_1px_2px_rgb(0_0_0/0.18),0_4px_12px_rgb(15_27_45/0.18)] ring-1 ring-black/5 dark:ring-white/10">
+        <span class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/12 to-transparent" aria-hidden="true"></span>
+        <svg viewBox="0 0 24 24" class="relative w-3/5" fill="none" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="12" rx="3" stroke="#fff" stroke-width="1.8"/>
+            <path d="M4 11h16" stroke="#fff" stroke-width="1.8"/>
+            <circle cx="8" cy="19" r="1.6" fill="#f97316"/>
+            <circle cx="16" cy="19" r="1.6" fill="#f97316"/>
+        </svg>
+    </span>
+    <span class="text-[15px] font-semibold tracking-[-0.02em] text-ink">EVENT TRANS</span>
+</span>
+</a>
+            </div>
+            <nav class="hidden items-center gap-1 sm:flex" aria-label="Navigation principale">
+                                    <a href="http://localhost" wire:key="top-0" class="rounded-full px-3.5 py-1.5 text-[14px] font-medium transition text-ink-secondary hover:text-ink">Événements</a>
+                                    <a href="/mes-pass" wire:key="top-1" class="rounded-full px-3.5 py-1.5 text-[14px] font-medium transition text-ink-secondary hover:text-ink">Mes Pass</a>
+                                    <a href="/mon-trajet" wire:key="top-2" class="rounded-full px-3.5 py-1.5 text-[14px] font-medium transition bg-surface text-ink shadow-sm ring-1 ring-hairline">Mon trajet</a>
+                                    <a href="/mon-compte" wire:key="top-3" class="rounded-full px-3.5 py-1.5 text-[14px] font-medium transition text-ink-secondary hover:text-ink">Profil</a>
+                            </nav>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
+                <div wire:snapshot="{&quot;data&quot;:{&quot;code&quot;:&quot;ET-2611-0001-YOP&quot;},&quot;memo&quot;:{&quot;id&quot;:&quot;9vJ6FFuUpCd1e6frNqOI&quot;,&quot;name&quot;:&quot;site.trip&quot;,&quot;path&quot;:&quot;mon-trajet&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;fr&quot;,&quot;islands&quot;:[]},&quot;checksum&quot;:&quot;b78caad38410d1c92e84ef0d0eff734df8d7b68754f5063c8b755d9d5dff01db&quot;}" wire:effects="{&quot;url&quot;:{&quot;code&quot;:{&quot;as&quot;:&quot;pass&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null}}}" wire:id="9vJ6FFuUpCd1e6frNqOI" wire:name="site.trip" wire:poll.15s>
+    <h1 class="text-[34px] leading-tight font-bold tracking-tight">Mon trajet</h1>
+
+    <!--[if BLOCK]><![endif]-->        <p class="mt-1 text-[15px] text-ink-secondary">Concert au stade d&#039;Ebimpé · Yopougon · Pass ET-2611-0001-YOP</p>
+
+        <!--[if BLOCK]><![endif]-->            <div class="mt-4">
+                <div class="space-y-1.5">
+    <!--[if BLOCK]><![endif]-->        <label for="code" class="block px-0.5 text-footnote font-medium text-ink-secondary">Pass</label>
+    <!--[if ENDBLOCK]><![endif]-->    <div class="relative">
+        <select
+            id="code"
+            name="code"
+                                                class="ui-field h-11 cursor-pointer appearance-none pr-10 pl-3.5" wire:model.live="code"
+        >
+            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->            <!--[if BLOCK]><![endif]-->                <option value="ET-2611-0001-ABO" wire:key="code-opt-ET-2611-0001-ABO">ET-2611-0001-ABO · Concert au stade d&#039;Ebimpé</option>
+                            <option value="ET-2611-0002-ABO" wire:key="code-opt-ET-2611-0002-ABO">ET-2611-0002-ABO · Concert au stade d&#039;Ebimpé</option>
+                            <option value="ET-2611-0001-YOP" wire:key="code-opt-ET-2611-0001-YOP">ET-2611-0001-YOP · Concert au stade d&#039;Ebimpé</option>
+            <!--[if ENDBLOCK]><![endif]-->        </select>
+        <svg class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-secondary" stroke-width="1.7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="m8 9.5 4-4 4 4m-8 5 4 4 4-4" />
+</svg>
+    </div>
+    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]--></div>
+            </div>
+        <!--[if ENDBLOCK]><![endif]-->
+        <!--[if BLOCK]><![endif]-->            <div class="mt-5 rounded-[22px] bg-marine-900 p-5 text-white">
+                <p class="text-[13px] font-semibold tracking-wide text-orange-300 uppercase">Bus 12 · En route</p>
+                <p class="mt-1 text-[28px] font-semibold tracking-tight">≈ 21 min</p>
+                <p class="text-[14px] text-white/70">avant l'arrivée · Stade Olympique d&#039;Ebimpé</p>
+            </div>
+        <!--[if ENDBLOCK]><![endif]-->
+        <div x-data="liveMap" data-map="{&quot;center&quot;:[5.3446,-4.0802],&quot;zoom&quot;:12,&quot;fit&quot;:true,&quot;markers&quot;:[{&quot;id&quot;:&quot;bus&quot;,&quot;lat&quot;:5.38,&quot;lng&quot;:-4.079,&quot;label&quot;:&quot;Bus 12&quot;,&quot;tone&quot;:&quot;warning&quot;},{&quot;id&quot;:&quot;point&quot;,&quot;lat&quot;:5.3446,&quot;lng&quot;:-4.0802,&quot;label&quot;:&quot;Gare Siporex&quot;,&quot;tone&quot;:&quot;brand&quot;}],&quot;zones&quot;:[{&quot;lat&quot;:5.495,&quot;lng&quot;:-4.078,&quot;radius&quot;:200,&quot;label&quot;:&quot;Parking P3 \u00b7 porte Nord&quot;}]}" class="relative overflow-hidden rounded-[var(--radius-card)] ring-1 ring-hairline mt-5">
+    <div wire:ignore data-map-canvas role="img" aria-label="Position de votre bus" class="z-0" style="height: 260px"></div>
+</div>
+
+        <ol class="mt-6 space-y-3">
+            <!--[if BLOCK]><![endif]-->                <li wire:key="step-0" class="flex gap-4 rounded-[18px] bg-surface p-4 ring-1 ring-hairline">
+                    <span class="mt-1 size-3 shrink-0 rounded-full bg-success"></span>
+                    <div>
+                        <p class="text-[17px] font-semibold tabular-nums">15h15</p>
+                        <p class="text-[15px] text-ink-secondary">Embarquement à Gare Siporex</p>
+                    </div>
+                </li>
+                            <li wire:key="step-1" class="flex gap-4 rounded-[18px] bg-surface p-4 ring-1 ring-hairline">
+                    <span class="mt-1 size-3 shrink-0 rounded-full bg-success"></span>
+                    <div>
+                        <p class="text-[17px] font-semibold tabular-nums">14h39</p>
+                        <p class="text-[15px] text-ink-secondary">Départ du bus</p>
+                    </div>
+                </li>
+                            <li wire:key="step-2" class="flex gap-4 rounded-[18px] bg-surface p-4 ring-1 ring-2 ring-brand">
+                    <span class="mt-1 size-3 shrink-0 rounded-full bg-brand"></span>
+                    <div>
+                        <p class="text-[17px] font-semibold tabular-nums">16h03</p>
+                        <p class="text-[15px]">Arrivée au Stade Olympique d&#039;Ebimpé</p>
+                    </div>
+                </li>
+                            <li wire:key="step-3" class="flex gap-4 rounded-[18px] bg-surface p-4 ring-1 ring-hairline">
+                    <span class="mt-1 size-3 shrink-0 rounded-full bg-fill-strong"></span>
+                    <div>
+                        <p class="text-[17px] font-semibold tabular-nums">23h30</p>
+                        <p class="text-[15px] text-ink-secondary">Votre bus retour vous attend · Parking P5 · porte Est</p>
+                    </div>
+                </li>
+                            <li wire:key="step-4" class="flex gap-4 rounded-[18px] bg-surface p-4 ring-1 ring-hairline">
+                    <span class="mt-1 size-3 shrink-0 rounded-full bg-fill-strong"></span>
+                    <div>
+                        <p class="text-[17px] font-semibold tabular-nums">00h03</p>
+                        <p class="text-[15px] text-ink-secondary">Dépose à Yopougon</p>
+                    </div>
+                </li>
+            <!--[if ENDBLOCK]><![endif]-->        </ol>
+    <!--[if ENDBLOCK]><![endif]--></div>
+    </main>
+
+    <footer class="mx-auto hidden max-w-5xl px-6 py-10 text-[13px] text-ink-tertiary sm:block">
+        © 2026 ACCES EVENT · EVENT TRANS · <a href="/login" class="hover:text-ink">Espace professionnel</a>
+    </footer>
+
+    
+    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-canvas/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden" aria-label="Onglets">
+        <div class="grid grid-cols-4">
+                            <a href="http://localhost" wire:key="tab-0" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-ink-tertiary">
+                    <svg class="size-6" stroke-width="1.7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+</svg>
+                    Événements
+                </a>
+                            <a href="/mes-pass" wire:key="tab-1" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-ink-tertiary">
+                    <svg class="size-6" stroke-width="1.7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M4 7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3a2 2 0 0 0 0 4v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a2 2 0 0 0 0-4zm10-1v12" />
+</svg>
+                    Mes Pass
+                </a>
+                            <a href="/mon-trajet" wire:key="tab-2" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-brand">
+                    <svg class="size-6" stroke-width="1.7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2zm0 0v14m6-12v14" />
+</svg>
+                    Mon trajet
+                </a>
+                            <a href="/mon-compte" wire:key="tab-3" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-ink-tertiary">
+                    <svg class="size-6" stroke-width="1.7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1m6.5-8a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM21 19v-1a4 4 0 0 0-3-3.87M15 4.13a3.5 3.5 0 0 1 0 6.74" />
+</svg>
+                    Profil
+                </a>
+                    </div>
+    </nav>
+
+    <div x-data="{ toasts: [] }"
+     x-on:notify.window="const id = Date.now(); toasts.push({ id, message: $event.detail.message, tone: $event.detail.tone ?? 'success' }); setTimeout(() => toasts = toasts.filter(t => t.id !== id), 3500)"
+     class="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-[90] flex flex-col items-center gap-2 px-4"
+     role="status" aria-live="polite">
+    <template x-for="toast in toasts" :key="toast.id">
+        <div x-transition:enter="transition ease-[cubic-bezier(0.32,0.72,0,1)] duration-500"
+             x-transition:enter-start="-translate-y-6 scale-90 opacity-0"
+             x-transition:enter-end="translate-y-0 scale-100 opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full bg-[rgb(28_28_30/0.88)] py-2.5 pr-5 pl-3 text-[14px] font-medium tracking-[-0.01em] text-white shadow-[0_8px_32px_rgb(0_0_0/0.25)] ring-1 ring-white/10 backdrop-blur-2xl backdrop-saturate-150">
+            <span class="grid size-6 shrink-0 place-items-center rounded-full text-white" :class="toast.tone === 'danger' ? 'bg-[#ff453a]' : 'bg-[#30d158]'">
+                <svg x-show="toast.tone !== 'danger'" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+                <svg x-show="toast.tone === 'danger'" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6m0 4h.01"/></svg>
+            </span>
+            <span x-text="toast.message"></span>
+        </div>
+    </template>
+</div>
+    <!-- Livewire Scripts -->
+<script src="/livewire-e6aa2221/livewire.js?id=a964a3c8"   data-csrf="gxw7TjlMoi58DNf3g7WttKOC9J3oQccyjT3Oj1nu" data-module-url="/livewire-e6aa2221" data-update-uri="/livewire-e6aa2221/update" data-navigate-once="true"></script>
+</body>
+</html>

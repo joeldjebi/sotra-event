@@ -550,3 +550,46 @@
         color: transparent;
     }
 }
+
+/*
+| Cartes (Leaflet) : marqueurs en pastille façon Plans, tuiles assombries en thème sombre.
+*/
+@layer components {
+    .ui-map-marker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+        border-radius: 9999px;
+        padding: 0.2rem 0.6rem 0.2rem 0.45rem;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 0 0 2px rgb(255 255 255 / 0.9);
+
+        &::before {
+            content: '';
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 9999px;
+            background: rgb(255 255 255 / 0.9);
+        }
+    }
+
+    .ui-map-marker--success { background: #1f8a4c; }
+    .ui-map-marker--warning { background: #c2410c; }
+    .ui-map-marker--danger { background: #d70015; }
+    .ui-map-marker--neutral { background: #3a3a3c; }
+    .ui-map-marker--brand { background: #0f1b2d; }
+
+    .ui-map-dark .leaflet-tile-pane {
+        filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+    }
+
+    .ui-map-dark .leaflet-bar a,
+    .ui-map-dark .leaflet-control-attribution {
+        background-color: #2c2c2e;
+        color: #f5f5f7;
+        border-color: rgb(255 255 255 / 0.12);
+    }
+}

@@ -18,6 +18,7 @@ use App\Livewire\Site\Login as SiteLogin;
 use App\Livewire\Site\PassesIndex;
 use App\Livewire\Site\PassShow;
 use App\Livewire\Site\PayOrder;
+use App\Livewire\Site\Trip as SiteTrip;
 use App\Models\OutboundMessage;
 use App\Models\SmsMessage;
 use App\Support\LivewirePage;
@@ -30,7 +31,7 @@ Route::get('/', SiteHome::class)->name('home');
 Route::get('/evenements/{slug}', ChoosePass::class)->name('site.events.show');
 Route::get('/connexion', SiteLogin::class)->middleware('guest:customer')->name('site.login');
 Route::get('/pass/{pass}', PublicPassController::class)->middleware('signed')->name('site.passes.public');
-Route::view('/mon-trajet', 'site.trip')->name('site.trip');
+Route::get('/mon-trajet', SiteTrip::class)->name('site.trip');
 
 Route::middleware('auth:customer')->group(function () {
     Route::get('/commande/{order}/paiement', PayOrder::class)->name('site.orders.pay');
@@ -76,6 +77,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
             LivewirePage::route('evenements-proposes', 'proposed-events', 'company.proposed-events', 'Événements proposés', Permission::ProposedEventsRespond);
             LivewirePage::route('plan-de-transport', 'transport-plan', 'company.transport-plan', 'Plan de transport', Permission::OperationsManage);
+            LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsManage);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);
             LivewirePage::route('affectations', 'assignments', 'company.assignments', 'Bus & affectations', Permission::FleetManage);
             LivewirePage::route('bus', 'assignments.fleet', 'company.buses-table', 'Flotte', Permission::FleetManage);

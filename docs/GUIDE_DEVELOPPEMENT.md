@@ -315,6 +315,30 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** (sortie du lot 3 CDC) : **500 scans simulés hors ligne** sont synchronisés sans perte ni doublon (test automatisé), et un bus est suivi de bout en bout sur la carte.
 
+> **Réalisé le 13/11/2026** (229 tests verts, dont le test des 500 scans hors ligne).
+> - **API convoyeur** (`auth:sanctum` + capacité `conveyor` + middleware `staff.device`) :
+>   - `me/missions` ;
+>   - `missions/{id}/manifest`, `/boarding`, `/boarding-started`, `/depart`, `/arrive`, `/positions` ;
+>   - `scans` (en ligne) et `scans/sync` (lot hors ligne).
+> - **`ScanValidator`** :
+>   - même règle en ligne et hors ligne ; idempotence par `client_uuid` ;
+>   - vert, orange (autre bus : le Pass est réaffecté ; autre point) ou rouge (falsifié, ancien QR, déjà utilisé, offre différente, trajet non acheté, annulé, non payé, code inconnu, bus plein en ligne) ;
+>   - conflit entre deux appareils hors ligne : le scan le plus ancien l'emporte, l'autre est signalé (`conflict`).
+> - **Manifeste hors ligne** : Pass de l'événement pour l'offre du bus, version du QR, Pass attendus, Pass révoqués, clé publique Ed25519.
+> - **Terminaux** : en-tête `X-Device-Serial`. Un PDA enregistré et bloqué est refusé (`DEVICE_BLOCKED`), et sa synchronisation et sa version d'app sont notées. Un smartphone personnel non enregistré est accepté.
+> - **`TripTracker`** :
+>   - positions GPS par lot ;
+>   - arrivée détectée par `ST_DWithin` dans la zone de dépose à l'aller, et à moins de 300 m du point au retour ;
+>   - heure d'arrivée estimée d'après la distance restante et la vitesse.
+> - **Temps réel** : `MissionUpdated` est diffusé sur `events.{id}.operations`, un canal réservé à ACCES EVENT, à la compagnie et au promoteur de l'événement. Les écrans se rafraîchissent aussi par `wire:poll` (10 à 15 s).
+> - **Écrans** :
+>   - « Exploitation en direct » (carte Leaflet / OpenStreetMap, compteurs, positions, temps restant) ;
+>   - « Mon trajet » du spectateur (chronologie, bus suivi, arrivée estimée) ;
+>   - API `passes/{pass}/trip`.
+> - **Rappels** J-1 et H-2 (`passes:remind`, toutes les 15 min), un seul de chaque sorte par Pass.
+> - **Carte** : composant `<x-ui.map>` (Leaflet + Alpine), tuiles assombries en thème sombre.
+> - Les tuiles OpenStreetMap publiques conviennent au pilote ; en production, prévoir un fournisseur de tuiles (règles d'usage d'OSM).
+
 ### Étape 7 — Pannes et interventions
 - `/breakdowns` (avec photos) ; **urgence automatique** (passagers à bord → urgent) ; entrée SMS de secours (CV-19).
 - API technique : alertes de l'équipe et du secteur, triées ; `take` avec verrou (409 si déjà prise) ; étapes horodatées ; bus de réserve proches (distance PostGIS, temps OSRM) ; push et sonnerie (ST-06).
