@@ -254,6 +254,31 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** (sortie du lot 2 CDC) : achat complet d'un Pass avec 2 % de frais, reçu sur le web, par l'API et dans les journaux SMS/WhatsApp ; aucun Pass en double sous des paiements concurrents (test).
 
+> **Réalisé le 13/11/2026** (175 tests verts).
+> - **Vente** :
+>   - `CreateOrder` : contrôles, places bloquées 15 min, montants figés ;
+>   - `PricingService` : RG-11 à RG-16, arrondi entier sans flottant ;
+>   - `CapacityService` : places par offre **et par segment** (un aller simple ne consomme pas le retour).
+> - **Concurrence** : les réservations sont sérialisées par un verrou de ligne PostgreSQL sur `event_offers`, plutôt que par Redis. C'est plus simple et tout aussi sûr.
+> - **Paiement** :
+>   - interface `PaymentGateway` et agrégateur simulé `FakeAggregator`, avec un webhook signé HMAC ;
+>   - le webhook est enregistré dans `payment_events`, unique par (fournisseur, id) : traitement idempotent (PA-02) ;
+>   - tâches planifiées `orders:expire` (chaque minute) et `payments:reconcile` (toutes les 5 min, PA-03) ;
+>   - un paiement tardif sans places restantes passe la commande au statut « à rembourser » ; un double paiement est tracé.
+> - **Pass** :
+>   - code `ET-AAMM-NNNN-COM`, compteur par événement et par commune ;
+>   - jeton **Ed25519** `ET1.<charge>.<signature>` (~170 caractères), clé dérivée de APP_KEY sauf si `PASS_SIGNING_SECRET_KEY` est défini ;
+>   - QR en SVG ;
+>   - « Offrir » : la version est incrémentée, ce qui invalide l'ancien QR et l'ancien lien.
+> - **Envois** : SMS, WhatsApp et push simulés. Le lien du Pass est signé et contient sa version. Boîte d'envoi locale : `/dev/sms`.
+> - **Site spectateur** (Livewire, session `customer` par OTP) :
+>   - Accueil, Choisir mon Pass (sélection gardée dans l'URL après connexion), Paiement (attente avec `wire:poll`) ;
+>   - Mes Pass, Mon Pass (QR), Offrir, Profil, Mon trajet (en attente de l'étape 6) ;
+>   - lien public du Pass et simulateur de paiement `/simulateur-paiement/{référence}`.
+> - **API spectateur** : 14 routes documentées par Scramble sur `/docs/api`. Les prix sont exposés en liste `{zone, pass_type, price}`.
+> - **Kit de promotion du promoteur** (PR-06) : lien de vente, copier, QR à télécharger.
+> - **Données de démo** : le concert d'Ebimpé est maintenant **en vente**.
+
 ### Étape 5 — Plan de transport et missions
 - `GenerateMissions` : pour chaque point × offre × sens, ⌈vendus ÷ places⌉ missions. Affectation des Pass aller dans l'ordre d'achat, en gardant ensemble les Pass d'une même commande. Les ventes suivantes vont dans une mission qui a de la place.
 - Écran **Bus & affectations** : bus, chauffeur, convoyeur, PDA par mission ; ajustement manuel ; bus de réserve et leur position d'attente.

@@ -5,13 +5,42 @@ use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Web\Admin\EventEditorController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Promoter\DashboardController as PromoterDashboardController;
+use App\Http\Controllers\Web\Promoter\PromoKitController;
+use App\Http\Controllers\Web\Site\PaymentSimulatorController;
+use App\Http\Controllers\Web\Site\PublicPassController;
 use App\Http\Controllers\Web\SpaceRedirectController;
 use App\Http\Controllers\Web\TwoFactorEnrollmentController;
+use App\Livewire\Site\Account as SiteAccount;
+use App\Livewire\Site\ChoosePass;
+use App\Livewire\Site\Home as SiteHome;
+use App\Livewire\Site\Login as SiteLogin;
+use App\Livewire\Site\PassesIndex;
+use App\Livewire\Site\PassShow;
+use App\Livewire\Site\PayOrder;
+use App\Models\OutboundMessage;
 use App\Models\SmsMessage;
 use App\Support\LivewirePage;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+/*
+| Site spectateur (SP-01 à SP-25) : catalogue public, achat, Mes Pass. Session « customer » (connexion OTP).
+*/
+Route::get('/', SiteHome::class)->name('home');
+Route::get('/evenements/{slug}', ChoosePass::class)->name('site.events.show');
+Route::get('/connexion', SiteLogin::class)->middleware('guest:customer')->name('site.login');
+Route::get('/pass/{pass}', PublicPassController::class)->middleware('signed')->name('site.passes.public');
+Route::view('/mon-trajet', 'site.trip')->name('site.trip');
+
+Route::middleware('auth:customer')->group(function () {
+    Route::get('/commande/{order}/paiement', PayOrder::class)->name('site.orders.pay');
+    Route::get('/mes-pass', PassesIndex::class)->name('site.passes.index');
+    Route::get('/mes-pass/{pass}', PassShow::class)->name('site.passes.show');
+    Route::get('/mon-compte', SiteAccount::class)->name('site.account');
+});
+
+// Simulateur de l'agrégateur (pilote « fake », jamais en production).
+Route::get('/simulateur-paiement/{reference}', [PaymentSimulatorController::class, 'show'])->name('payments.simulator');
+Route::post('/simulateur-paiement/{reference}', [PaymentSimulatorController::class, 'respond'])->name('payments.simulator.respond');
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/espace', SpaceRedirectController::class)->name('space');
@@ -54,6 +83,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::prefix('promoteur')->name('promoter.')->middleware('space:promoter')->group(function () {
             Route::get('/', PromoterDashboardController::class)->name('dashboard');
+            Route::middleware('can:'.Permission::PromoKitView->value)->group(function () {
+                Route::get('kit', [PromoKitController::class, 'index'])->name('kit');
+                Route::get('kit/{event}/qr.svg', [PromoKitController::class, 'qr'])->name('kit.qr');
+            });
         });
     });
 });
@@ -62,5 +95,6 @@ if (app()->isLocal()) {
     // Boîte d'envoi des SMS simulés (codes OTP), uniquement en local.
     Route::get('/dev/sms', fn () => view('dev.sms', [
         'messages' => SmsMessage::query()->latest('id')->limit(50)->get(),
+        'outbound' => OutboundMessage::query()->latest('id')->limit(30)->get(),
     ]))->name('dev.sms');
 }

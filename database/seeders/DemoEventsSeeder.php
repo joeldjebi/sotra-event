@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 
 /**
  * Événements de démonstration (données d'exemple des maquettes, coordonnées approximatives) :
- * un concert accepté prêt à ouvrir la vente, un match proposé, un brunch en brouillon.
+ * un concert en vente (site spectateur), un match proposé à la compagnie, un brunch en brouillon.
  */
 class DemoEventsSeeder extends Seeder
 {
@@ -37,7 +37,7 @@ class DemoEventsSeeder extends Seeder
 
         $concertDay = Carbon::parse('2026-11-15');
 
-        $concert = $this->event('Concert au stade d\'Ebimpé', $ebimpe, $concertDay->copy()->setTime(18, 0), $sotra, $promoter, $lead, $admin, EventStatus::Accepted, 3000, true);
+        $concert = $this->event('Concert au stade d\'Ebimpé', $ebimpe, $concertDay->copy()->setTime(18, 0), $sotra, $promoter, $lead, $admin, EventStatus::OnSale, 3000, true);
         $this->points($concert, $zones, [
             ['YOP', 'Gare Siporex', 5.3446, -4.0802, '15:30'],
             ['ABO', 'Gare d\'Abobo', 5.4180, -4.0200, '15:45'],
@@ -84,7 +84,8 @@ class DemoEventsSeeder extends Seeder
             'featured' => $featured,
             'created_by' => $admin?->id,
             'proposed_at' => $status === EventStatus::Draft ? null : now(),
-            'accepted_at' => $status === EventStatus::Accepted ? now() : null,
+            'accepted_at' => in_array($status, [EventStatus::Accepted, EventStatus::OnSale], true) ? now() : null,
+            'sale_opened_at' => $status === EventStatus::OnSale ? now() : null,
         ]);
     }
 

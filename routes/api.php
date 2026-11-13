@@ -1,7 +1,12 @@
 <?php
 
+use App\Enums\TokenAbility;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\Customer\EventController;
+use App\Http\Controllers\Api\V1\Customer\OrderController;
+use App\Http\Controllers\Api\V1\Customer\PassController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,4 +23,23 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', MeController::class)->name('me');
     });
+
+    // Catalogue public (SP-01 à SP-05)
+    Route::get('events', [EventController::class, 'index'])->name('events.index');
+    Route::get('events/{event}', [EventController::class, 'show'])->whereNumber('event')->name('events.show');
+
+    // Spectateur connecté
+    Route::middleware(['auth:sanctum', 'abilities:'.TokenAbility::Customer->value])->group(function () {
+        Route::post('orders/quote', [OrderController::class, 'quote'])->name('orders.quote');
+        Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:30,1')->name('orders.store');
+        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('orders/{order}/pay', [OrderController::class, 'pay'])->middleware('throttle:10,1')->name('orders.pay');
+
+        Route::get('me/passes', [PassController::class, 'index'])->name('passes.index');
+        Route::get('passes/{pass}', [PassController::class, 'show'])->name('passes.show');
+        Route::post('passes/{pass}/transfer', [PassController::class, 'transfer'])->middleware('throttle:10,1')->name('passes.transfer');
+    });
+
+    // Agrégateur de paiement (PA-02)
+    Route::post('payments/webhook/{provider}', PaymentWebhookController::class)->middleware('throttle:120,1')->name('payments.webhook');
 });

@@ -2,8 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGateway;
+use App\Contracts\PushSender;
 use App\Contracts\SmsSender;
+use App\Contracts\WhatsAppSender;
 use App\Enums\Role;
+use App\Integrations\Messaging\LogPushSender;
+use App\Integrations\Messaging\LogWhatsAppSender;
+use App\Integrations\Payment\FakeAggregator;
 use App\Integrations\Sms\LogSmsSender;
 use App\Models\User;
 use App\Support\PhoneNumber;
@@ -24,6 +30,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(PaymentGateway::class, fn (): PaymentGateway => match (config('eventtrans.drivers.payment')) {
+            'fake' => new FakeAggregator,
+            default => throw new InvalidArgumentException('Pilote de paiement inconnu : '.config('eventtrans.drivers.payment')),
+        });
+
+        $this->app->bind(WhatsAppSender::class, fn (): WhatsAppSender => match (config('eventtrans.drivers.whatsapp')) {
+            'log' => new LogWhatsAppSender,
+            default => throw new InvalidArgumentException('Pilote WhatsApp inconnu : '.config('eventtrans.drivers.whatsapp')),
+        });
+
+        $this->app->bind(PushSender::class, fn (): PushSender => match (config('eventtrans.drivers.push')) {
+            'log' => new LogPushSender,
+            default => throw new InvalidArgumentException('Pilote push inconnu : '.config('eventtrans.drivers.push')),
+        });
+
         $this->app->bind(SmsSender::class, function (): SmsSender {
             return match (config('eventtrans.drivers.sms')) {
                 'log' => new LogSmsSender,

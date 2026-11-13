@@ -27,7 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserIsActive::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('login'));
+        // Espace spectateur → connexion par SMS ; espaces professionnels → connexion Fortify.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->routeIs('site.*') ? route('site.login') : route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

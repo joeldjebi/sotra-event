@@ -79,4 +79,30 @@ return [
         'YOP' => 'Yopougon',
     ],
 
+    /*
+    | Vente des Pass.
+    */
+    'sales' => [
+        // Places bloquées pendant le paiement (§ 11 CDC, statut « en attente de paiement »).
+        'hold_minutes' => 15,
+        // Limite de Pass par commande (SP-06, décision du 13/11).
+        'max_passes_per_order' => 10,
+    ],
+
+    /*
+    | Paiement. Le pilote « fake » simule l'agrégateur (attente, confirmation, webhook signé).
+    */
+    'payment' => [
+        'webhook_secret' => env('PAYMENT_WEBHOOK_SECRET'),
+        // Délai après lequel un paiement en attente est vérifié auprès de l'agrégateur (PA-03).
+        'reconcile_after_minutes' => 2,
+    ],
+
+    /*
+    | Signature des QR des Pass (NF-01). Sans clé configurée, une paire Ed25519 est dérivée de APP_KEY.
+    */
+    'pass_signing' => [
+        'secret_key' => env('PASS_SIGNING_SECRET_KEY'),
+    ],
+
 ];

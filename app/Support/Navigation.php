@@ -69,7 +69,7 @@ final class Navigation
                     ['Fiche événement', 'calendar', null, Permission::EventTracking],
                     ['Zones de dépose', 'map-pin', null, Permission::EventTracking],
                     ['Messages aux spectateurs', 'chat', null, Permission::PromoterMessagesSend],
-                    ['Kit de promotion', 'qr', null, Permission::PromoKitView],
+                    ['Kit de promotion', 'qr', 'promoter.kit', Permission::PromoKitView],
                     ['Bilan', 'document', null, Permission::EventTracking],
                 ]],
             ],
