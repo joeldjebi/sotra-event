@@ -1,5 +1,5 @@
 <x-layouts.app :title="'Bonjour, '.Str::before(auth()->user()->name, ' ')" :subtitle="$company?->name">
-    <div class="grid gap-4 sm:grid-cols-3">
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
         @foreach ($staffCounts as $label => $count)
             <x-ui.kpi wire:key="staff-{{ $loop->index }}" :label="$label.'s'" :value="$count" hint="dans votre compagnie" />
         @endforeach
@@ -7,13 +7,13 @@
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         <x-ui.card padding="p-0">
-            <div class="flex items-center justify-between px-6 pt-5 pb-3">
-                <h2 class="text-[17px] font-semibold tracking-tight">Événements proposés à valider</h2>
+            <div class="flex items-center justify-between px-6 pt-5 pb-3.5">
+                <h2 class="text-headline">Événements proposés à valider</h2>
                 @can('proposed-events.respond')
-                    <a href="{{ route('company.proposed-events') }}" class="text-[14px] font-medium text-brand hover:underline">Tout voir</a>
+                    <a href="{{ route('company.proposed-events') }}" class="inline-flex items-center gap-0.5 text-[14px] font-medium text-brand-text hover:opacity-70">Tout voir<x-ui.icon name="chevron-right" class="size-3.5" stroke-width="2.2" /></a>
                 @endcan
             </div>
-            <ul class="divide-y divide-hairline border-t border-hairline">
+            <ul class="ui-list border-t border-separator">
                 @forelse ($pendingEvents as $event)
                     <li wire:key="pending-{{ $event->id }}" class="flex items-center justify-between gap-3 px-6 py-3.5">
                         <div class="min-w-0">
@@ -30,13 +30,13 @@
         </x-ui.card>
 
         <x-ui.card padding="p-0">
-            <div class="px-6 pt-5 pb-3"><h2 class="text-[17px] font-semibold tracking-tight">Prochains événements</h2></div>
-            <ul class="divide-y divide-hairline border-t border-hairline">
+            <div class="px-6 pt-5 pb-3.5"><h2 class="text-headline">Prochains événements</h2></div>
+            <ul class="ui-list border-t border-separator" style="--list-inset: 5.5rem">
                 @forelse ($upcomingEvents as $event)
                     <li wire:key="upcoming-{{ $event->id }}" class="flex items-center gap-4 px-6 py-3.5">
-                        <div class="grid w-12 shrink-0 place-items-center rounded-xl bg-brand-soft py-1.5 text-brand">
-                            <span class="text-[17px] leading-none font-semibold">{{ $event->starts_at->format('d') }}</span>
-                            <span class="text-[11px] font-semibold uppercase">{{ $event->starts_at->translatedFormat('M') }}</span>
+                        <div class="grid w-12 shrink-0 place-items-center gap-0.5 rounded-[12px] bg-surface py-1.5 shadow-[var(--shadow-card)] ring-1 ring-hairline">
+                            <span class="font-rounded text-[20px] leading-none font-semibold tabular-nums">{{ $event->starts_at->format('d') }}</span>
+                            <span class="text-[10px] font-bold tracking-[0.04em] text-brand-text uppercase">{{ $event->starts_at->translatedFormat('M') }}</span>
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="truncate font-medium">{{ $event->name }}</p>

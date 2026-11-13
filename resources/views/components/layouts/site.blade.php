@@ -44,7 +44,7 @@
     </footer>
 
     {{-- Barre d'onglets façon application (SP : Événements · Mes Pass · Mon trajet · Profil) --}}
-    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden" aria-label="Onglets">
+    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-canvas/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden" aria-label="Onglets">
         <div class="grid grid-cols-4">
             @foreach ($tabs as [$label, $icon, $url, $active])
                 <a href="{{ $url }}" wire:key="tab-{{ $loop->index }}" @class(['flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium', 'text-brand' => $active, 'text-ink-tertiary' => ! $active])>

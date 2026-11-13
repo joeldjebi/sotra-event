@@ -14,7 +14,7 @@
         </x-slot:head>
 
         @forelse ($promoters as $promoter)
-            <tr wire:key="promoter-{{ $promoter->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="promoter-{{ $promoter->id }}" class="hover:bg-fill-subtle">
                 <td class="font-medium">{{ $promoter->name }}</td>
                 <td class="text-ink-secondary">
                     <p>{{ $promoter->email ?? '—' }}</p>

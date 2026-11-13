@@ -1,5 +1,5 @@
 <x-layouts.app title="Tableau de bord" :subtitle="now()->translatedFormat('l j F Y')">
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <x-ui.kpi label="Compagnies" :value="$stats['companies']" hint="partenaires de transport" />
         <x-ui.kpi label="Promoteurs" :value="$stats['promoters']" hint="organisateurs d'événements" />
         <x-ui.kpi label="Utilisateurs" :value="$stats['users']" hint="comptes des espaces web" />

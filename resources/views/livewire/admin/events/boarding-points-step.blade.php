@@ -2,7 +2,7 @@
     <x-ui.card padding="p-0">
         <div class="flex flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
             <div>
-                <h2 class="text-[19px] font-semibold tracking-tight">Points d'embarquement</h2>
+                <h2 class="text-title-3">Points d'embarquement</h2>
                 <p class="text-[13px] text-ink-secondary">Zone calculée selon la distance au lieu. Les bus sont répartis selon les ventes : pas de quota par point.</p>
             </div>
             @unless ($locked)
@@ -15,13 +15,13 @@
         @endif
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-[14px]">
-                <thead class="border-y border-hairline bg-canvas/60 text-[12px] text-ink-secondary">
-                    <tr class="[&>th]:px-5 [&>th]:py-3 [&>th]:font-medium [&>th]:whitespace-nowrap">
+            <table class="ui-table border-t border-separator">
+                <thead>
+                    <tr>
                         <th>Commune</th><th>Lieu de montée</th><th>Départ aller</th><th>Départ retour</th><th class="text-right">Distance</th><th>Zone</th><th></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-hairline [&_td]:px-5 [&_td]:py-3.5">
+                <tbody>
                     @forelse ($points as $point)
                         <tr wire:key="point-{{ $point->id }}">
                             <td class="font-medium">{{ $point->commune }}</td>

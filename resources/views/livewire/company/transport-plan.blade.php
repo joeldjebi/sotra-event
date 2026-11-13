@@ -8,7 +8,7 @@
         <x-ui.card wire:key="plan-{{ $event->id }}">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2 class="text-[19px] font-semibold tracking-tight">{{ $event->name }}</h2>
+                    <h2 class="text-title-3">{{ $event->name }}</h2>
                     <p class="text-[13px] text-ink-secondary">{{ $event->venue->name }} · {{ $event->starts_at->translatedFormat('l j F Y, H\hi') }}
                         @if ($event->estimated_passes) · {{ number_format($event->estimated_passes, 0, ',', ' ') }} Pass estimés @endif</p>
                 </div>
@@ -16,25 +16,25 @@
             </div>
 
             <form wire:submit="save({{ $event->id }})" class="mt-5">
-                <div class="overflow-x-auto rounded-2xl ring-1 ring-hairline">
-                    <table class="w-full text-left text-[14px]">
-                        <thead class="bg-canvas/60 text-[12px] text-ink-secondary">
-                            <tr class="[&>th]:px-4 [&>th]:py-2.5 [&>th]:font-medium"><th>Offre</th><th>Bus</th><th>Places par bus</th><th class="text-right">Capacité</th><th class="text-right">Flotte disponible</th></tr>
+                <div class="overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] ring-1 ring-hairline">
+                    <table class="ui-table ui-table--compact">
+                        <thead>
+                            <tr><th>Offre</th><th>Bus</th><th>Places par bus</th><th class="text-right">Capacité</th><th class="text-right">Flotte disponible</th></tr>
                         </thead>
-                        <tbody class="divide-y divide-hairline">
+                        <tbody>
                             @foreach ($event->offers as $offer)
                                 @php($available = $fleet[$offer->offer->value] ?? null)
-                                <tr wire:key="offer-row-{{ $offer->id }}" class="align-top [&>td]:px-4 [&>td]:py-2.5">
+                                <tr wire:key="offer-row-{{ $offer->id }}" class="[&>td]:!align-top">
                                     <td class="font-medium">{{ $offer->offer->label() }}</td>
                                     <td class="w-36">
-                                        <input type="number" min="1" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.bus_count" class="h-10 w-full rounded-xl bg-surface px-3 tabular-nums ring-1 ring-inset ring-hairline focus:ring-2 focus:ring-brand focus:outline-none">
+                                        <input type="number" min="1" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.bus_count" class="ui-field h-10 px-3" @error("capacity.{$offer->id}.bus_count") aria-invalid="true" @enderror>
                                         @error("capacity.{$offer->id}.bus_count") <p class="mt-1 text-[12px] text-danger">{{ $message }}</p> @enderror
                                     </td>
                                     <td class="w-36">
-                                        <input type="number" min="10" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.seats_per_bus" class="h-10 w-full rounded-xl bg-surface px-3 tabular-nums ring-1 ring-inset ring-hairline focus:ring-2 focus:ring-brand focus:outline-none">
+                                        <input type="number" min="10" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.seats_per_bus" class="ui-field h-10 px-3" @error("capacity.{$offer->id}.seats_per_bus") aria-invalid="true" @enderror>
                                         @error("capacity.{$offer->id}.seats_per_bus") <p class="mt-1 text-[12px] text-danger">{{ $message }}</p> @enderror
                                     </td>
-                                    <td class="text-right text-[17px] font-semibold tabular-nums">{{ ($cap = $capacityOf($offer)) ? number_format($cap, 0, ',', ' ') : '—' }}</td>
+                                    <td class="text-right font-rounded text-[19px] font-semibold tabular-nums">{{ ($cap = $capacityOf($offer)) ? number_format($cap, 0, ',', ' ') : '—' }}</td>
                                     <td class="text-right text-[13px] text-ink-secondary">{{ $available ? $available->total.' bus' : 'aucun bus '.$offer->offer->label() }}</td>
                                 </tr>
                             @endforeach
@@ -51,7 +51,7 @@
 
     @if ($onSale->isNotEmpty())
         <section>
-            <h2 class="mb-3 text-[19px] font-semibold tracking-tight">En vente</h2>
+            <h2 class="mb-3 text-title-3">En vente</h2>
             <x-ui.table>
                 <x-slot:head><th>Événement</th><th>Date</th><th>Capacité par offre</th></x-slot:head>
                 @foreach ($onSale as $event)

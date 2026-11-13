@@ -3,12 +3,12 @@
         <div class="flex flex-wrap items-center gap-3">
             <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Nom ou e-mail" />
             {{-- Contrôle segmenté façon iOS --}}
-            <div class="inline-flex rounded-[10px] bg-fill p-0.5 text-[13px] font-medium">
-                <button type="button" wire:click="$set('spaceFilter', '')" @class(['rounded-[8px] px-3 py-1.5 transition', 'bg-surface shadow-sm' => $spaceFilter === '', 'text-ink-secondary' => $spaceFilter !== ''])>Tous</button>
+            <x-ui.segmented label="Filtrer par espace">
+                <x-ui.segment :active="$spaceFilter === ''" wire:click="$set('spaceFilter', '')">Tous</x-ui.segment>
                 @foreach (['admin' => 'ACCES EVENT', 'company' => 'Compagnies', 'promoter' => 'Promoteurs'] as $value => $label)
-                    <button type="button" wire:key="filter-{{ $value }}" wire:click="$set('spaceFilter', '{{ $value }}')" @class(['rounded-[8px] px-3 py-1.5 transition', 'bg-surface shadow-sm' => $spaceFilter === $value, 'text-ink-secondary' => $spaceFilter !== $value])>{{ $label }}</button>
+                    <x-ui.segment wire:key="filter-{{ $value }}" :active="$spaceFilter === $value" wire:click="$set('spaceFilter', '{{ $value }}')">{{ $label }}</x-ui.segment>
                 @endforeach
-            </div>
+            </x-ui.segmented>
         </div>
         <x-ui.button wire:click="create" type="button" icon="sparkles">Nouvel utilisateur</x-ui.button>
     </div>
@@ -24,10 +24,10 @@
         </x-slot:head>
 
         @forelse ($users as $user)
-            <tr wire:key="user-{{ $user->id }}" @class(['hover:bg-canvas/50', 'opacity-55' => ! $user->is_active])>
+            <tr wire:key="user-{{ $user->id }}" @class(['hover:bg-fill-subtle', 'opacity-55' => ! $user->is_active])>
                 <td>
                     <div class="flex items-center gap-3">
-                        <span class="grid size-9 shrink-0 place-items-center rounded-full bg-marine-900 text-[12px] font-semibold text-white">{{ $user->initials() }}</span>
+                        <x-ui.avatar :initials="$user->initials()" />
                         <div>
                             <p class="font-medium">{{ $user->name }} @unless ($user->is_active)<x-ui.badge class="ml-1">Désactivé</x-ui.badge>@endunless</p>
                             <p class="text-[13px] text-ink-secondary">{{ $user->email }}</p>
@@ -51,16 +51,16 @@
                 <td class="text-right whitespace-nowrap" x-data="{ menu: false }">
                     <div class="relative inline-block text-left">
                         <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $user->id }})">Modifier</x-ui.button>
-                        <button type="button" class="ml-1 inline-grid size-8 place-items-center rounded-full text-ink-secondary hover:bg-fill" x-on:click="menu = !menu" aria-label="Plus d'actions">
+                        <button type="button" class="ml-1 inline-grid size-8 place-items-center rounded-full bg-fill text-ink-secondary transition hover:bg-fill-strong hover:text-ink active:scale-90" x-on:click="menu = !menu" aria-label="Plus d'actions" :aria-expanded="menu">
                             <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
                         </button>
                         <div x-cloak x-show="menu" x-on:click.outside="menu = false" x-transition.origin.top.right
-                             class="absolute right-0 z-20 mt-2 w-60 rounded-2xl bg-surface p-1.5 text-left shadow-[var(--shadow-float)] ring-1 ring-hairline">
-                            <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-[14px] hover:bg-fill" wire:click="sendInvitation({{ $user->id }})" x-on:click="menu = false">Renvoyer le lien de connexion</button>
-                            <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-[14px] hover:bg-fill" wire:click="resetTwoFactor({{ $user->id }})"
+                             class="ui-popover elevated absolute right-0 z-20 mt-2 w-64 p-1.5 text-left" role="menu">
+                            <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="sendInvitation({{ $user->id }})" x-on:click="menu = false">Renvoyer le lien de connexion</button>
+                            <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="resetTwoFactor({{ $user->id }})"
                                     wire:confirm="Réinitialiser la double authentification ? L'utilisateur devra la réactiver à sa prochaine connexion." x-on:click="menu = false">Réinitialiser la 2FA</button>
                             @if ($user->id !== auth()->id())
-                                <button type="button" @class(['w-full rounded-xl px-3 py-2 text-left text-[14px]', 'text-danger hover:bg-danger-soft' => $user->is_active, 'hover:bg-fill' => ! $user->is_active])
+                                <button type="button" role="menuitem" @class(['flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors', 'text-danger hover:bg-danger hover:text-white' => $user->is_active, 'hover:bg-brand hover:text-white' => ! $user->is_active])
                                         wire:click="toggleActive({{ $user->id }})" wire:confirm="{{ $user->is_active ? 'Désactiver ce compte ?' : 'Réactiver ce compte ?' }}" x-on:click="menu = false">
                                     {{ $user->is_active ? 'Désactiver le compte' : 'Réactiver le compte' }}
                                 </button>
@@ -97,8 +97,8 @@
                 @endif
 
                 <div>
-                    <p class="mb-1.5 text-[13px] font-medium text-ink-secondary">Rôles</p>
-                    <div class="rounded-xl bg-canvas px-3 py-2">
+                    <p class="mb-1.5 px-0.5 text-footnote font-medium text-ink-secondary">Rôles</p>
+                    <div class="divide-y divide-separator rounded-[var(--radius-card)] bg-surface px-3 py-1 [&>label]:rounded-none shadow-[var(--shadow-card)] ring-1 ring-hairline">
                         @foreach ($availableRoles as $role)
                             <x-ui.checkbox wire:key="role-option-{{ $role->value }}" :label="$role->label()" value="{{ $role->value }}" wire:model="roles" />
                         @endforeach

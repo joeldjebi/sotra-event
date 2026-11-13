@@ -6,10 +6,10 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach ($availableChannels as $channel)
                         <label wire:key="channel-{{ $channel->value }}" @class([
-                            'inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-medium ring-1 transition',
-                            'cursor-not-allowed bg-fill text-ink-tertiary ring-transparent' => ! $channel->isAvailable(),
-                            'cursor-pointer bg-success-soft text-success ring-success/30' => $channel->isAvailable() && in_array($channel->value, $channels, true),
-                            'cursor-pointer bg-surface ring-hairline hover:bg-canvas' => $channel->isAvailable() && ! in_array($channel->value, $channels, true),
+                            'inline-flex h-9 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition duration-200 active:scale-[0.97] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-focus',
+                            'cursor-not-allowed bg-fill-subtle text-ink-tertiary' => ! $channel->isAvailable(),
+                            'cursor-pointer bg-brand text-white shadow-[0_1px_2px_rgb(0_0_0/0.1)]' => $channel->isAvailable() && in_array($channel->value, $channels, true),
+                            'cursor-pointer bg-fill text-ink hover:bg-fill-strong' => $channel->isAvailable() && ! in_array($channel->value, $channels, true),
                         ])>
                             <input type="checkbox" class="sr-only" value="{{ $channel->value }}" wire:model.live="channels" @disabled(! $channel->isAvailable())>
                             {{ $channel->label() }}
@@ -22,7 +22,7 @@
             <section class="space-y-4">
                 <x-ui.section-title title="Présentation" />
                 <div class="flex flex-wrap items-center gap-5">
-                    <div class="grid size-28 shrink-0 place-items-center overflow-hidden rounded-2xl bg-fill">
+                    <div class="grid size-28 shrink-0 place-items-center overflow-hidden rounded-[22px] bg-fill ring-1 ring-hairline">
                         @if ($visual)
                             <img src="{{ $visual->temporaryUrl() }}" alt="" class="size-full object-cover">
                         @elseif ($event->visualUrl())
@@ -33,7 +33,7 @@
                     </div>
                     <div class="space-y-2">
                         <label class="inline-flex cursor-pointer">
-                            <span class="inline-flex h-9 items-center rounded-full bg-surface px-4 text-[13px] font-medium ring-1 ring-hairline hover:bg-canvas">Choisir un visuel</span>
+                            <span class="inline-flex h-8 items-center rounded-full bg-fill px-3.5 text-[13px] font-medium text-brand-text transition hover:bg-fill-strong active:scale-[0.97]">Choisir un visuel</span>
                             <input type="file" accept="image/*" class="sr-only" wire:model="visual">
                         </label>
                         <p class="text-[13px] text-ink-tertiary">JPG ou PNG, 4 Mo maximum.</p>
@@ -50,12 +50,12 @@
     <x-ui.card padding="p-0">
         <div class="flex flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
             <div>
-                <h2 class="text-[19px] font-semibold tracking-tight">Zones de dépose et de reprise</h2>
+                <h2 class="text-title-3">Zones de dépose et de reprise</h2>
                 <p class="text-[13px] text-ink-secondary">Un bus qui entre dans le périmètre de dépose est compté « arrivé ».</p>
             </div>
             <x-ui.button type="button" variant="secondary" wire:click="createZone" icon="map-pin">Ajouter une zone</x-ui.button>
         </div>
-        <ul class="divide-y divide-hairline border-t border-hairline">
+        <ul class="ui-list border-t border-separator">
             @forelse ($zones as $zone)
                 <li wire:key="zone-{{ $zone->id }}" class="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5">
                     <div>

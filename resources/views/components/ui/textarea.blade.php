@@ -1,15 +1,20 @@
-@props(['label', 'name', 'rows' => 3, 'error' => null])
+@props(['label', 'name', 'rows' => 3, 'error' => null, 'hint' => null])
 @php
     $message = $error ?? $errors->first($name);
+    $id = $attributes->get('id', $name);
+    $describedBy = $message || $hint ? $id.'-help' : null;
 @endphp
 <div class="space-y-1.5">
-    <label for="{{ $attributes->get('id', $name) }}" class="block text-[13px] font-medium text-ink-secondary">{{ $label }}</label>
-    <textarea id="{{ $attributes->get('id', $name) }}" name="{{ $name }}" rows="{{ $rows }}"
-        {{ $attributes->except(['id'])->merge([
-            'class' => 'block w-full rounded-xl bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-tertiary ring-1 ring-inset transition focus:outline-none focus:ring-2 '
-                .($message ? 'ring-danger/60 focus:ring-danger' : 'ring-hairline focus:ring-brand'),
-        ]) }}></textarea>
+    @if (filled($label))
+        <label for="{{ $id }}" class="block px-0.5 text-footnote font-medium text-ink-secondary">{{ $label }}</label>
+    @endif
+    <textarea id="{{ $id }}" name="{{ $name }}" rows="{{ $rows }}"
+        @if ($message) aria-invalid="true" @endif
+        @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
+        {{ $attributes->except(['id'])->merge(['class' => 'ui-field min-h-11 resize-y px-3.5 py-2.5 leading-normal']) }}></textarea>
     @if ($message)
-        <p class="text-[13px] text-danger">{{ $message }}</p>
+        <p id="{{ $describedBy }}" class="flex items-center gap-1 px-0.5 text-footnote text-danger"><x-ui.icon name="exclamation" class="size-3.5 shrink-0" />{{ $message }}</p>
+    @elseif ($hint)
+        <p id="{{ $describedBy }}" class="px-0.5 text-footnote text-ink-tertiary">{{ $hint }}</p>
     @endif
 </div>

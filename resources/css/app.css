@@ -4,58 +4,517 @@
 @source '../../storage/framework/views/*.php';
 
 /*
-| Design EVENT TRANS, inspiré d'Apple : typographie système, fonds gris clair, surfaces blanches,
-| coins arrondis généreux, filets fins, flou de transparence. Charte « Le Pass en route » : marine et orange.
+| Design system EVENT TRANS — langage visuel Apple (apple.com, iCloud, Réglages macOS/iOS).
+| Charte « Le Pass en route » : marine #0f1b2d, orange #c2410c (couleur d'accent).
+|
+| Les couleurs sont des jetons sémantiques (fond, surface, texte, filets, remplissages) redéfinis
+| en mode sombre plus bas : toute classe Tailwind qui les utilise (bg-surface, text-ink-secondary,
+| ring-hairline…) bascule automatiquement, comme les couleurs dynamiques d'UIKit/AppKit.
 */
 @theme {
+    /* Pile SF Pro (Apple), Inter auto-hébergée en repli sur Windows/Android/Linux. */
     --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', Roboto,
         'Helvetica Neue', Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue',
+        Arial, sans-serif;
+    /* SF Pro Rounded, utilisée par Apple pour les chiffres des widgets (Santé, Forme, Météo). */
+    --font-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto,
+        sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
+    /* Échelle typographique Apple (Dynamic Type, taille « Large » adaptée au web). */
+    --text-display: 4rem;
+    --text-display--line-height: 1.05;
+    --text-display--letter-spacing: -0.035em;
+    --text-display--font-weight: 700;
+    --text-large-title: 2.125rem;
+    --text-large-title--line-height: 1.15;
+    --text-large-title--letter-spacing: -0.026em;
+    --text-large-title--font-weight: 700;
+    --text-title-1: 1.75rem;
+    --text-title-1--line-height: 1.2;
+    --text-title-1--letter-spacing: -0.022em;
+    --text-title-1--font-weight: 700;
+    --text-title-2: 1.375rem;
+    --text-title-2--line-height: 1.25;
+    --text-title-2--letter-spacing: -0.018em;
+    --text-title-2--font-weight: 700;
+    --text-title-3: 1.1875rem;
+    --text-title-3--line-height: 1.3;
+    --text-title-3--letter-spacing: -0.016em;
+    --text-title-3--font-weight: 600;
+    --text-headline: 1.0625rem;
+    --text-headline--line-height: 1.35;
+    --text-headline--letter-spacing: -0.014em;
+    --text-headline--font-weight: 600;
+    --text-body: 1.0625rem;
+    --text-body--line-height: 1.45;
+    --text-body--letter-spacing: -0.012em;
+    --text-callout: 1rem;
+    --text-callout--line-height: 1.4;
+    --text-callout--letter-spacing: -0.01em;
+    --text-subheadline: 0.9375rem;
+    --text-subheadline--line-height: 1.4;
+    --text-subheadline--letter-spacing: -0.008em;
+    --text-footnote: 0.8125rem;
+    --text-footnote--line-height: 1.38;
+    --text-footnote--letter-spacing: -0.004em;
+    --text-caption: 0.75rem;
+    --text-caption--line-height: 1.33;
+    --text-caption-2: 0.6875rem;
+    --text-caption-2--line-height: 1.3;
+    --text-caption-2--letter-spacing: 0.006em;
+
+    /* Fonds et surfaces (clair). */
     --color-canvas: #f5f5f7;
     --color-surface: #ffffff;
+    --color-elevated: #ffffff;
+    --color-field: #ffffff;
     --color-ink: #1d1d1f;
     --color-ink-secondary: #6e6e73;
     --color-ink-tertiary: #86868b;
-    --color-hairline: rgb(0 0 0 / 0.08);
+    --color-hairline: rgb(0 0 0 / 0.07);
+    --color-separator: rgb(60 60 67 / 0.14);
+    --color-line: rgb(0 0 0 / 0.12);
+    --color-line-strong: rgb(0 0 0 / 0.22);
     --color-fill: rgb(120 120 128 / 0.12);
+    --color-fill-strong: rgb(120 120 128 / 0.2);
+    --color-fill-subtle: rgb(120 120 128 / 0.06);
 
+    /* Matériaux translucides (vibrancy) : à combiner avec backdrop-blur. */
+    --color-material: rgb(255 255 255 / 0.72);
+    --color-material-thick: rgb(255 255 255 / 0.86);
+    --color-sidebar: rgb(242 242 245 / 0.78);
+    --color-bubble: #e9e9eb;
+
+    /* Charte. */
     --color-marine-950: #0b1422;
     --color-marine-900: #0f1b2d;
     --color-marine-800: #1b2a40;
+    --color-marine-700: #2a3b55;
 
     --color-brand: #c2410c;
     --color-brand-hover: #a7380b;
     --color-brand-soft: #fdeee6;
+    --color-brand-text: #b23c0b;
+    --color-focus: rgb(194 65 12 / 0.4);
 
-    --color-success: #1f8a4c;
-    --color-success-soft: #e3f5ea;
+    /* Bouton « fort » : marine en clair, clair sur marine en sombre (comme les boutons label d'Apple). */
+    --color-inverse: #0f1b2d;
+    --color-inverse-hover: #1b2a40;
+    --color-on-inverse: #ffffff;
+
+    /* Couleurs système Apple, versions « contraste accessible » pour le texte. */
+    --color-success: #248a3d;
+    --color-success-soft: #e4f6e9;
     --color-warning: #b25e00;
-    --color-warning-soft: #fdf1df;
+    --color-warning-soft: #fff2de;
     --color-danger: #d70015;
-    --color-danger-soft: #fde7e9;
+    --color-danger-soft: #fdeaeb;
+    --color-info: #0071e3;
+    --color-info-soft: #e5f1fd;
+    --color-switch: #34c759;
 
-    --radius-card: 1.25rem;
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
-    --shadow-float: 0 12px 40px rgb(0 0 0 / 0.12);
+    /* Formes et profondeur : rayons 12–22 px, ombres très douces. */
+    --radius-control: 0.75rem;
+    --radius-card: 1.125rem;
+    --radius-sheet: 1.375rem;
+    --shadow-card: 0 1px 1px rgb(0 0 0 / 0.02), 0 2px 6px rgb(0 0 0 / 0.03), 0 8px 24px rgb(0 0 0 / 0.03);
+    --shadow-control: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+    --shadow-float: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.1), 0 24px 64px rgb(0 0 0 / 0.12);
+
+    --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* Mode sombre automatique, valeurs inspirées des couleurs dynamiques d'iOS/macOS. */
 @layer base {
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --color-canvas: #000000;
+            --color-surface: #1c1c1e;
+            --color-elevated: #1c1c1e;
+            --color-field: rgb(255 255 255 / 0.06);
+            --color-ink: #f5f5f7;
+            --color-ink-secondary: #a1a1a6;
+            --color-ink-tertiary: #7c7c82;
+            --color-hairline: rgb(255 255 255 / 0.08);
+            --color-separator: rgb(84 84 88 / 0.5);
+            --color-line: rgb(255 255 255 / 0.12);
+            --color-line-strong: rgb(255 255 255 / 0.24);
+            --color-fill: rgb(118 118 128 / 0.24);
+            --color-fill-strong: rgb(118 118 128 / 0.34);
+            --color-fill-subtle: rgb(118 118 128 / 0.12);
+
+            --color-material: rgb(22 22 24 / 0.72);
+            --color-material-thick: rgb(28 28 30 / 0.86);
+            --color-sidebar: rgb(30 30 32 / 0.74);
+            --color-bubble: #2c2c2e;
+
+            --color-brand: #e2541a;
+            --color-brand-hover: #f0662b;
+            --color-brand-soft: rgb(226 84 26 / 0.18);
+            --color-brand-text: #ff8a4c;
+            --color-focus: rgb(255 138 76 / 0.45);
+
+            --color-inverse: #f5f5f7;
+            --color-inverse-hover: #ffffff;
+            --color-on-inverse: #0f1b2d;
+
+            --color-success: #30d158;
+            --color-success-soft: rgb(48 209 88 / 0.16);
+            --color-warning: #ffb340;
+            --color-warning-soft: rgb(255 159 10 / 0.16);
+            --color-danger: #ff6961;
+            --color-danger-soft: rgb(255 69 58 / 0.16);
+            --color-info: #409cff;
+            --color-info-soft: rgb(10 132 255 / 0.18);
+            --color-switch: #30d158;
+
+            --shadow-card: 0 0 0 0.5px rgb(255 255 255 / 0.04);
+            --shadow-control: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 0.5px rgb(255 255 255 / 0.06);
+            --shadow-float: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 12px 32px rgb(0 0 0 / 0.5), 0 32px 80px rgb(0 0 0 / 0.5);
+        }
+
+        /* Surfaces surélevées (feuilles, popovers) : un cran plus clair, comme les feuilles iOS. */
+        .elevated {
+            --color-canvas: #1c1c1e;
+            --color-surface: #2c2c2e;
+            --color-elevated: #2c2c2e;
+            --color-bubble: #3a3a3c;
+        }
+    }
+
     html {
+        color-scheme: light dark;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
         @apply bg-canvas text-ink;
+        font-size: 0.9375rem;
+        letter-spacing: -0.008em;
         font-feature-settings: 'cv11', 'ss01';
+    }
+
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
     }
 
     ::selection {
         @apply bg-brand/20;
     }
 
+    :focus-visible {
+        outline: 3px solid var(--color-focus);
+        outline-offset: 2px;
+    }
+
+    a,
+    button,
+    [role='button'],
+    label,
+    summary {
+        -webkit-tap-highlight-color: transparent;
+    }
+
     [x-cloak] {
         display: none !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+@layer components {
+    /* Champ de saisie Apple : arrondi 12 px, filet fin, anneau de focus teinté. */
+    .ui-field {
+        display: block;
+        width: 100%;
+        border-radius: var(--radius-control);
+        background-color: var(--color-field);
+        color: var(--color-ink);
+        box-shadow: inset 0 0 0 1px var(--color-line);
+        font-size: 1rem;
+        letter-spacing: -0.01em;
+        transition:
+            box-shadow 200ms var(--ease-apple),
+            background-color 200ms var(--ease-apple);
+        font-variant-numeric: tabular-nums;
+
+        &::placeholder {
+            color: var(--color-ink-tertiary);
+        }
+
+        &:hover:not(:focus):not(:disabled) {
+            box-shadow: inset 0 0 0 1px var(--color-line-strong);
+        }
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                inset 0 0 0 1px var(--color-brand),
+                0 0 0 4px var(--color-focus);
+        }
+
+        &[aria-invalid='true'] {
+            box-shadow: inset 0 0 0 1px var(--color-danger);
+        }
+
+        &[aria-invalid='true']:focus {
+            box-shadow:
+                inset 0 0 0 1px var(--color-danger),
+                0 0 0 4px color-mix(in oklab, var(--color-danger) 30%, transparent);
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            background-color: var(--color-fill-subtle);
+            color: var(--color-ink-secondary);
+        }
+
+        @media (width >= 40rem) {
+            font-size: 0.9375rem;
+        }
+    }
+
+    /* Case à cocher macOS : carré 18 px arrondi, remplie de la couleur d'accent. */
+    .ui-check {
+        appearance: none;
+        display: inline-grid;
+        place-content: center;
+        flex-shrink: 0;
+        width: 1.125rem;
+        height: 1.125rem;
+        border-radius: 0.3125rem;
+        background-color: var(--color-field);
+        box-shadow:
+            inset 0 0 0 1px var(--color-line-strong),
+            0 1px 1px rgb(0 0 0 / 0.04);
+        cursor: pointer;
+        transition:
+            background-color 150ms var(--ease-apple),
+            box-shadow 150ms var(--ease-apple),
+            transform 150ms var(--ease-apple);
+
+        &::after {
+            content: '';
+            width: 0.75rem;
+            height: 0.75rem;
+            background-color: #fff;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")
+                center / contain no-repeat;
+            transform: scale(0.4);
+            opacity: 0;
+            transition:
+                transform 200ms var(--ease-spring),
+                opacity 150ms var(--ease-apple);
+        }
+
+        &:checked {
+            background-color: var(--color-brand);
+            box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-brand) 80%, black);
+        }
+
+        &:checked::after {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        &:active {
+            transform: scale(0.92);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                inset 0 0 0 1px var(--color-brand),
+                0 0 0 4px var(--color-focus);
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    }
+
+    /* Contrôle segmenté iOS/macOS : piste grise, segment actif blanc surélevé. */
+    .ui-segmented {
+        display: inline-flex;
+        align-items: stretch;
+        gap: 0.125rem;
+        padding: 0.125rem;
+        border-radius: 0.5625rem;
+        background-color: var(--color-fill);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        letter-spacing: -0.006em;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .ui-segment {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        white-space: nowrap;
+        border-radius: 0.4375rem;
+        padding: 0.3125rem 0.875rem;
+        color: var(--color-ink);
+        transition:
+            background-color 200ms var(--ease-apple),
+            box-shadow 200ms var(--ease-apple),
+            color 200ms var(--ease-apple),
+            transform 150ms var(--ease-apple);
+
+        &:hover:not([aria-pressed='true']):not([aria-current]) {
+            background-color: var(--color-fill-subtle);
+        }
+
+        &:active {
+            transform: scale(0.97);
+        }
+
+        &[aria-pressed='true'],
+        &[aria-current] {
+            background-color: var(--color-surface);
+            box-shadow: var(--shadow-control);
+            font-weight: 600;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            &[aria-pressed='true'],
+            &[aria-current] {
+                background-color: #636366;
+                color: #fff;
+            }
+        }
+    }
+
+    /*
+    | Tableau léger : en-têtes discrets, lignes aérées, séparateurs fins indentés comme les listes iOS.
+    | Utilisé par <x-ui.table> et applicable à une <table> brute avec class="ui-table".
+    */
+    .ui-table {
+        width: 100%;
+        text-align: left;
+        font-size: 0.875rem;
+        letter-spacing: -0.006em;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        & thead th {
+            padding: 0.75rem 1.25rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            color: var(--color-ink-secondary);
+            white-space: nowrap;
+            border-bottom: 1px solid var(--color-separator);
+        }
+
+        & tbody td {
+            padding: 0.875rem 1.25rem;
+            vertical-align: middle;
+            background-repeat: no-repeat;
+            background-image: linear-gradient(var(--color-separator), var(--color-separator));
+            background-size: 100% 1px;
+            background-position: 0 0;
+        }
+
+        & tbody tr:first-child td {
+            background-image: none;
+        }
+
+        & tbody td:first-child {
+            background-size: calc(100% - 1.25rem) 1px;
+            background-position: 100% 0;
+        }
+
+        & tbody td:last-child {
+            background-size: calc(100% - 1.25rem) 1px;
+            background-position: 0 0;
+        }
+
+        & tbody td:only-child {
+            background-size: calc(100% - 2.5rem) 1px;
+            background-position: 50% 0;
+        }
+
+        & tbody tr {
+            transition: background-color 150ms var(--ease-apple);
+        }
+
+        &.ui-table--compact thead th {
+            padding: 0.625rem 1rem 0.5rem;
+        }
+
+        &.ui-table--compact tbody td {
+            padding: 0.625rem 1rem;
+        }
+
+        &.ui-table--compact tbody td:first-child,
+        &.ui-table--compact tbody td:last-child {
+            background-size: calc(100% - 1rem) 1px;
+        }
+    }
+
+    /* Liste « inset grouped » iOS : séparateurs indentés alignés sur le texte (--list-inset). */
+    .ui-list {
+        --list-inset: 1.5rem;
+
+        & > li {
+            position: relative;
+        }
+
+        & > li + li::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: var(--list-inset);
+            height: 1px;
+            background-color: var(--color-separator);
+            pointer-events: none;
+        }
+    }
+
+    /* Matériau translucide (barres, barre latérale, popovers). */
+    .ui-material {
+        background-color: var(--color-material);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+    }
+
+    .ui-popover {
+        background-color: var(--color-material-thick);
+        -webkit-backdrop-filter: saturate(180%) blur(24px);
+        backdrop-filter: saturate(180%) blur(24px);
+        box-shadow: var(--shadow-float);
+        border-radius: 0.875rem;
+    }
+
+    /* Texte en dégradé de la charte (titres héros façon apple.com). */
+    .ui-gradient-text {
+        background-image: linear-gradient(100deg, #c2410c 0%, #ea580c 45%, #f59e0b 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
     }
 }

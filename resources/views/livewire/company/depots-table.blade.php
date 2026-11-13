@@ -13,7 +13,7 @@
             <th></th>
         </x-slot:head>
         @forelse ($depots as $depot)
-            <tr wire:key="depot-{{ $depot->id }}" class="hover:bg-canvas/50">
+            <tr wire:key="depot-{{ $depot->id }}" class="hover:bg-fill-subtle">
                 <td>
                     <p class="font-medium">{{ $depot->name }}</p>
                     <p class="text-[13px] text-ink-secondary">{{ $depot->address }}</p>
