@@ -9,13 +9,15 @@ use Illuminate\Database\Eloquent\Model;
  * Journalise création, modification et suppression du modèle dans audit_logs (NF-04).
  *
  * Les attributs listés dans $auditExclude (et les secrets usuels) ne sont jamais journalisés.
+ * Les attributs listés dans $auditMasked sont journalisés comme « modifié » sans leur valeur
+ * (ex. coordonnées bancaires) : on sait qu'ils ont changé et par qui, sans exposer la donnée.
  */
 trait Auditable
 {
     public static function bootAuditable(): void
     {
         static::created(function (Model $model): void {
-            AuditLog::record('created', $model, [], self::auditableValues($model, $model->getAttributes()));
+            AuditLog::record('created', $model, [], self::masked($model, self::auditableValues($model, $model->getAttributes())));
         });
 
         static::updated(function (Model $model): void {
@@ -35,11 +37,11 @@ trait Auditable
                 $new[$key] = $model->getAttributeValue($key);
             }
 
-            AuditLog::record('updated', $model, $old, $new);
+            AuditLog::record('updated', $model, self::masked($model, $old), self::masked($model, $new));
         });
 
         static::deleted(function (Model $model): void {
-            AuditLog::record('deleted', $model, self::auditableValues($model, $model->getAttributes()), []);
+            AuditLog::record('deleted', $model, self::masked($model, self::auditableValues($model, $model->getAttributes())), []);
         });
     }
 
@@ -55,5 +57,22 @@ trait Auditable
         );
 
         return array_diff_key($values, array_flip($excluded));
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private static function masked(Model $model, array $values): array
+    {
+        $masked = property_exists($model, 'auditMasked') ? $model->auditMasked : [];
+
+        foreach ($masked as $key) {
+            if (array_key_exists($key, $values)) {
+                $values[$key] = $values[$key] === null ? null : '••••••';
+            }
+        }
+
+        return $values;
     }
 }

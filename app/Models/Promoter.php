@@ -14,9 +14,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property string $name
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $address
  * @property bool $is_active
  */
-#[Fillable(['name', 'email', 'phone', 'is_active'])]
+#[Fillable(['name', 'email', 'phone', 'address', 'is_active'])]
 class Promoter extends Model
 {
     /** @use HasFactory<PromoterFactory> */

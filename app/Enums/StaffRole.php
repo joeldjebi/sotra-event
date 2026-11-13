@@ -2,11 +2,15 @@
 
 namespace App\Enums;
 
+use App\Enums\Concerns\HasOptions;
+
 /**
  * Personnel terrain d'une compagnie. Seuls convoyeurs et techniciens se connectent (OTP).
  */
 enum StaffRole: string
 {
+    use HasOptions;
+
     case Driver = 'chauffeur';
     case Conveyor = 'convoyeur';
     case Technician = 'technicien';

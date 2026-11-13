@@ -169,6 +169,31 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** : la SOTRA, ses bus et son personnel sont saisis ou importés, et chaque profil se connecte.
 
+> **Réalisé le 13/11/2026** (106 tests verts).
+> - **Console** (`/admin/...`) :
+>   - Compagnies : contrat, commission par défaut, compte de reversement chiffré, masqué dans l'audit.
+>   - Promoteurs, avec la liste de leurs chefs de projet.
+>   - Lieux, avec position GPS.
+>   - Utilisateurs & rôles : invitation par lien, rôles par espace, activation, réinitialisation de la 2FA.
+>   - Journal d'audit en lecture seule.
+> - **Exploitation** (`/compagnie/...`) :
+>   - Bus : gamme, statut, dépôt, filtres par statut.
+>   - Dépôts, avec position GPS.
+>   - Chauffeurs, convoyeurs et techniciens. Désactiver un membre révoque ses jetons mobiles.
+>   - Équipes techniques : code, type, techniciens, disponibilité.
+>   - PDA et terminaux : attribution, blocage avec motif, et déconnexion de la personne à qui le terminal est attribué.
+> - **Import Excel / CSV « tout ou rien »** pour les bus et le personnel :
+>   - modèle téléchargeable ;
+>   - erreurs signalées ligne par ligne ;
+>   - mise à jour par immatriculation ou par téléphone ;
+>   - correction du 0 initial que supprime Excel.
+> - La désactivation de la 2FA par l'utilisateur (route Fortify) est neutralisée tant que la 2FA est obligatoire.
+> - **Ajouts au menu** par rapport aux maquettes : « Lieux » et « Journal d'audit » (console), « Dépôts » (exploitation).
+> - **Reporté** :
+>   - le contrôle du terminal à chaque appel API arrive à l'étape 6 ;
+>   - le secteur d'une équipe se choisit par événement à l'étape 7 ;
+>   - les affectations des bus aux missions arrivent à l'étape 5.
+
 ### Étape 3 — Événement : création, négociation, ouverture de la vente
 - Assistant Livewire en 4 étapes (AD-01 à AD-04), avec enregistrement du brouillon à tout moment :
   1. Informations (commission reprise de la fiche compagnie, modifiable) ;

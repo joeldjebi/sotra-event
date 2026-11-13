@@ -125,6 +125,7 @@
             {{ $slot }}
         </div>
     </main>
+    <x-ui.toasts />
     @livewireScripts
 </body>
 </html>

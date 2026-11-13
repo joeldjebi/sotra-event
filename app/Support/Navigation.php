@@ -25,11 +25,13 @@ final class Navigation
                 [null, [
                     ['Tableau de bord', 'home', 'admin.dashboard', Permission::PlatformDashboard],
                     ['Événements', 'calendar', null, Permission::EventsManage],
-                    ['Compagnies', 'building', null, Permission::CompaniesManage],
-                    ['Promoteurs', 'megaphone', null, Permission::PromotersManage],
+                    ['Lieux', 'map-pin', 'admin.venues', Permission::EventsManage],
+                    ['Compagnies', 'building', 'admin.companies', Permission::CompaniesManage],
+                    ['Promoteurs', 'megaphone', 'admin.promoters', Permission::PromotersManage],
                     ['Pass & ventes', 'ticket', null, Permission::PassesManage],
                     ['Reversements', 'banknotes', null, Permission::PayoutsManage],
-                    ['Utilisateurs & rôles', 'users', null, Permission::UsersManage],
+                    ['Utilisateurs & rôles', 'users', 'admin.users', Permission::UsersManage],
+                    ['Journal d\'audit', 'shield', 'admin.audit', Permission::AuditView],
                 ]],
             ],
             Space::Company => [
@@ -53,11 +55,12 @@ final class Navigation
                 ['Exploitation', [
                     ['Exploitation en direct', 'map', null, Permission::OperationsManage],
                     ['Plan de transport', 'route', null, Permission::OperationsManage],
-                    ['Bus & affectations', 'bus', null, Permission::FleetManage],
-                    ['Chauffeurs & convoyeurs', 'id-card', null, Permission::StaffManage],
+                    ['Bus & affectations', 'bus', 'company.buses', Permission::FleetManage],
+                    ['Dépôts', 'building', 'company.depots', Permission::FleetManage],
+                    ['Chauffeurs & convoyeurs', 'id-card', 'company.staff', Permission::StaffManage],
                     ['Pannes & interventions', 'wrench', null, Permission::BreakdownsManage],
-                    ['Équipes service technique', 'users', null, Permission::TechTeamsManage],
-                    ['PDA & terminaux', 'device', null, Permission::DevicesManage],
+                    ['Équipes service technique', 'users', 'company.tech-teams', Permission::TechTeamsManage],
+                    ['PDA & terminaux', 'device', 'company.devices', Permission::DevicesManage],
                 ]],
             ],
             Space::Promoter => [
