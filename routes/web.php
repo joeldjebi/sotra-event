@@ -78,6 +78,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             LivewirePage::route('evenements-proposes', 'proposed-events', 'company.proposed-events', 'Événements proposés', Permission::ProposedEventsRespond);
             LivewirePage::route('plan-de-transport', 'transport-plan', 'company.transport-plan', 'Plan de transport', Permission::OperationsManage);
             LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsManage);
+            LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsManage);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);
             LivewirePage::route('affectations', 'assignments', 'company.assignments', 'Bus & affectations', Permission::FleetManage);
             LivewirePage::route('bus', 'assignments.fleet', 'company.buses-table', 'Flotte', Permission::FleetManage);

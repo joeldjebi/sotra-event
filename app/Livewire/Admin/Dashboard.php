@@ -2,10 +2,15 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\AlertStatus;
+use App\Enums\BreakdownUrgency;
+use App\Enums\MissionStatus;
 use App\Enums\Offer;
 use App\Enums\Permission;
 use App\Livewire\Concerns\AuthorizesPermission;
+use App\Models\BreakdownAlert;
 use App\Models\Company;
+use App\Models\Mission;
 use App\Services\Reporting\PlatformMetrics;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -14,7 +19,7 @@ use Livewire\Component;
 /**
  * Console ACCES EVENT · Tableau de bord (AD-07) : ventes de la période, remplissage, pipeline des événements,
  * points d'attention. Filtres : période glissante (7, 30, 90 jours) et compagnie de transport.
- * La vue jour J (bus en route, pannes, réclamations) arrive avec les étapes 6 à 8.
+ * Carte jour J : bus en route et pannes en cours, toutes compagnies (ou la compagnie filtrée).
  */
 class Dashboard extends Component
 {
@@ -34,6 +39,32 @@ class Dashboard extends Component
     public function setPeriod(int $days): void
     {
         $this->period = in_array($days, PlatformMetrics::PERIODS, true) ? $days : 30;
+    }
+
+    /**
+     * Situation jour J : missions en cours et pannes ouvertes.
+     *
+     * @return array{on_route: int, boarding: int, incidents: int, open_alerts: int, urgent_alerts: int}
+     */
+    private function dayOf(?int $companyId): array
+    {
+        $missions = Mission::query()
+            ->when($companyId, fn ($query) => $query->whereHas('event', fn ($event) => $event->where('company_id', $companyId)))
+            ->whereIn('status', [MissionStatus::OnRoute, MissionStatus::Boarding, MissionStatus::Incident])
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $alerts = BreakdownAlert::query()
+            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
+            ->whereIn('status', [AlertStatus::Open, AlertStatus::Taken]);
+
+        return [
+            'on_route' => (int) ($missions[MissionStatus::OnRoute->value] ?? 0),
+            'boarding' => (int) ($missions[MissionStatus::Boarding->value] ?? 0),
+            'incidents' => (int) ($missions[MissionStatus::Incident->value] ?? 0),
+            'open_alerts' => (clone $alerts)->count(),
+            'urgent_alerts' => (clone $alerts)->where('urgency', BreakdownUrgency::Urgent)->count(),
+        ];
     }
 
     public function render(): View
@@ -77,6 +108,7 @@ class Dashboard extends Component
             'pipeline' => $metrics->pipeline(),
             'alerts' => $metrics->alerts(),
             'recent' => $metrics->recentOrders(),
+            'dayOf' => $this->dayOf($companyId),
         ]);
     }
 }

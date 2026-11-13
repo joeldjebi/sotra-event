@@ -101,4 +101,29 @@
             </form>
         </x-ui.card>
     @endif
+    @if ($event)
+        <x-ui.card>
+            <h2 class="text-[17px] font-semibold tracking-tight">Équipes techniques mobilisées</h2>
+            <p class="text-[13px] text-ink-secondary">Elles reçoivent les alertes de panne de l'événement (ST-01, ST-06).</p>
+            <ul class="mt-4 divide-y divide-hairline">
+                @forelse ($techAssignments as $assignment)
+                    <li wire:key="team-assignment-{{ $assignment->id }}" class="flex items-center justify-between py-2.5">
+                        <span>
+                            <span class="font-medium">Équipe {{ $assignment->techTeam->code }}</span>
+                            <span class="text-ink-secondary">· {{ $assignment->sector }} · {{ $assignment->techTeam->members->count() }} technicien(s)</span>
+                            <x-ui.badge :tone="$assignment->techTeam->status->tone()" class="ml-1">{{ $assignment->techTeam->status->label() }}</x-ui.badge>
+                        </span>
+                        <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeTechTeam({{ $assignment->id }})">Retirer</x-ui.button>
+                    </li>
+                @empty
+                    <li class="py-3 text-[14px] text-ink-tertiary">Aucune équipe mobilisée.</li>
+                @endforelse
+            </ul>
+            <form wire:submit="addTechTeam" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <x-ui.select label="Équipe" name="techTeamId" wire:model="techTeamId" :options="$teamOptions" placeholder="Choisir" />
+                <x-ui.input label="Secteur" name="sector" wire:model="sector" placeholder="Secteur Nord" />
+                <x-ui.button variant="secondary">Mobiliser</x-ui.button>
+            </form>
+        </x-ui.card>
+    @endif
 </div>

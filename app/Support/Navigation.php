@@ -58,7 +58,7 @@ final class Navigation
                     ['Bus & affectations', 'bus', 'company.assignments', Permission::FleetManage],
                     ['Dépôts', 'building', 'company.depots', Permission::FleetManage],
                     ['Chauffeurs & convoyeurs', 'id-card', 'company.staff', Permission::StaffManage],
-                    ['Pannes & interventions', 'wrench', null, Permission::BreakdownsManage],
+                    ['Pannes & interventions', 'wrench', 'company.breakdowns', Permission::BreakdownsManage],
                     ['Équipes service technique', 'users', 'company.tech-teams', Permission::TechTeamsManage],
                     ['PDA & terminaux', 'device', 'company.devices', Permission::DevicesManage],
                 ]],

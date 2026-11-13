@@ -6,8 +6,11 @@ use App\Http\Controllers\Api\V1\Customer\EventController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
 use App\Http\Controllers\Api\V1\Customer\PassController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\Staff\BreakdownController;
 use App\Http\Controllers\Api\V1\Staff\MissionController;
 use App\Http\Controllers\Api\V1\Staff\ScanController;
+use App\Http\Controllers\Api\V1\Tech\TechController;
+use App\Http\Controllers\Api\V1\Webhooks\InboundSmsController;
 use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,7 +57,25 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('missions/{mission}/positions', [MissionController::class, 'positions'])->middleware('throttle:120,1')->name('missions.positions');
         Route::post('scans', [ScanController::class, 'store'])->middleware('throttle:240,1')->name('scans.store');
         Route::post('scans/sync', [ScanController::class, 'sync'])->middleware('throttle:60,1')->name('scans.sync');
+        Route::post('breakdowns', [BreakdownController::class, 'store'])->middleware('throttle:20,1')->name('breakdowns.store');
     });
+
+    // App service technique (ST-01 à ST-16)
+    Route::prefix('tech')->name('tech.')->middleware(['auth:sanctum', 'abilities:'.TokenAbility::Tech->value, 'staff.device'])->group(function () {
+        Route::get('team', [TechController::class, 'team'])->name('team');
+        Route::patch('team', [TechController::class, 'updateTeam'])->name('team.update');
+        Route::post('position', [TechController::class, 'position'])->middleware('throttle:120,1')->name('position');
+        Route::get('alerts', [TechController::class, 'alerts'])->name('alerts');
+        Route::post('alerts/{alert}/take', [TechController::class, 'take'])->whereNumber('alert')->name('alerts.take');
+        Route::get('reserve-buses', [TechController::class, 'reserveBuses'])->name('reserve-buses');
+        Route::get('interventions', [TechController::class, 'history'])->name('interventions.index');
+        Route::get('interventions/{intervention}', [TechController::class, 'show'])->name('interventions.show');
+        Route::post('interventions/{intervention}/steps', [TechController::class, 'step'])->name('interventions.step');
+        Route::post('interventions/{intervention}/close', [TechController::class, 'close'])->name('interventions.close');
+    });
+
+    // Passerelle SMS : alerte panne en mode dégradé (CV-19)
+    Route::post('sms/inbound', InboundSmsController::class)->middleware('throttle:60,1')->name('sms.inbound');
 
     // Agrégateur de paiement (PA-02)
     Route::post('payments/webhook/{provider}', PaymentWebhookController::class)->middleware('throttle:120,1')->name('payments.webhook');

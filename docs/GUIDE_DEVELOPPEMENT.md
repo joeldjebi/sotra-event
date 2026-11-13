@@ -348,10 +348,38 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 
 **Terminé quand** : une panne simulée est traitée jusqu'au remplacement du bus, et l'alerte arrive en moins de 30 s (NF-07).
 
+> **Réalisé le 13/11/2026** (239 tests verts).
+> - **Signalement** :
+>   - `POST /api/v1/breakdowns` (convoyeur, jusqu'à 4 photos) ;
+>   - urgence automatique : passagers à bord ou accident → urgent ;
+>   - une seule alerte ouverte par mission ; la mission passe « Incident ».
+> - **SMS de secours** (CV-19) : `POST /api/v1/sms/inbound`, en-tête `X-Sms-Secret`, format `PANNE <bus> <TYPE> [précisions]`.
+> - **Équipes techniques** : mobilisées par événement et par secteur (écran Bus & affectations). Les techniciens des équipes disponibles reçoivent un push (sonnerie si urgent).
+> - **API technique** (`/api/v1/tech`, capacité `tech`) :
+>   - équipe, statut et position ;
+>   - alertes triées (urgentes d'abord) avec distance et temps estimé ;
+>   - `take` sous verrou (409 `ALERT_ALREADY_TAKEN`, 403 `TEAM_NOT_ASSIGNED`) ;
+>   - étapes horodatées, sans retour en arrière ;
+>   - bus de réserve les plus proches ; historique ; clôture.
+> - **Clôture** : réparé (la mission reprend son statut), remplacé (bus de réserve obligatoire) ou remorquage. Numéros `PN-0001`.
+> - **`BusReplacement`** (RG-20) :
+>   - nouvelle mission sur le bus de réserve, même convoyeur ;
+>   - Pass transférés, y compris ceux déjà scannés ;
+>   - ancien bus « En panne », retiré de la réserve ;
+>   - passagers prévenus par SMS, WhatsApp et push.
+> - **Scan de contrôle** dans le bus de remplacement : vert la première fois, sans consommer le trajet ; rouge ensuite.
+> - **Écrans** :
+>   - « Exploitation en direct » : carte « Panne signalée » avec **Envoyer l'équipe** et **Remplacer le bus** ;
+>   - nouvel écran **Pannes & interventions** (`/compagnie/pannes`) ;
+>   - carte « Jour J » du tableau de bord ACCES EVENT branchée (bus en route, pannes en cours).
+> - **Reporté** :
+>   - la réclamation collective au-delà de 20 min de retard passe à l'étape 8, avec les réclamations ;
+>   - le temps routier OSRM est remplacé pour l'instant par une estimation à vitesse moyenne.
+
 ### Étape 8 — Espaces partenaires, avis, réclamations
 - **Promoteur** : suivi en direct (PR-01 à PR-03, graphique du flux prévu et réel avec Chart.js), messages aux spectateurs (ciblage tous / point / bus / offre, journal et plafond, PR-04, PR-08), zones de dépose, fiche événement, bilan PDF.
 - **Qualité** : indicateurs QU-01 (à l'heure ≤ +10 min), notes par critère, réclamations (Traiter), équipages, ponctualité, **rapport PDF**, bilans du pilote.
-- **Spectateur** : avis sur 5 critères (SP-22), réclamation et suivi (SP-23).
+- **Spectateur** : avis sur 5 critères (SP-22), réclamation et suivi (SP-23) ; réclamation collective automatique si un retard dépasse 20 minutes (reportée de l'étape 7).
 - Console : **tableau de bord jour J** (AD-07), **Pass & ventes** : recherche, historique des scans, transfert, annulation (AD-10).
 
 **Terminé quand** (sortie du lot 4 CDC) : les indicateurs du jeu d'essai correspondent aux calculs du CDC (tests).

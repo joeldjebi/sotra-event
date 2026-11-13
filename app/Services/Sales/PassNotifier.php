@@ -5,6 +5,7 @@ namespace App\Services\Sales;
 use App\Contracts\PushSender;
 use App\Contracts\SmsSender;
 use App\Contracts\WhatsAppSender;
+use App\Models\Bus;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Pass;
@@ -50,6 +51,22 @@ class PassNotifier
     {
         $this->sendPasses($pass->holder, [$pass], $from);
         $this->sms->send(PhoneNumber::parse($from->phone), "EVENT TRANS : le Pass {$pass->code} a bien été offert. Il n'est plus valable sur votre téléphone.");
+    }
+
+    /**
+     * Bus remplacé après une panne (RG-20) : les passagers sont prévenus, leur Pass reste valable.
+     *
+     * @param  list<Pass>  $passes
+     */
+    public function busReplaced(array $passes, Bus $bus): void
+    {
+        foreach ($passes as $pass) {
+            $body = "EVENT TRANS : votre bus a eu une panne. Le bus {$bus->number} vous prend en charge, votre Pass {$pass->code} reste valable. Merci de votre patience.";
+            $phone = PhoneNumber::parse($pass->holder->phone);
+            $this->sms->send($phone, $body);
+            $this->whatsApp->send($phone, 'bus_replaced', $body, ['code' => $pass->code, 'bus' => $bus->number]);
+            $this->push->send($pass->holder, 'Changement de bus', $body, ['code' => $pass->code]);
+        }
     }
 
     /**

@@ -47,7 +47,7 @@ class ScanValidator
         $input = trim($input);
 
         return DB::transaction(function () use ($mission, $conveyor, $input, $clientUuid, $scannedAt, $offline, $deviceId, $segment): Scan {
-            [$pass, $result, $reason] = $this->decide($mission, $input, $segment, $scannedAt, $offline);
+            [$pass, $result, $reason, $segment] = $this->decide($mission, $input, $segment, $scannedAt, $offline);
 
             $scan = Scan::query()->create([
                 'client_uuid' => $clientUuid,
@@ -63,7 +63,7 @@ class ScanValidator
                 'scanned_at' => $scannedAt,
             ]);
 
-            if ($pass !== null && $result->accepted()) {
+            if ($pass !== null && $result->accepted() && $segment !== Segment::Control) {
                 $this->board($pass, $mission, $segment);
             }
 
@@ -76,10 +76,24 @@ class ScanValidator
     }
 
     /**
-     * @return array{0: Pass|null, 1: ScanResult, 2: ScanReason|null}
+     * @return array{0: Pass|null, 1: ScanResult, 2: ScanReason|null, 3: Segment}
      */
     private function decide(Mission $mission, string $input, Segment $segment, Carbon $scannedAt, bool $offline): array
     {
+        [$pass, $result, $reason] = $this->evaluate($mission, $input, $segment, $scannedAt, $offline);
+
+        return [$pass, $result, $reason, $this->controlSegment ?? $segment];
+    }
+
+    /** Segment « contrôle » retenu pour un passager transféré depuis un bus en panne. */
+    private ?Segment $controlSegment = null;
+
+    /**
+     * @return array{0: Pass|null, 1: ScanResult, 2: ScanReason|null}
+     */
+    private function evaluate(Mission $mission, string $input, Segment $segment, Carbon $scannedAt, bool $offline): array
+    {
+        $this->controlSegment = null;
         $pass = null;
 
         if (str_starts_with($input, 'ET1.')) {
@@ -120,6 +134,18 @@ class ScanValidator
 
         if ($pass->offer !== $mission->offer) {
             return [$pass, ScanResult::Red, ScanReason::OfferMismatch];
+        }
+
+        // Bus de remplacement après une panne (RG-20) : un passager déjà monté dans le bus en panne passe en
+        // « scan de contrôle », qui ne consomme pas de segment.
+        $replaced = Mission::query()->withoutGlobalScopes()->where('replaced_by_mission_id', $mission->id)->first();
+
+        if ($replaced !== null && $replaced->scans()->where('pass_id', $pass->id)->whereIn('result', [ScanResult::Green, ScanResult::Orange])->exists()) {
+            $this->controlSegment = Segment::Control;
+            $alreadyControlled = $mission->scans()->where('pass_id', $pass->id)->where('segment', Segment::Control)
+                ->whereIn('result', [ScanResult::Green, ScanResult::Orange])->exists();
+
+            return $alreadyControlled ? [$pass, ScanResult::Red, ScanReason::AlreadyUsed] : [$pass, ScanResult::Green, null];
         }
 
         $previous = Scan::query()

@@ -19,6 +19,7 @@ enum ScanReason: string
     case Outdated = 'qr_perime';
     case UnknownCode = 'code_inconnu';
     case BusFull = 'bus_plein';
+    case NotTransferred = 'non_transfere';
 
     public function label(): string
     {
@@ -35,6 +36,7 @@ enum ScanReason: string
             self::Outdated => 'Ancien QR (Pass offert à quelqu\'un d\'autre)',
             self::UnknownCode => 'Code inconnu',
             self::BusFull => 'Bus plein',
+            self::NotTransferred => 'Passager absent du bus en panne',
         };
     }
 }

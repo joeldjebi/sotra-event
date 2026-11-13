@@ -13,8 +13,10 @@ use App\Models\Bus;
 use App\Models\Device;
 use App\Models\Event;
 use App\Models\EventReserveBus;
+use App\Models\EventTechTeam;
 use App\Models\Mission;
 use App\Models\Staff;
+use App\Models\TechTeam;
 use App\Services\Operations\MissionAssignment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -40,6 +42,10 @@ class Assignments extends Component
     public ?int $reserveBusId = null;
 
     public string $waitingPlace = '';
+
+    public ?int $techTeamId = null;
+
+    public string $sector = '';
 
     protected function permission(): Permission
     {
@@ -95,6 +101,29 @@ class Assignments extends Component
     }
 
     /**
+     * Mobilise une équipe technique sur l'événement : elle recevra les alertes de panne (ST-01).
+     */
+    public function addTechTeam(): void
+    {
+        $event = $this->events()->findOrFail($this->eventId);
+
+        $this->validate([
+            'techTeamId' => ['required', Rule::exists('tech_teams', 'id')->where('company_id', $event->company_id)],
+            'sector' => ['required', 'string', 'max:120'],
+        ], attributes: ['techTeamId' => 'équipe', 'sector' => 'secteur']);
+
+        EventTechTeam::query()->updateOrCreate(['event_id' => $event->id, 'tech_team_id' => $this->techTeamId], ['sector' => $this->sector]);
+        $this->reset(['techTeamId', 'sector']);
+        $this->notify('Équipe mobilisée.');
+    }
+
+    public function removeTechTeam(int $assignmentId): void
+    {
+        EventTechTeam::query()->where('event_id', $this->eventId)->findOrFail($assignmentId)->delete();
+        $this->notify('Équipe retirée de l\'événement.');
+    }
+
+    /**
      * @return Builder<Event>
      */
     private function events()
@@ -134,6 +163,8 @@ class Assignments extends Component
             'conveyors' => Staff::query()->where('role', StaffRole::Conveyor)->where('is_active', true)->orderBy('last_name')->get(),
             'devices' => Device::query()->where('status', DeviceStatus::Active)->orderBy('label')->get(),
             'reserves' => $reserves,
+            'techAssignments' => $event?->techTeams()->with('techTeam.members')->get() ?? collect(),
+            'teamOptions' => TechTeam::query()->orderBy('code')->get()->mapWithKeys(fn (TechTeam $team) => [$team->id => "Équipe {$team->code} · {$team->type->label()}"])->all(),
             'reserveOptions' => Bus::query()->whereNotIn('id', $usedBusIds)->whereNotIn('status', [BusStatus::Broken, BusStatus::OutOfService])
                 ->orderByRaw('length(number), number')->get()->mapWithKeys(fn (Bus $bus) => [$bus->id => "Bus {$bus->number} · {$bus->capacity} places"])->all(),
         ]);

@@ -160,6 +160,14 @@ class Event extends Model
     }
 
     /**
+     * @return HasMany<EventTechTeam, $this>
+     */
+    public function techTeams(): HasMany
+    {
+        return $this->hasMany(EventTechTeam::class);
+    }
+
+    /**
      * @return list<Offer>
      */
     public function activeOffers(): array

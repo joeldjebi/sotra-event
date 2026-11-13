@@ -13,7 +13,7 @@ it('affiche le tableau de bord de la console aux profils ACCES EVENT', function 
         ->assertSeeLivewire(Dashboard::class)
         ->assertSee('Chiffre d\'affaires encaissé', false)
         ->assertSee('Remplissage des événements en vente')
-        ->assertSee('Disponible avec le suivi jour J');
+        ->assertSee('Aucune panne en cours');
 })->with([Role::SuperAdmin, Role::Operator]);
 
 it('refuse le tableau de bord de la console aux profils compagnie', function () {

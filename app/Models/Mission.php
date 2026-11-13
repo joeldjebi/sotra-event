@@ -32,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $actual_departure_at
  * @property Carbon|null $arrived_at
  * @property MissionStatus $status
+ * @property int|null $replaced_by_mission_id
  * @property-read Event $event
  * @property-read BoardingPoint $boardingPoint
  * @property-read Bus|null $bus
@@ -117,6 +118,16 @@ class Mission extends Model
     public function outboundPasses(): HasMany
     {
         return $this->hasMany(Pass::class, 'outbound_mission_id');
+    }
+
+    /**
+     * Mission de remplacement après une panne (RG-20).
+     *
+     * @return BelongsTo<Mission, $this>
+     */
+    public function replacedBy(): BelongsTo
+    {
+        return $this->belongsTo(Mission::class, 'replaced_by_mission_id');
     }
 
     /**

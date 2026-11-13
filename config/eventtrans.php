@@ -36,6 +36,8 @@ return [
 
     'sms' => [
         'sender_name' => env('SMS_SENDER_NAME', 'EVENTTRANS'),
+        // Secret partagé avec la passerelle pour les SMS entrants (alerte panne en mode dégradé, CV-19).
+        'inbound_secret' => env('SMS_INBOUND_SECRET'),
     ],
 
     /*

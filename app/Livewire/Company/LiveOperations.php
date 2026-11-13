@@ -2,15 +2,24 @@
 
 namespace App\Livewire\Company;
 
+use App\Enums\AlertStatus;
 use App\Enums\DropZoneUsage;
 use App\Enums\EventStatus;
 use App\Enums\MissionStatus;
 use App\Enums\Permission;
+use App\Enums\TechTeamStatus;
+use App\Exceptions\ApiException;
 use App\Livewire\Concerns\AuthorizesPermission;
+use App\Models\BreakdownAlert;
+use App\Models\Bus;
 use App\Models\Event;
 use App\Models\Mission;
+use App\Models\TechTeam;
+use App\Services\Operations\BreakdownService;
+use App\Services\Operations\BusReplacement;
 use App\Services\Operations\TripTracker;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -29,6 +38,12 @@ class LiveOperations extends Component
     #[Url(as: 'sens')]
     public string $direction = 'aller';
 
+    /** @var array<int|string, int|string|null> équipe choisie par alerte */
+    public array $dispatchTeam = [];
+
+    /** @var array<int|string, int|string|null> bus de réserve choisi par alerte */
+    public array $replacementBus = [];
+
     protected function permission(): Permission
     {
         return Permission::OperationsManage;
@@ -37,6 +52,50 @@ class LiveOperations extends Component
     public function mount(): void
     {
         $this->eventId ??= $this->events()->first()?->id;
+    }
+
+    /**
+     * Envoie une équipe technique disponible sur une panne (prise en charge pour son compte).
+     */
+    public function sendTeam(int $alertId, BreakdownService $breakdowns): void
+    {
+        $alert = BreakdownAlert::query()->where('event_id', $this->eventId)->findOrFail($alertId);
+        $team = TechTeam::query()->find((int) ($this->dispatchTeam[$alertId] ?? 0));
+
+        if ($team === null) {
+            $this->notify('Choisissez une équipe.', 'danger');
+
+            return;
+        }
+
+        try {
+            $intervention = $breakdowns->take($alert, $team);
+            $this->notify("Équipe {$team->code} envoyée · {$intervention->number}.");
+        } catch (ApiException $exception) {
+            $this->notify($exception->getMessage(), 'danger');
+        }
+    }
+
+    /**
+     * Remplace le bus en panne par un bus de réserve : les Pass suivent, les passagers sont prévenus (RG-20).
+     */
+    public function replaceBus(int $alertId, BusReplacement $replacement): void
+    {
+        $alert = BreakdownAlert::query()->with('mission')->where('event_id', $this->eventId)->findOrFail($alertId);
+        $bus = Bus::query()->find((int) ($this->replacementBus[$alertId] ?? 0));
+
+        if ($bus === null) {
+            $this->notify('Choisissez un bus de réserve.', 'danger');
+
+            return;
+        }
+
+        try {
+            $replacement->replace($alert->mission, $bus);
+            $this->notify("Bus {$bus->number} en remplacement, passagers prévenus.");
+        } catch (ValidationException $exception) {
+            $this->notify((string) collect($exception->errors())->flatten()->first(), 'danger');
+        }
     }
 
     /**
@@ -111,6 +170,17 @@ class LiveOperations extends Component
                 ])->values()->all(),
             ],
             'dropOff' => $event?->dropZones->firstWhere('usage', DropZoneUsage::DropOff),
+            'alerts' => $event === null ? collect() : BreakdownAlert::query()
+                ->with(['bus', 'mission.boardingPoint', 'mission.replacedBy.bus', 'reporter', 'techTeam', 'intervention'])
+                ->where('event_id', $event->id)
+                ->whereIn('status', [AlertStatus::Open, AlertStatus::Taken])
+                ->orderByRaw("case urgency when 'urgent' then 0 else 1 end")
+                ->get(),
+            'teamOptions' => $event === null ? [] : $event->techTeams()->with('techTeam')->get()
+                ->filter(fn ($assignment) => $assignment->techTeam->status === TechTeamStatus::Available)
+                ->mapWithKeys(fn ($assignment) => [$assignment->tech_team_id => "Équipe {$assignment->techTeam->code} · {$assignment->sector}"])->all(),
+            'reserveOptions' => $event === null ? [] : $event->reserveBuses()->with('bus')->get()
+                ->mapWithKeys(fn ($reserve) => [$reserve->bus_id => "Bus {$reserve->bus->number} · {$reserve->waiting_place}"])->all(),
         ]);
     }
 }
