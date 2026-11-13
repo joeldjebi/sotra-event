@@ -3,6 +3,8 @@
 use App\Enums\AlertStatus;
 use App\Enums\BusStatus;
 use App\Enums\Direction;
+use App\Enums\InterventionResult;
+use App\Enums\InterventionStep;
 use App\Enums\MissionStatus;
 use App\Enums\PassStatus;
 use App\Enums\Role;
@@ -21,6 +23,7 @@ use App\Models\OutboundMessage;
 use App\Models\SmsMessage;
 use App\Models\Staff;
 use App\Models\TechTeam;
+use App\Services\Operations\BreakdownService;
 use App\Services\Operations\MissionPlanner;
 use App\Services\Sales\PassTokenService;
 use Clickbar\Magellan\Data\Geometries\Point;
@@ -233,4 +236,13 @@ it('affiche les bus en route et les pannes en cours sur le tableau de bord ACCES
         ->get('/admin')
         ->assertOk()
         ->assertSee('1 en cours · dont 1 urgente(s)');
+});
+
+it('clôture une intervention juste après sa prise en charge, sans relecture en base', function () {
+    reportBreakdown();
+    $intervention = app(BreakdownService::class)->take(BreakdownAlert::query()->sole(), $this->team);
+
+    app(BreakdownService::class)->close($intervention, ['result' => InterventionResult::Repaired]);
+
+    expect($intervention->fresh()->step)->toBe(InterventionStep::Closed);
 });

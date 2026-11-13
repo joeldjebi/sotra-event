@@ -42,6 +42,17 @@ composer dev       # serveur web, Horizon (files), Reverb (temps réel), Vite
 
 La double authentification est obligatoire : à la première connexion, scannez le QR code avec une application d'authentification. En local, on peut la désactiver avec `TWO_FACTOR_ENFORCED=false`.
 
+### Jeu de démonstration pour une présentation
+```bash
+php artisan db:seed --class=DemoSalesSeeder        # historique de ventes du concert (base sans ventes)
+php artisan db:seed --class=DemoOperationsSeeder   # jour J en direct + bilan complet (relançable)
+```
+`DemoOperationsSeeder` crée, par les vrais services :
+- **« Festival des Grillades d'Abidjan »** (il y a 12 jours, terminé) : ventes, départs dont un à +25 min, panne avec bus remplacé, avis, réclamations, remboursements et reversement payé avec justificatif. Il remplit les écrans Qualité, Bilans du pilote, Bilan promoteur, Remboursements et Reversements.
+- **« Match de gala »** (aujourd'hui, en direct) : bus arrivés, en route, une panne urgente en attente de remplacement, un départ en retard de 40 min (réclamation collective) et des bus en embarquement. Il remplit Exploitation en direct, Suivi promoteur et la carte Jour J.
+
+Les horaires du match sont calés sur l'heure de lancement : **relancez le seeder juste avant la présentation**. Il efface et recrée ses deux événements, sans toucher au reste. SMS, WhatsApp et push y sont toujours simulés, même si `SMS_DRIVER=mtarget`.
+
 Personnel terrain SOTRA (connexion mobile par OTP) : convoyeurs `0700000001` et `0700000002`, technicien `0700000003`. Les codes OTP simulés s'affichent sur **/dev/sms**.
 
 ## Qualité

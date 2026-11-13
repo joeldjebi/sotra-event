@@ -46,6 +46,15 @@ class Intervention extends Model
 {
     use Auditable;
 
+    /**
+     * Valeur par défaut aussi en mémoire (la base met '[]'), pour un modèle utilisé juste après sa création.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'photos' => '[]',
+    ];
+
     protected function casts(): array
     {
         return [
