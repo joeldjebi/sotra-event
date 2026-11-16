@@ -112,6 +112,13 @@ it('expose une sonde de supervision (NF-08)', function () {
 
     Cache::forever(HealthController::SCHEDULER_HEARTBEAT, now()->timestamp);
     $this->getJson('/api/v1/health')->assertJsonPath('checks.scheduler', true);
+
+    // Redis rend les nombres sous forme de texte.
+    Cache::forever(HealthController::SCHEDULER_HEARTBEAT, (string) now()->timestamp);
+    $this->getJson('/api/v1/health')->assertJsonPath('checks.scheduler', true);
+
+    Cache::forever(HealthController::SCHEDULER_HEARTBEAT, (string) now()->subMinutes(5)->timestamp);
+    $this->getJson('/api/v1/health')->assertJsonPath('checks.scheduler', false);
 });
 
 it('ne stocke aucune donnée de carte bancaire (PA-06)', function () {

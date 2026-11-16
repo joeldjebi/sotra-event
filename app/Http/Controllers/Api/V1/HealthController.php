@@ -37,8 +37,9 @@ class HealthController extends Controller
         ];
 
         $backlog = $this->check(fn () => Queue::size() <= (int) config('eventtrans.ops.max_queue_backlog'));
+        // Redis renvoie les nombres sous forme de texte : on accepte toute valeur numérique.
         $heartbeat = Cache::get(self::SCHEDULER_HEARTBEAT);
-        $scheduler = is_int($heartbeat) && now()->timestamp - $heartbeat <= 180;
+        $scheduler = is_numeric($heartbeat) && now()->timestamp - (int) $heartbeat <= 180;
 
         $healthy = ! in_array(false, $checks, true);
 
