@@ -5,13 +5,13 @@ namespace App\Livewire\Admin;
 use App\Enums\Permission;
 use App\Enums\Role;
 use App\Enums\Space;
+use App\Livewire\Concerns\IssuesInitialPasswords;
 use App\Livewire\Concerns\ManagesRecords;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Promoter;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -28,7 +28,7 @@ use Livewire\Component;
  */
 class UsersTable extends Component
 {
-    use ManagesRecords;
+    use IssuesInitialPasswords, ManagesRecords;
 
     #[Url(except: '')]
     public string $spaceFilter = '';
@@ -52,9 +52,6 @@ class UsersTable extends Component
 
     /** Mot de passe initial donné par l'administrateur (facultatif) ; sinon, lien par e-mail. */
     public string $initial_password = '';
-
-    /** @var array{name: string, email: string, password: string}|null identifiants à transmettre, affichés une seule fois */
-    public ?array $issuedCredentials = null;
 
     protected function permission(): Permission
     {
@@ -134,8 +131,7 @@ class UsersTable extends Component
             ] + ($this->editingId === null ? ['password' => Str::password(40)] : []));
 
             if ($initialPassword !== '') {
-                $user->forceFill(['password' => Hash::make($initialPassword), 'must_change_password' => true])->save();
-                AuditLog::record('initial_password_set', $user);
+                $this->issueCredentials($user, $initialPassword);
             }
 
             $previousRoles = $user->getRoleNames()->sort()->values()->all();
@@ -149,9 +145,7 @@ class UsersTable extends Component
             return $user;
         });
 
-        if ($initialPassword !== '') {
-            $this->issuedCredentials = ['name' => $user->name, 'email' => $user->email, 'password' => $initialPassword];
-        } elseif ($this->editingId === null) {
+        if ($initialPassword === '' && $this->editingId === null) {
             Password::broker()->sendResetLink(['email' => $user->email]);
         }
 
@@ -164,25 +158,9 @@ class UsersTable extends Component
         });
     }
 
-    /**
-     * Propose un mot de passe initial lisible et conforme (12 caractères, lettres et chiffres).
-     */
-    public function generatePassword(): void
+    protected function passwordFields(): array
     {
-        $letters = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ';
-        $digits = '23456789';
-        $password = '';
-
-        for ($i = 0; $i < 10; $i++) {
-            $password .= $letters[random_int(0, strlen($letters) - 1)];
-        }
-
-        $this->initial_password = $password.$digits[random_int(0, 7)].$digits[random_int(0, 7)];
-    }
-
-    public function dismissCredentials(): void
-    {
-        $this->issuedCredentials = null;
+        return ['initial_password'];
     }
 
     public function toggleActive(int $userId): void

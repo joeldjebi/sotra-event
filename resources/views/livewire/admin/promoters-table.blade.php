@@ -1,4 +1,6 @@
 <div>
+    @include('partials.issued-credentials')
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Rechercher un promoteur" />
         <x-ui.button wire:click="create" type="button" icon="sparkles">Nouveau promoteur</x-ui.button>
@@ -24,7 +26,7 @@
                     @forelse ($promoter->users as $lead)
                         <span wire:key="lead-{{ $lead->id }}" class="mr-1 mb-1 inline-flex"><x-ui.badge>{{ $lead->name }}</x-ui.badge></span>
                     @empty
-                        <span class="text-[13px] text-ink-tertiary">Aucun — à créer dans Utilisateurs & rôles</span>
+                        <span class="text-[13px] text-ink-tertiary">Aucun — à créer avec « Modifier »</span>
                     @endforelse
                 </td>
                 <td><x-ui.badge :tone="$promoter->is_active ? 'success' : 'neutral'">{{ $promoter->is_active ? 'Actif' : 'Inactif' }}</x-ui.badge></td>
@@ -43,11 +45,28 @@
         <form id="promoter-form" wire:submit="save" class="space-y-4">
             <x-ui.input label="Nom" name="name" wire:model="name" />
             <div class="grid gap-4 sm:grid-cols-2">
-                <x-ui.input label="E-mail" name="email" type="email" wire:model="email" />
+                <x-ui.input label="E-mail" name="email" type="email" wire:model.blur="email" />
                 <x-ui.input label="Téléphone" name="phone" wire:model="phone" />
             </div>
             <x-ui.input label="Adresse" name="address" wire:model="address" />
             <x-ui.switch label="Promoteur actif" wire:model="is_active" />
+
+            @unless ($editingHasAccount)
+                <div class="space-y-4 rounded-[var(--radius-card)] bg-fill p-4">
+                    <x-ui.switch label="Créer le compte de connexion du chef de projet transport" wire:model.live="createAccount" />
+                    @if ($createAccount)
+                        <x-ui.input label="Nom du chef de projet" name="account_name" wire:model="account_name" placeholder="Prénom Nom" />
+                        <x-ui.input label="E-mail de connexion" name="account_email" type="email" wire:model="account_email" />
+                        <div class="flex items-end gap-2">
+                            <div class="min-w-0 flex-1">
+                                <x-ui.input label="Mot de passe" name="account_password" wire:model="account_password" autocomplete="off"
+                                            hint="Au moins 12 caractères, avec des lettres et des chiffres. Il devra le changer à sa première connexion." />
+                            </div>
+                            <x-ui.button variant="secondary" type="button" wire:click="generatePassword('account_password')" class="mb-[1px]">Générer</x-ui.button>
+                        </div>
+                    @endif
+                </div>
+            @endunless
         </form>
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
