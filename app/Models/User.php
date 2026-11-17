@@ -26,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $company_id
  * @property int|null $promoter_id
  * @property bool $is_active
+ * @property bool $must_change_password
  * @property string $theme
  * @property-read Company|null $company
  * @property-read Promoter|null $promoter
@@ -51,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];

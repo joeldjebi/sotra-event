@@ -57,6 +57,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/espace', SpaceRedirectController::class)->name('space');
     Route::put('/preferences/theme', ThemePreferenceController::class)->name('preferences.theme');
     Route::get('/securite/double-authentification', TwoFactorEnrollmentController::class)->name('security.two-factor');
+    Route::view('/securite/mot-de-passe', 'security.password')->name('security.password');
 
     // La 2FA est obligatoire (NF-03) : la désactivation proposée par Fortify est neutralisée.
     // Seul un administrateur peut la réinitialiser (Utilisateurs & rôles).
@@ -65,7 +66,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('two-factor.disable');
     }
 
-    Route::middleware('two-factor.enrolled')->group(function () {
+    Route::middleware(['two-factor.enrolled', 'password.changed'])->group(function () {
         Route::prefix('admin')->name('admin.')->middleware('space:admin')->group(function () {
             Route::get('/', AdminDashboardController::class)->name('dashboard');
 

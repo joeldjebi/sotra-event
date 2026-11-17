@@ -11,9 +11,11 @@ use App\Models\Company;
 use App\Models\Promoter;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -21,7 +23,8 @@ use Livewire\Component;
 /**
  * Console ACCES EVENT · Utilisateurs & rôles (AD-12).
  *
- * Un compte créé reçoit un lien pour choisir son mot de passe ; il activera sa 2FA à la première connexion.
+ * Un compte créé reçoit soit un lien par e-mail pour choisir son mot de passe, soit un mot de passe initial donné
+ * par l'administrateur (affiché une seule fois, à changer à la première connexion). Il active sa 2FA à la première connexion.
  */
 class UsersTable extends Component
 {
@@ -47,6 +50,12 @@ class UsersTable extends Component
 
     public bool $is_active = true;
 
+    /** Mot de passe initial donné par l'administrateur (facultatif) ; sinon, lien par e-mail. */
+    public string $initial_password = '';
+
+    /** @var array{name: string, email: string, password: string}|null identifiants à transmettre, affichés une seule fois */
+    public ?array $issuedCredentials = null;
+
     protected function permission(): Permission
     {
         return Permission::UsersManage;
@@ -64,7 +73,7 @@ class UsersTable extends Component
 
     public function create(): void
     {
-        $this->reset(['name', 'email', 'phone', 'space', 'roles', 'company_id', 'promoter_id', 'is_active', 'editingId']);
+        $this->reset(['name', 'email', 'phone', 'space', 'roles', 'company_id', 'promoter_id', 'is_active', 'editingId', 'initial_password']);
         $this->resetValidation();
         $this->showForm = true;
     }
@@ -82,6 +91,7 @@ class UsersTable extends Component
         $this->company_id = $user->company_id;
         $this->promoter_id = $user->promoter_id;
         $this->is_active = $user->is_active;
+        $this->initial_password = '';
         $this->showForm = true;
     }
 
@@ -100,7 +110,10 @@ class UsersTable extends Component
             'company_id' => [Rule::requiredIf($space === Space::Company), 'nullable', 'exists:companies,id'],
             'promoter_id' => [Rule::requiredIf($space === Space::Promoter), 'nullable', 'exists:promoters,id'],
             'is_active' => ['boolean'],
-        ], attributes: ['name' => 'nom', 'roles' => 'rôles', 'company_id' => 'compagnie', 'promoter_id' => 'promoteur']);
+            'initial_password' => ['nullable', 'string', PasswordRule::default()],
+        ], attributes: ['name' => 'nom', 'roles' => 'rôles', 'company_id' => 'compagnie', 'promoter_id' => 'promoteur', 'initial_password' => 'mot de passe initial']);
+
+        $initialPassword = trim($this->initial_password);
 
         $isSelf = $this->editingId === auth()->id();
 
@@ -110,7 +123,7 @@ class UsersTable extends Component
             return;
         }
 
-        $user = DB::transaction(function () use ($space): User {
+        $user = DB::transaction(function () use ($space, $initialPassword): User {
             $user = User::query()->updateOrCreate(['id' => $this->editingId], [
                 'name' => $this->name,
                 'email' => Str::lower($this->email),
@@ -119,6 +132,11 @@ class UsersTable extends Component
                 'promoter_id' => $space === Space::Promoter ? $this->promoter_id : null,
                 'is_active' => $this->is_active,
             ] + ($this->editingId === null ? ['password' => Str::password(40)] : []));
+
+            if ($initialPassword !== '') {
+                $user->forceFill(['password' => Hash::make($initialPassword), 'must_change_password' => true])->save();
+                AuditLog::record('initial_password_set', $user);
+            }
 
             $previousRoles = $user->getRoleNames()->sort()->values()->all();
             $user->syncRoles($this->roles);
@@ -131,12 +149,40 @@ class UsersTable extends Component
             return $user;
         });
 
-        if ($this->editingId === null) {
+        if ($initialPassword !== '') {
+            $this->issuedCredentials = ['name' => $user->name, 'email' => $user->email, 'password' => $initialPassword];
+        } elseif ($this->editingId === null) {
             Password::broker()->sendResetLink(['email' => $user->email]);
         }
 
         $this->showForm = false;
-        $this->notify($this->editingId ? "{$user->name} mis à jour." : "Invitation envoyée à {$user->email}.");
+        $this->initial_password = '';
+        $this->notify(match (true) {
+            $initialPassword !== '' => "Mot de passe initial défini pour {$user->name}.",
+            $this->editingId !== null => "{$user->name} mis à jour.",
+            default => "Invitation envoyée à {$user->email}.",
+        });
+    }
+
+    /**
+     * Propose un mot de passe initial lisible et conforme (12 caractères, lettres et chiffres).
+     */
+    public function generatePassword(): void
+    {
+        $letters = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ';
+        $digits = '23456789';
+        $password = '';
+
+        for ($i = 0; $i < 10; $i++) {
+            $password .= $letters[random_int(0, strlen($letters) - 1)];
+        }
+
+        $this->initial_password = $password.$digits[random_int(0, 7)].$digits[random_int(0, 7)];
+    }
+
+    public function dismissCredentials(): void
+    {
+        $this->issuedCredentials = null;
     }
 
     public function toggleActive(int $userId): void

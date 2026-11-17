@@ -1,4 +1,21 @@
 <div>
+    @if ($issuedCredentials)
+        <div class="mb-5 rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-hairline sm:p-5" role="status">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[15px] font-semibold">Identifiants de {{ $issuedCredentials['name'] }}</p>
+                    <p class="text-[13px] text-ink-secondary">À transmettre de façon sûre (en main propre, par téléphone). Ils ne seront plus affichés. Le mot de passe devra être changé à la première connexion.</p>
+                </div>
+                <x-ui.button variant="secondary" size="sm" type="button" wire:click="dismissCredentials">J’ai transmis les identifiants</x-ui.button>
+            </div>
+            <dl class="mt-3 grid gap-2 text-[14px] sm:grid-cols-3">
+                <div><dt class="text-ink-tertiary">Adresse de connexion</dt><dd class="font-medium">{{ route('login') }}</dd></div>
+                <div><dt class="text-ink-tertiary">E-mail</dt><dd class="font-medium break-all">{{ $issuedCredentials['email'] }}</dd></div>
+                <div><dt class="text-ink-tertiary">Mot de passe initial</dt><dd><code class="rounded-md bg-fill px-2 py-0.5 font-mono text-[15px] font-semibold select-all">{{ $issuedCredentials['password'] }}</code></dd></div>
+            </dl>
+        </div>
+    @endif
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
             <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Nom ou e-mail" />
@@ -79,7 +96,7 @@
     </x-ui.table>
 
     <x-ui.sheet model="showForm" :title="$editingId ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'"
-                :subtitle="$editingId ? null : 'Un lien lui sera envoyé pour choisir son mot de passe.'">
+                :subtitle="$editingId ? null : 'Donnez-lui un mot de passe initial, ou laissez vide pour lui envoyer un lien par e-mail.'">
         <form id="user-form" wire:submit="save" class="space-y-6">
             <div class="space-y-4">
                 <x-ui.input label="Nom complet" name="name" wire:model="name" />
@@ -107,11 +124,21 @@
                 </div>
             </div>
 
+            <div>
+                <div class="flex items-end gap-2">
+                    <div class="min-w-0 flex-1">
+                        <x-ui.input :label="$editingId ? 'Nouveau mot de passe initial (facultatif)' : 'Mot de passe initial (facultatif)'" name="initial_password" wire:model="initial_password" autocomplete="off"
+                                    :hint="$editingId ? 'Remplace son mot de passe ; il devra le changer à sa prochaine connexion.' : 'Vide : un lien par e-mail. Rempli : il se connecte avec ce mot de passe et doit le changer à la première connexion.'" />
+                    </div>
+                    <x-ui.button variant="secondary" type="button" wire:click="generatePassword" class="mb-[1px]">Générer</x-ui.button>
+                </div>
+            </div>
+
             <x-ui.switch label="Compte actif" wire:model="is_active" />
         </form>
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
-            <x-ui.button form="user-form">{{ $editingId ? 'Enregistrer' : 'Créer et inviter' }}</x-ui.button>
+            <x-ui.button form="user-form">{{ $editingId ? 'Enregistrer' : ($initial_password !== '' ? 'Créer le compte' : 'Créer et inviter') }}</x-ui.button>
         </x-slot:footer>
     </x-ui.sheet>
 </div>

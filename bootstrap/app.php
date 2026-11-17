@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureSpace;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => CheckForAnyAbility::class,
             'space' => EnsureSpace::class,
             'two-factor.enrolled' => EnsureTwoFactorEnrolled::class,
+            'password.changed' => EnsurePasswordChanged::class,
             'active' => EnsureUserIsActive::class,
             'staff.device' => ResolveStaffDevice::class,
         ]);

@@ -91,6 +91,9 @@
                     <a href="{{ route('security.two-factor') }}" class="flex h-9 items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] transition-colors hover:bg-brand hover:text-white" role="menuitem">
                         <x-ui.icon name="shield" class="size-4" /> Sécurité du compte
                     </a>
+                    <a href="{{ route('security.password') }}" class="flex h-9 items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] transition-colors hover:bg-brand hover:text-white" role="menuitem">
+                        <x-ui.icon name="key" class="size-4" /> Changer de mot de passe
+                    </a>
                     <div class="mx-2.5 my-1 h-px bg-separator" role="separator"></div>
                     {{-- Apparence : Système / Clair / Sombre, appliquée immédiatement et enregistrée sur le compte. --}}
                     <div class="px-2.5 pt-1 pb-2" x-data="{
