@@ -145,6 +145,8 @@ return [
     'legal' => [
         // Version des CGV et de la politique de confidentialité, enregistrée sur chaque commande (NF-14).
         'terms_version' => '2026-11',
+        // Adresse affichée dans la politique de confidentialité et la page de suppression de compte.
+        'contact_email' => env('LEGAL_CONTACT_EMAIL', 'contact@accestrans.com'),
     ],
 
     'privacy' => [

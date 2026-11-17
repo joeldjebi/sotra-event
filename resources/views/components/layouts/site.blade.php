@@ -44,6 +44,7 @@
         · <a href="{{ route('legal.terms') }}" class="hover:text-ink">CGV</a>
         · <a href="{{ route('legal.privacy') }}" class="hover:text-ink">Confidentialité</a>
         · <a href="{{ route('legal.notice') }}" class="hover:text-ink">Mentions légales</a>
+        · <a href="{{ route('legal.account-deletion') }}" class="hover:text-ink">Supprimer mon compte</a>
         · <a href="{{ route('login') }}" class="hover:text-ink">Espace professionnel</a>
     </footer>
 

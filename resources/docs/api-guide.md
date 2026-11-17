@@ -19,7 +19,7 @@ Pas de mot de passe : chacun se connecte avec son **numéro de téléphone** et 
 2. `POST /auth/verify` avec le même `phone`, l'`audience`, le `code` et `device_name` : la réponse contient le **jeton**, à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore).
 3. Envoyer `Authorization: Bearer <jeton>` sur chaque requête protégée (bouton **Authorize** pour essayer ici).
 
-Le compte spectateur est créé à la première connexion. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.
+Le compte spectateur est créé à la première connexion. **Suppression du compte** (exigée par les stores) : bouton « Supprimer mon compte » dans le profil, qui appelle `DELETE /me` après confirmation ; page web équivalente à déclarer dans les stores : `/suppression-compte`. Politique de confidentialité : `/confidentialite`. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.
 
 Le jeton porte une **capacité** selon le profil : `customer`, `conveyor` ou `tech`. Il ne donne accès qu'aux appels de son application. Pour le personnel, la demande de code répond toujours la même chose, que le numéro existe ou non ; les chauffeurs n'ont pas d'accès mobile.
 
@@ -119,6 +119,7 @@ Une erreur a toujours un `message` lisible, à afficher tel quel.
 | `INTERVENTION_OTHER_TEAM` | 403 | Intervention d'une autre équipe. |
 | `INTERVENTION_STEP_INVALID` | 409 | Étape hors ordre. |
 | `INTERVENTION_CLOSED` | 409 | Intervention déjà clôturée. |
+| `ACCOUNT_HAS_UPCOMING_PASSES` | 409 | Suppression de compte impossible : un Pass est à venir. Le message dit quoi faire. |
 
 ## Limites de requêtes
 

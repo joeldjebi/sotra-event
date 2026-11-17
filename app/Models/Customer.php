@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -17,6 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $first_name
  * @property string|null $last_name
  * @property string $locale
+ * @property Carbon|null $anonymized_at
  */
 #[Fillable(['phone', 'first_name', 'last_name', 'locale', 'last_login_at'])]
 class Customer extends Authenticatable
@@ -28,6 +30,7 @@ class Customer extends Authenticatable
     {
         return [
             'last_login_at' => 'datetime',
+            'anonymized_at' => 'datetime',
         ];
     }
 

@@ -15,4 +15,5 @@
     </form>
 
     <x-ui.button variant="ghost" type="button" class="mt-6 w-full text-danger" wire:click="logout">Se déconnecter</x-ui.button>
+    <p class="mt-3 text-center text-[13px]"><a href="{{ route('legal.account-deletion') }}" class="text-ink-tertiary underline-offset-2 hover:text-danger hover:underline">Supprimer mon compte</a></p>
 </div>

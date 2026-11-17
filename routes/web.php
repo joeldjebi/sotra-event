@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\ThemePreferenceController;
 use App\Http\Controllers\Web\TwoFactorEnrollmentController;
 use App\Livewire\Site\Account as SiteAccount;
 use App\Livewire\Site\ChoosePass;
+use App\Livewire\Site\DeleteAccount;
 use App\Livewire\Site\Home as SiteHome;
 use App\Livewire\Site\Login as SiteLogin;
 use App\Livewire\Site\PassesIndex;
@@ -39,6 +40,7 @@ Route::get('/mon-trajet', SiteTrip::class)->name('site.trip');
 Route::view('/cgv', 'site.legal.terms')->name('legal.terms');
 Route::view('/confidentialite', 'site.legal.privacy')->name('legal.privacy');
 Route::view('/mentions-legales', 'site.legal.notice')->name('legal.notice');
+Route::get('/suppression-compte', DeleteAccount::class)->name('legal.account-deletion');
 
 Route::middleware('auth:customer')->group(function () {
     Route::get('/commande/{order}/paiement', PayOrder::class)->name('site.orders.pay');

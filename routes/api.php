@@ -2,6 +2,7 @@
 
 use App\Enums\TokenAbility;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\Customer\AccountDeletionController;
 use App\Http\Controllers\Api\V1\Customer\EventController;
 use App\Http\Controllers\Api\V1\Customer\FeedbackController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
@@ -52,6 +53,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('passes/{pass}/review', [FeedbackController::class, 'review'])->middleware('throttle:10,1')->name('passes.review');
         Route::post('passes/{pass}/complaints', [FeedbackController::class, 'complain'])->middleware('throttle:10,1')->name('passes.complaints');
         Route::get('me/complaints', [FeedbackController::class, 'complaints'])->name('complaints.index');
+        Route::delete('me', AccountDeletionController::class)->middleware('throttle:5,1')->name('me.destroy');
     });
 
     // App convoyeur (CV-01 à CV-19) : missions, manifeste hors ligne, scans, positions.

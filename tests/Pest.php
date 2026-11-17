@@ -26,6 +26,7 @@ use App\Services\Operations\MissionPlanner;
 use App\Services\Sales\PassTokenService;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -35,6 +36,9 @@ use Tests\TestCase;
 */
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    // Horloge figée : les scénarios (événement du 15/11/2026) ne dépendent pas du jour où la suite tourne.
+    // Un test peut toujours la déplacer avec travelTo().
+    ->beforeEach(fn () => $this->travelTo(Carbon::parse('2026-11-13 10:00')))
     ->in('Feature');
 
 /**

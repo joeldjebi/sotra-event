@@ -47,6 +47,7 @@ class ApiDocumentationServiceProvider extends ServiceProvider
     private const array LIMITS = [
         'throttle:otp-send' => '3 demandes de code par numéro et par 10 minutes, 20 par heure et par adresse IP.',
         'throttle:otp-verify' => '10 vérifications par minute et par adresse IP. Chaque code accepte 5 essais.',
+        'throttle:5,1' => '5 appels par minute.',
         'throttle:10,1' => '10 appels par minute.',
         'throttle:20,1' => '20 appels par minute.',
         'throttle:30,1' => '30 appels par minute.',
