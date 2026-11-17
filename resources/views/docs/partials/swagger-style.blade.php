@@ -1,4 +1,4 @@
-{{-- Charte EVENT TRANS (marine et orange) appliquée à Swagger UI. --}}
+{{-- Charte ACCES TRANS (marine et orange) appliquée à Swagger UI. --}}
 <style>
     body { margin: 0; background: #f6f7f9; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
     .et-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 24px; background: #0f2d52; color: #f6f7f9; }

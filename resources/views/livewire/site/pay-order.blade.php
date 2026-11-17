@@ -45,7 +45,7 @@
                 <x-ui.input label="Numéro Mobile Money" name="msisdn" type="tel" wire:model="msisdn" />
                 <p class="-mt-3 rounded-xl bg-fill px-4 py-3 text-[14px] text-ink-secondary">Vous allez recevoir une demande de confirmation sur votre téléphone. Votre Pass arrive aussitôt sur le site, par SMS et WhatsApp.</p>
             @else
-                <p class="rounded-xl bg-fill px-4 py-3 text-[14px] text-ink-secondary">Paiement sécurisé 3-D Secure. Aucune donnée de carte n'est conservée par EVENT TRANS.</p>
+                <p class="rounded-xl bg-fill px-4 py-3 text-[14px] text-ink-secondary">Paiement sécurisé 3-D Secure. Aucune donnée de carte n'est conservée par ACCES TRANS.</p>
             @endif
 
             @error('payment') <x-ui.alert tone="danger">{{ $message }}</x-ui.alert> @enderror

@@ -2,12 +2,12 @@
 <x-layouts.site title="Politique de confidentialité">
     <article class="space-y-5 text-[15px] leading-relaxed [&_h2]:mt-9 [&_h2]:text-[19px] [&_h2]:font-semibold [&_h2]:tracking-tight [&_li]:mt-1">
         <h1 class="text-[28px] font-bold tracking-tight">Politique de confidentialité</h1>
-        <p class="text-[14px] text-ink-secondary">EVENT TRANS · site accestrans.com et applications mobiles EVENT TRANS (spectateur, convoyeur, service technique) · dernière mise à jour : 17 novembre 2026</p>
+        <p class="text-[14px] text-ink-secondary">ACCES TRANS · site accestrans.com et applications mobiles ACCES TRANS (spectateur, convoyeur, service technique) · dernière mise à jour : 17 novembre 2026</p>
 
-        <p>EVENT TRANS est le service de Pass transport en bus des grands événements, proposé par ACCES EVENT avec la compagnie de transport partenaire de chaque événement (par exemple la SOTRA). Cette politique explique quelles données nous collectons, pourquoi, avec qui nous les partageons, combien de temps nous les gardons et comment exercer vos droits. Elle s’applique conformément à la loi ivoirienne n° 2013-450 du 19 juin 2013 relative à la protection des données à caractère personnel ; le traitement est déclaré auprès de l’ARTCI.</p>
+        <p>ACCES TRANS est le service de Pass transport en bus des grands événements, proposé par ACCES EVENT avec la compagnie de transport partenaire de chaque événement (par exemple la SOTRA). Cette politique explique quelles données nous collectons, pourquoi, avec qui nous les partageons, combien de temps nous les gardons et comment exercer vos droits. Elle s’applique conformément à la loi ivoirienne n° 2013-450 du 19 juin 2013 relative à la protection des données à caractère personnel ; le traitement est déclaré auprès de l’ARTCI.</p>
 
         <h2>1. Responsable du traitement</h2>
-        <p>ACCES EVENT, éditeur d’EVENT TRANS (Abidjan, Côte d’Ivoire). Contact pour toute question sur vos données : <span class="font-medium">{{ $contact }}</span>.</p>
+        <p>ACCES EVENT, éditeur d’ACCES TRANS (Abidjan, Côte d’Ivoire). Contact pour toute question sur vos données : <span class="font-medium">{{ $contact }}</span>.</p>
 
         <h2>2. Données collectées</h2>
         <p><strong>Application spectateur et site</strong></p>
@@ -64,7 +64,7 @@
         <p>Dans l’application : <strong>Profil › Supprimer mon compte</strong>. Sur le web : <a href="{{ route('legal.account-deletion') }}" class="font-medium text-brand-text hover:underline">{{ route('legal.account-deletion') }}</a>. La suppression est immédiate ; le détail de ce qui est effacé et conservé figure sur cette page.</p>
 
         <h2>9. Mineurs</h2>
-        <p>EVENT TRANS s’adresse aux personnes de 16 ans et plus. Un Pass peut être acheté par un adulte pour un mineur qui l’accompagne.</p>
+        <p>ACCES TRANS s’adresse aux personnes de 16 ans et plus. Un Pass peut être acheté par un adulte pour un mineur qui l’accompagne.</p>
 
         <h2>10. Modifications</h2>
         <p>Nous pouvons mettre à jour cette politique ; la date en haut de page indique la dernière version. En cas de changement important, nous vous en informons dans l’application ou par SMS.</p>

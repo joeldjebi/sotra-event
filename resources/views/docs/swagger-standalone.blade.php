@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EVENT TRANS — Swagger de l’API mobile v1</title>
+    <title>ACCES TRANS — Swagger de l’API mobile v1</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css">
     @include('docs.partials.swagger-style')
 </head>

@@ -20,7 +20,7 @@ enum DropZoneUsage: string
         return match ($this) {
             self::DropOff => 'Dépose aller',
             self::PickUp => 'Reprise retour',
-            self::Welcome => 'Accueil EVENT TRANS',
+            self::Welcome => 'Accueil ACCES TRANS',
         };
     }
 }

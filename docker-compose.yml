@@ -1,4 +1,4 @@
-# Services locaux EVENT TRANS : PostgreSQL + PostGIS et Redis.
+# Services locaux ACCES TRANS : PostgreSQL + PostGIS et Redis.
 # Ports décalés pour ne pas entrer en conflit avec d'autres projets.
 services:
   pgsql:

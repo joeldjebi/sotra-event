@@ -41,7 +41,7 @@ class PassNotifier
 
         if (! $order->passes->contains(fn (Pass $pass) => $pass->holder_id === $order->customer_id)) {
             $this->sms->send(PhoneNumber::parse($order->customer->phone), sprintf(
-                'EVENT TRANS : votre cadeau (%d Pass pour %s) a bien été envoyé au %s.',
+                'ACCES TRANS : votre cadeau (%d Pass pour %s) a bien été envoyé au %s.',
                 $order->quantity,
                 $order->event->name,
                 $order->beneficiary_phone,
@@ -52,7 +52,7 @@ class PassNotifier
     public function passTransferred(Pass $pass, Customer $from): void
     {
         $this->sendPasses($pass->holder, [$pass], $from);
-        $this->sms->send(PhoneNumber::parse($from->phone), "EVENT TRANS : le Pass {$pass->code} a bien été offert. Il n'est plus valable sur votre téléphone.");
+        $this->sms->send(PhoneNumber::parse($from->phone), "ACCES TRANS : le Pass {$pass->code} a bien été offert. Il n'est plus valable sur votre téléphone.");
     }
 
     /**
@@ -62,7 +62,7 @@ class PassNotifier
     {
         $retained = $refund->retained_amount > 0 ? ' ('.number_format($refund->retained_amount, 0, ',', ' ').' FCFA de frais d\'annulation retenus)' : '';
         $body = sprintf(
-            'EVENT TRANS : le Pass %s est remboursé : %s FCFA sur votre %s%s. Réf. %s.',
+            'ACCES TRANS : le Pass %s est remboursé : %s FCFA sur votre %s%s. Réf. %s.',
             $refund->pass->code,
             number_format($refund->amount, 0, ',', ' '),
             $refund->payment->method->label(),
@@ -82,7 +82,7 @@ class PassNotifier
     public function disruption(iterable $passes, string $title, string $body, string $template): void
     {
         foreach (collect($passes)->unique('holder_id') as $pass) {
-            $text = "EVENT TRANS : {$body}";
+            $text = "ACCES TRANS : {$body}";
             $phone = PhoneNumber::parse($pass->holder->phone);
             $this->sms->send($phone, $text);
             $this->whatsApp->send($phone, $template, $text, ['event' => $pass->event_id]);
@@ -98,7 +98,7 @@ class PassNotifier
     public function busReplaced(array $passes, Bus $bus): void
     {
         foreach ($passes as $pass) {
-            $body = "EVENT TRANS : votre bus a eu une panne. Le bus {$bus->number} vous prend en charge, votre Pass {$pass->code} reste valable. Merci de votre patience.";
+            $body = "ACCES TRANS : votre bus a eu une panne. Le bus {$bus->number} vous prend en charge, votre Pass {$pass->code} reste valable. Merci de votre patience.";
             $phone = PhoneNumber::parse($pass->holder->phone);
             $this->sms->send($phone, $body);
             $this->whatsApp->send($phone, 'bus_replaced', $body, ['code' => $pass->code, 'bus' => $bus->number]);
@@ -114,7 +114,7 @@ class PassNotifier
     public function busDelayed(array $passes, Mission $mission, int $minutes): void
     {
         foreach (collect($passes)->unique('holder_id') as $pass) {
-            $body = "EVENT TRANS : votre bus ({$mission->boardingPoint->commune}, {$mission->direction->label()}) a {$minutes} min de retard. Nous nous en excusons : une réclamation collective est ouverte, inutile d'en déposer une.";
+            $body = "ACCES TRANS : votre bus ({$mission->boardingPoint->commune}, {$mission->direction->label()}) a {$minutes} min de retard. Nous nous en excusons : une réclamation collective est ouverte, inutile d'en déposer une.";
             $phone = PhoneNumber::parse($pass->holder->phone);
             $this->sms->send($phone, $body);
             $this->push->send($pass->holder, 'Retard de votre bus', $body, ['code' => $pass->code]);
@@ -129,7 +129,7 @@ class PassNotifier
         $point = $pass->boardingPoint;
         $when = $kind === 'h2' ? "aujourd'hui à" : 'demain à';
         $body = sprintf(
-            'EVENT TRANS : rappel, %s. Montée %s %s · %s. Présentez votre Pass %s au convoyeur. %s',
+            'ACCES TRANS : rappel, %s. Montée %s %s · %s. Présentez votre Pass %s au convoyeur. %s',
             $pass->event->name,
             $when,
             $point->boardingCallAt()->format('H\hi'),
@@ -157,7 +157,7 @@ class PassNotifier
 
         foreach ($passes as $pass) {
             $body = sprintf(
-                'EVENT TRANS : %sPass %s %s pour %s (%s). Montée : %s · %s à %s. Code %s. Votre Pass : %s',
+                'ACCES TRANS : %sPass %s %s pour %s (%s). Montée : %s · %s à %s. Code %s. Votre Pass : %s',
                 $intro,
                 $pass->offer->label(),
                 mb_strtolower($pass->pass_type->label()),

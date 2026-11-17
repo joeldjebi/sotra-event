@@ -109,7 +109,7 @@ class ComplaintService
             'resolved_at' => now(),
         ]);
 
-        $body = "EVENT TRANS : réponse à votre réclamation {$complaint->number}. {$resolution}";
+        $body = "ACCES TRANS : réponse à votre réclamation {$complaint->number}. {$resolution}";
 
         foreach ($this->recipients($complaint) as $phone) {
             $this->sms->send(PhoneNumber::parse($phone), $body);

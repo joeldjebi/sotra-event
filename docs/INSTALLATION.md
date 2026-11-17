@@ -1,4 +1,4 @@
-# EVENT TRANS — Manuel d'installation et d'exploitation
+# ACCES TRANS — Manuel d'installation et d'exploitation
 
 Pour l'équipe technique qui installe, déploie et surveille la plateforme (recette et production).
 Le développement local est décrit dans le `README.md`.

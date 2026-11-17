@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Démarrage d'un conteneur EVENT TRANS selon son rôle :
+# Démarrage d'un conteneur ACCES TRANS selon son rôle :
 #   web (nginx + PHP-FPM), horizon (files), scheduler (tâches planifiées), reverb (temps réel),
 #   backup (sauvegarde ponctuelle), ou toute autre commande (ex. « php artisan migrate --force »).
 set -euo pipefail

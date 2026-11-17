@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<title>{{ $title ? $title.' · ' : '' }}EVENT TRANS</title>
+<title>{{ $title ? $title.' · ' : '' }}ACCES TRANS</title>
 {{-- Résout le thème (Système / Clair / Sombre) avant l'affichage pour éviter tout clignotement. --}}
 <script>
     (() => {

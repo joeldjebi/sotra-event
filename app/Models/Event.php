@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Événement desservi par EVENT TRANS.
+ * Événement desservi par ACCES TRANS.
  *
  * @property int $id
  * @property string $name

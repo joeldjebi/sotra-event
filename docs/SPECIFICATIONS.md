@@ -1,4 +1,4 @@
-# EVENT TRANS — Document de référence technique (équipe web & API)
+# ACCES TRANS — Document de référence technique (équipe web & API)
 
 > **Le Pass en route** · Partenariat ACCES EVENT × compagnies de transport (première compagnie : SOTRA)
 > Ce document **complète** le *Cahier des charges développeurs* (CDC, 12 nov. 2026). Il ne le remplace pas.
@@ -23,7 +23,7 @@ Les identifiants du CDC (ex. `RG-08`, `CV-08`) sont repris dans le code (tests, 
 
 | Nous livrons | Hors de notre périmètre |
 |---|---|
-| **API EVENT TRANS** unique, qui porte toutes les règles de gestion | Apps mobiles spectateur, convoyeur et technique (équipe mobile) |
+| **API ACCES TRANS** unique, qui porte toutes les règles de gestion | Apps mobiles spectateur, convoyeur et technique (équipe mobile) |
 | **Site web spectateur** responsive (mêmes écrans que l'app, § 4 CDC) | Transport régulier, billetterie d'accès (ACCES TICKETS) |
 | **Console ACCES EVENT** (§ 7 CDC) | Points de vente physiques (désactivés en V1, AD-04) |
 | **Espace compagnie** : commercial, qualité, exploitation / technique (§ 8 CDC) | |

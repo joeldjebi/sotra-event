@@ -8,7 +8,7 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 /*
-| Design system EVENT TRANS — langage visuel Apple (apple.com, iCloud, Réglages macOS/iOS).
+| Design system ACCES TRANS — langage visuel Apple (apple.com, iCloud, Réglages macOS/iOS).
 | Charte « Le Pass en route » : marine #0f1b2d, orange #c2410c (couleur d'accent).
 |
 | Les couleurs sont des jetons sémantiques (fond, surface, texte, filets, remplissages) redéfinis

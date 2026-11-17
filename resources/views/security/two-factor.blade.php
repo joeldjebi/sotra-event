@@ -7,7 +7,7 @@
         <div class="text-center">
             <h1 class="mt-5 text-title-1">Protégez votre compte</h1>
             <p class="mt-2 text-[15px] leading-snug text-ink-secondary">
-                La double authentification est obligatoire pour accéder aux espaces EVENT TRANS.
+                La double authentification est obligatoire pour accéder aux espaces ACCES TRANS.
                 Installez une application comme Google Authenticator, Microsoft Authenticator ou l'app Mots de passe d'Apple.
             </p>
         </div>

@@ -33,7 +33,7 @@ class SendTestSms extends Command
             return self::FAILURE;
         }
 
-        $message = (string) ($this->option('message') ?: 'EVENT TRANS : SMS de test envoyé le '.now()->format('d/m/Y à H\hi').'.');
+        $message = (string) ($this->option('message') ?: 'ACCES TRANS : SMS de test envoyé le '.now()->format('d/m/Y à H\hi').'.');
         $sender = $this->option('sender') ? (string) $this->option('sender') : null;
 
         try {

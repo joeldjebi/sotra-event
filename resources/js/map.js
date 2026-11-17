@@ -1,5 +1,5 @@
 /*
-| Cartes EVENT TRANS (Leaflet + OpenStreetMap, sans framework) : composant Alpine « liveMap » utilisé par <x-ui.map>.
+| Cartes ACCES TRANS (Leaflet + OpenStreetMap, sans framework) : composant Alpine « liveMap » utilisé par <x-ui.map>.
 |
 | - Les données (JSON) sont lues dans l'attribut data-map ; quand Livewire rafraîchit la page (wire:poll), l'attribut
 |   change et seuls les marqueurs sont déplacés, sans recréer la carte.

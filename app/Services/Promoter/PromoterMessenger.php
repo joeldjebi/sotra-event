@@ -64,7 +64,7 @@ class PromoterMessenger
             $phone = PhoneNumber::parse($pass->holder->phone);
 
             if (in_array('sms', $channels, true)) {
-                $this->sms->send($phone, "EVENT TRANS · {$text}");
+                $this->sms->send($phone, "ACCES TRANS · {$text}");
             }
 
             if (in_array('whatsapp', $channels, true)) {

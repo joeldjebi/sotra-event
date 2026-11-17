@@ -40,7 +40,7 @@
     </main>
 
     <footer class="mx-auto hidden max-w-5xl px-6 py-10 text-[13px] text-ink-tertiary sm:block">
-        © {{ date('Y') }} ACCES EVENT · EVENT TRANS
+        © {{ date('Y') }} ACCES EVENT · ACCES TRANS
         · <a href="{{ route('legal.terms') }}" class="hover:text-ink">CGV</a>
         · <a href="{{ route('legal.privacy') }}" class="hover:text-ink">Confidentialité</a>
         · <a href="{{ route('legal.notice') }}" class="hover:text-ink">Mentions légales</a>

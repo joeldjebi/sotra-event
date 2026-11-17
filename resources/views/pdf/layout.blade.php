@@ -21,7 +21,7 @@
     </style>
 </head>
 <body>
-    <div class="footer">EVENT TRANS · ACCES EVENT × {{ $company ?? '' }} · généré le {{ now()->format('d/m/Y à H\hi') }}</div>
+    <div class="footer">ACCES TRANS · ACCES EVENT × {{ $company ?? '' }} · généré le {{ now()->format('d/m/Y à H\hi') }}</div>
     @yield('content')
 </body>
 </html>

@@ -1,4 +1,4 @@
-# EVENT TRANS — « Le Pass en route »
+# ACCES TRANS — « Le Pass en route »
 
 Plateforme ACCES EVENT × compagnies de transport (SOTRA) : vente et contrôle de Pass transport pour les grands événements.
 Ce dépôt contient l'**API**, le **site spectateur**, la **console ACCES EVENT** et les **espaces compagnie et promoteur**. Tout est en Laravel (Blade + Livewire).

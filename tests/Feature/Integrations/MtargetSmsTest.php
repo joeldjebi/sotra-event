@@ -16,7 +16,7 @@ beforeEach(function () {
             'url' => 'https://api-public.mtarget.fr/api-sms.json',
             'username' => 'compte-test',
             'password' => 'secret-test',
-            'sender' => 'EVENTTRANS',
+            'sender' => 'ACCESTRANS',
             'timeout' => 30,
             'verify_ssl' => true,
         ],
@@ -31,7 +31,7 @@ function mtargetAccepted(): array
 it('envoie le SMS à MTarget en formulaire et trace le ticket (SMS_DRIVER=mtarget)', function () {
     Http::fake(['api-public.mtarget.fr/*' => Http::response(mtargetAccepted())]);
 
-    $sms = app(SmsSender::class)->send(PhoneNumber::parse('07 07 07 07 07'), 'EVENT TRANS : bonjour');
+    $sms = app(SmsSender::class)->send(PhoneNumber::parse('07 07 07 07 07'), 'ACCES TRANS : bonjour');
 
     expect(app(SmsSender::class))->toBeInstanceOf(MtargetSmsSender::class)
         ->and($sms->fresh())
@@ -42,8 +42,8 @@ it('envoie le SMS à MTarget en formulaire et trace le ticket (SMS_DRIVER=mtarge
 
     Http::assertSent(fn (Request $request) => $request->isForm()
         && $request['msisdn'] === '+2250707070707'
-        && $request['msg'] === 'EVENT TRANS : bonjour'
-        && $request['sender'] === 'EVENTTRANS'
+        && $request['msg'] === 'ACCES TRANS : bonjour'
+        && $request['sender'] === 'ACCESTRANS'
         && $request['username'] === 'compte-test'
         && $request['remoteid'] === (string) $sms->id);
 });

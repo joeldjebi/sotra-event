@@ -1,5 +1,5 @@
 /*
-| Graphiques EVENT TRANS (Chart.js, sans framework) : composant Alpine « chart » utilisé par <x-ui.chart>.
+| Graphiques ACCES TRANS (Chart.js, sans framework) : composant Alpine « chart » utilisé par <x-ui.chart>.
 |
 | - La configuration (JSON) est lue dans l'attribut data-chart de l'élément ; quand Livewire re-rend la page
 |   (filtre de période), l'attribut change et le graphique est mis à jour sans être recréé.

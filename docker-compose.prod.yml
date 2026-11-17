@@ -1,4 +1,4 @@
-# Déploiement EVENT TRANS (recette ou production) sur un hôte Docker.
+# Déploiement ACCES TRANS (recette ou production) sur un hôte Docker.
 # Les variables viennent du fichier .env de l'hôte (voir docs/INSTALLATION.md), jamais de l'image.
 #   docker compose -f docker-compose.prod.yml up -d --build
 # PostgreSQL et Redis peuvent être remplacés par des services managés : supprimer les blocs pgsql / redis

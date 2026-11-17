@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>EVENT TRANS — Swagger de l’API mobile</title>
+    <title>ACCES TRANS — Swagger de l’API mobile</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css">
     @include('docs.partials.swagger-style')
 </head>
@@ -13,7 +13,7 @@
         <div class="et-brand"><span>EVENT</span> TRANS · API mobile v1</div>
         <nav class="et-links">
             <a href="{{ url('docs/api') }}">Vue détaillée</a>
-            <a href="{{ $specUrl }}" download="eventtrans-openapi.json">Télécharger le fichier OpenAPI</a>
+            <a href="{{ $specUrl }}" download="accestrans-openapi.json">Télécharger le fichier OpenAPI</a>
         </nav>
     </header>
     <div id="swagger-ui"></div>

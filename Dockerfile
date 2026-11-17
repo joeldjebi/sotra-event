@@ -1,4 +1,4 @@
-# Image de production EVENT TRANS (Laravel 13, PHP 8.3) : nginx + PHP-FPM, et la même image pour
+# Image de production ACCES TRANS (Laravel 13, PHP 8.3) : nginx + PHP-FPM, et la même image pour
 # Horizon, le planificateur et Reverb (voir docker-compose.prod.yml). Aucune donnée secrète dans l'image :
 # la configuration vient des variables d'environnement au démarrage.
 

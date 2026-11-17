@@ -50,7 +50,7 @@ class DemoEventsSeeder extends Seeder
         $concert->dropZones()->createMany([
             ['name' => 'Parking P3 · porte Nord', 'usage' => DropZoneUsage::DropOff, 'location' => Point::makeGeodetic(5.4950, -4.0780), 'radius_m' => 200],
             ['name' => 'Parking P5 · porte Est', 'usage' => DropZoneUsage::PickUp, 'scheduled_at' => $concertDay->copy()->setTime(23, 30), 'location' => Point::makeGeodetic(5.4915, -4.0760), 'radius_m' => 200],
-            ['name' => 'Accueil EVENT TRANS · stand près de P3', 'usage' => DropZoneUsage::Welcome, 'location' => Point::makeGeodetic(5.4948, -4.0785), 'radius_m' => 50],
+            ['name' => 'Accueil ACCES TRANS · stand près de P3', 'usage' => DropZoneUsage::Welcome, 'location' => Point::makeGeodetic(5.4948, -4.0785), 'radius_m' => 50],
         ]);
         $this->thread($concert, $admin, $sotra);
 

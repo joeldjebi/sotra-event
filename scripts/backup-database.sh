@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sauvegarde quotidienne de la base EVENT TRANS (NF-08), conservée 30 jours.
+# Sauvegarde quotidienne de la base ACCES TRANS (NF-08), conservée 30 jours.
 # À planifier chaque nuit (cron de l'hôte ou service « backup » de docker-compose.prod.yml) :
 #   0 1 * * * /chemin/vers/scripts/backup-database.sh >> /var/log/eventtrans-backup.log 2>&1
 # Variables : DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD, BACKUP_DIR (défaut ./storage/backups),

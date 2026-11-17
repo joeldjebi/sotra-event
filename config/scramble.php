@@ -57,11 +57,11 @@ return [
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
         // Remplacée par le guide d'intégration (resources/docs/api-guide.md) : voir ApiDocumentationServiceProvider.
-        'description' => 'API REST v1 d’EVENT TRANS, consommée par les applications mobiles spectateur, convoyeur et service technique.',
+        'description' => 'API REST v1 d’ACCES TRANS, consommée par les applications mobiles spectateur, convoyeur et service technique.',
     ],
 
     'ui' => [
-        'title' => 'EVENT TRANS — API mobile v1',
+        'title' => 'ACCES TRANS — API mobile v1',
     ],
 
     /*

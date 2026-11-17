@@ -46,7 +46,7 @@
     </main>
 
     <footer class="bg-canvas dark:bg-[#0d0d0f]">
-        <div class="mx-auto max-w-[1080px] border-t border-separator px-4 py-6 text-[12px] text-ink-tertiary sm:px-8">© {{ date('Y') }} ACCES EVENT · EVENT TRANS</div>
+        <div class="mx-auto max-w-[1080px] border-t border-separator px-4 py-6 text-[12px] text-ink-tertiary sm:px-8">© {{ date('Y') }} ACCES EVENT · ACCES TRANS</div>
     </footer>
     @livewireScripts
 </body>

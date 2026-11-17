@@ -19,5 +19,5 @@
             <circle cx="16" cy="19" r="1.6" fill="#f97316"/>
         </svg>
     </span>
-    <span class="{{ $text }} font-semibold tracking-[-0.02em] {{ $inverted ? 'text-white' : 'text-ink' }}">EVENT TRANS</span>
+    <span class="{{ $text }} font-semibold tracking-[-0.02em] {{ $inverted ? 'text-white' : 'text-ink' }}">ACCES TRANS</span>
 </span>

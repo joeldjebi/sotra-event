@@ -1,4 +1,4 @@
-# EVENT TRANS — Cahier de recette (web, backoffice, API)
+# ACCES TRANS — Cahier de recette (web, backoffice, API)
 
 Pour ACCES EVENT et la SOTRA, qui recettent la plateforme lot par lot (§ 15 du CDC).
 Chaque scénario se joue à la main sur l'environnement de recette. La colonne « Test » renvoie au test

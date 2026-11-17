@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
-| API EVENT TRANS v1 : applications spectateur, convoyeur et service technique.
+| API ACCES TRANS v1 : applications spectateur, convoyeur et service technique.
 | Préfixe /api/v1. Documentation OpenAPI générée par Scramble sur /docs/api.
 */
 Route::prefix('v1')->name('api.v1.')->group(function () {

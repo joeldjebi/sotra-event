@@ -1,7 +1,7 @@
 <div class="mx-auto max-w-xl space-y-6 pt-2">
     <div>
         <h1 class="text-[30px] leading-tight font-semibold tracking-tight">Supprimer mon compte</h1>
-        <p class="mt-1.5 text-[15px] text-ink-secondary">EVENT TRANS · application et site du Pass transport ACCES EVENT</p>
+        <p class="mt-1.5 text-[15px] text-ink-secondary">ACCES TRANS · application et site du Pass transport ACCES EVENT</p>
     </div>
 
     <x-ui.card padding="p-5 sm:p-6">
@@ -45,7 +45,7 @@
             <div class="text-center">
                 <span class="mx-auto grid size-12 place-items-center rounded-full bg-success-soft text-success"><x-ui.icon name="check" class="size-6" /></span>
                 <h2 class="mt-3 text-[19px] font-semibold tracking-tight">Compte supprimé</h2>
-                <p class="mt-1 text-[15px] text-ink-secondary">Il n’existe plus de compte EVENT TRANS associé à ce numéro. Vous êtes déconnecté de tous vos appareils.</p>
+                <p class="mt-1 text-[15px] text-ink-secondary">Il n’existe plus de compte ACCES TRANS associé à ce numéro. Vous êtes déconnecté de tous vos appareils.</p>
             </div>
         @endif
     </x-ui.card>

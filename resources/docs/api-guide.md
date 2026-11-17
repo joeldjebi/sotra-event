@@ -1,4 +1,4 @@
-API REST d'**EVENT TRANS**, le Pass transport des grands événements (ACCES EVENT × SOTRA). Elle est consommée par trois applications mobiles : **spectateur** (acheter, montrer et suivre son Pass), **convoyeur** (contrôler les Pass à la montée, même sans réseau, et conduire la mission) et **service technique** (prendre en charge les pannes). Toutes les règles métier vivent côté serveur : l'application affiche et envoie, le serveur contrôle.
+API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVENT × SOTRA). Elle est consommée par trois applications mobiles : **spectateur** (acheter, montrer et suivre son Pass), **convoyeur** (contrôler les Pass à la montée, même sans réseau, et conduire la mission) et **service technique** (prendre en charge les pannes). Toutes les règles métier vivent côté serveur : l'application affiche et envoie, le serveur contrôle.
 
 ## Conventions
 

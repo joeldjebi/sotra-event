@@ -666,7 +666,7 @@ class DemoOperationsSeeder extends Seeder
         return Event::query()->withoutGlobalScopes()->create([
             'name' => $name,
             'slug' => Str::slug($name).'-'.$startsAt->format('Y-m-d'),
-            'description' => 'Événement de démonstration EVENT TRANS.',
+            'description' => 'Événement de démonstration ACCES TRANS.',
             'venue_id' => $venue->id,
             'promoter_id' => $promoter->id,
             'transport_lead_id' => $this->lead?->id,
@@ -741,7 +741,7 @@ class DemoOperationsSeeder extends Seeder
         $event->dropZones()->createMany([
             ['name' => 'Parking Nord · porte A', 'usage' => DropZoneUsage::DropOff, 'location' => Point::makeGeodetic($lat, $lng), 'radius_m' => 250],
             ['name' => 'Parking Est · porte C', 'usage' => DropZoneUsage::PickUp, 'scheduled_at' => $event->ends_at->copy()->addMinutes(30), 'location' => Point::makeGeodetic($lat - 0.0015, $lng + 0.0012), 'radius_m' => 200],
-            ['name' => 'Stand d\'accueil EVENT TRANS', 'usage' => DropZoneUsage::Welcome, 'location' => Point::makeGeodetic($lat + 0.0004, $lng - 0.0003), 'radius_m' => 40],
+            ['name' => 'Stand d\'accueil ACCES TRANS', 'usage' => DropZoneUsage::Welcome, 'location' => Point::makeGeodetic($lat + 0.0004, $lng - 0.0003), 'radius_m' => 40],
         ]);
     }
 
