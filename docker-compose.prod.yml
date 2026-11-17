@@ -4,7 +4,11 @@
 # PostgreSQL et Redis peuvent être remplacés par des services managés : supprimer les blocs pgsql / redis
 # et renseigner DB_HOST / REDIS_HOST.
 x-app: &app
-  build: .
+  build:
+    context: .
+    # Construction sur le réseau de l'hôte : la résolution DNS des conteneurs de build peut échouer
+    # sur certains serveurs (cPanel), alors que la compilation télécharge les polices (fonts.bunny.net).
+    network: host
   image: eventtrans:${APP_VERSION:-latest}
   env_file: .env
   environment:
