@@ -17,6 +17,14 @@ enum Permission: string
     case UsersManage = 'users.manage';
     case AuditView = 'audit.view';
 
+    // Console : consultation seule et équipes ACCES TRANS (direction commerciale, direction technique, centre d'appel)
+    case EventsView = 'events.view';
+    case PromotersView = 'promoters.view';
+    case PayoutsView = 'payouts.view';
+    case PlatformSalesView = 'platform-sales.view';
+    case OperationsSupervise = 'operations.supervise';
+    case CallCenterAccess = 'call-center.access';
+
     // Espace compagnie : Direction commerciale
     case SalesView = 'sales.view';
     case ProposedEventsRespond = 'proposed-events.respond';

@@ -94,21 +94,26 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::prefix('admin')->name('admin.')->middleware('space:admin')->group(function () {
             Route::get('/', AdminDashboardController::class)->name('dashboard');
 
-            LivewirePage::route('evenements', 'events', 'admin.events-table', 'Événements', Permission::EventsManage);
+            LivewirePage::route('evenements', 'events', 'admin.events-table', 'Événements', Permission::EventsView);
             Route::middleware('can:'.Permission::EventsManage->value)->group(function () {
                 Route::get('evenements/nouveau', [EventEditorController::class, 'create'])->name('events.create');
                 Route::get('evenements/{event}', [EventEditorController::class, 'edit'])->name('events.edit');
                 Route::get('evenements/{event}/annulation', [EventEditorController::class, 'disruption'])->name('events.disruption');
             });
             LivewirePage::route('compagnies', 'companies', 'admin.companies-table', 'Compagnies', Permission::CompaniesManage);
-            LivewirePage::route('promoteurs', 'promoters', 'admin.promoters-table', 'Promoteurs', Permission::PromotersManage);
+            LivewirePage::route('promoteurs', 'promoters', 'admin.promoters-table', 'Promoteurs', Permission::PromotersView);
             Route::get('promoteurs/{promoter}/justificatifs/{document}', PromoterDocumentController::class)
-                ->middleware('can:'.Permission::PromotersManage->value)->name('promoters.document');
-            LivewirePage::route('demandes-evenements', 'event-requests', 'admin.event-requests-table', 'Demandes des promoteurs', Permission::EventsManage);
+                ->middleware('can:'.Permission::PromotersView->value)->name('promoters.document');
+            LivewirePage::route('demandes-evenements', 'event-requests', 'admin.event-requests-table', 'Demandes des promoteurs', Permission::EventsView);
+            // Équipes ACCES TRANS : direction commerciale, direction technique, centre d'appel.
+            LivewirePage::route('ventes', 'sales', 'admin.sales-overview', 'Ventes par événement', Permission::PlatformSalesView);
+            LivewirePage::route('supervision', 'operations', 'admin.operations-monitor', 'Supervision en direct', Permission::OperationsSupervise);
+            LivewirePage::route('terminaux', 'devices', 'admin.devices-overview', 'Terminaux', Permission::OperationsSupervise);
+            LivewirePage::route('centre-appel', 'call-center', 'admin.call-center', 'Centre d\'appel', Permission::CallCenterAccess);
             LivewirePage::route('pass', 'passes', 'admin.passes-table', 'Pass & ventes', Permission::PassesManage);
             LivewirePage::route('remboursements', 'refunds', 'admin.refunds-table', 'Remboursements', Permission::PassesManage);
-            LivewirePage::route('reversements', 'payouts', 'admin.payouts-table', 'Reversements', Permission::PayoutsManage);
-            Route::middleware('can:'.Permission::PayoutsManage->value)->group(function () {
+            LivewirePage::route('reversements', 'payouts', 'admin.payouts-table', 'Reversements', Permission::PayoutsView);
+            Route::middleware('can:'.Permission::PayoutsView->value)->group(function () {
                 Route::get('reversements/{payout}/releve.pdf', [PayoutDocumentController::class, 'statement'])->name('payouts.statement');
                 Route::get('reversements/{payout}/justificatif', [PayoutDocumentController::class, 'proof'])->name('payouts.proof');
             });

@@ -24,16 +24,26 @@ final class Navigation
             Space::Admin => [
                 [null, [
                     ['Tableau de bord', 'home', 'admin.dashboard', Permission::PlatformDashboard],
-                    ['Événements', 'calendar', 'admin.events', Permission::EventsManage],
+                    ['Événements', 'calendar', 'admin.events', Permission::EventsView],
                     ['Lieux', 'map-pin', 'admin.venues', Permission::EventsManage],
                     ['Compagnies', 'building', 'admin.companies', Permission::CompaniesManage],
-                    ['Promoteurs', 'megaphone', 'admin.promoters', Permission::PromotersManage],
-                    ['Demandes des promoteurs', 'inbox', 'admin.event-requests', Permission::EventsManage],
+                    ['Promoteurs', 'megaphone', 'admin.promoters', Permission::PromotersView],
+                    ['Demandes des promoteurs', 'inbox', 'admin.event-requests', Permission::EventsView],
                     ['Pass & ventes', 'ticket', 'admin.passes', Permission::PassesManage],
                     ['Remboursements', 'lifebuoy', 'admin.refunds', Permission::PassesManage],
-                    ['Reversements', 'banknotes', 'admin.payouts', Permission::PayoutsManage],
+                    ['Reversements', 'banknotes', 'admin.payouts', Permission::PayoutsView],
                     ['Utilisateurs & rôles', 'users', 'admin.users', Permission::UsersManage],
                     ['Journal d\'audit', 'shield', 'admin.audit', Permission::AuditView],
+                ]],
+                ['Direction commerciale', [
+                    ['Ventes par événement', 'chart', 'admin.sales', Permission::PlatformSalesView],
+                ]],
+                ['Direction technique', [
+                    ['Supervision en direct', 'map', 'admin.operations', Permission::OperationsSupervise],
+                    ['Terminaux', 'device', 'admin.devices', Permission::OperationsSupervise],
+                ]],
+                ['Centre d\'appel', [
+                    ['Fiche spectateur', 'phone', 'admin.call-center', Permission::CallCenterAccess],
                 ]],
             ],
             Space::Company => [

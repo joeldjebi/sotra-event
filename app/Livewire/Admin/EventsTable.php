@@ -22,6 +22,11 @@ class EventsTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::EventsView;
+    }
+
+    protected function managePermission(): ?Permission
+    {
         return Permission::EventsManage;
     }
 

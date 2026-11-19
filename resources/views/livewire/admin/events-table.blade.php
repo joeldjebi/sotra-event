@@ -4,7 +4,9 @@
             <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Rechercher un événement" />
             <div class="w-52"><x-ui.select label="" name="statusFilter" wire:model.live="statusFilter" :options="$statuses" placeholder="Tous les statuts" /></div>
         </div>
-        <x-ui.button :href="route('admin.events.create')" icon="calendar">Nouvel événement</x-ui.button>
+        @if ($this->canManage())
+            <x-ui.button :href="route('admin.events.create')" icon="calendar">Nouvel événement</x-ui.button>
+        @endif
     </div>
 
     <x-ui.table>
@@ -17,9 +19,18 @@
             <th>Statut</th>
         </x-slot:head>
         @forelse ($events as $event)
-            <tr wire:key="event-{{ $event->id }}" class="cursor-pointer hover:bg-fill-subtle" onclick="window.location='{{ route('admin.events.edit', $event) }}'">
+            @php
+                // Consultation seule : l'événement ouvre ses ventes au lieu de l'éditeur.
+                $eventUrl = $this->canManage() ? route('admin.events.edit', $event)
+                    : (auth()->user()->can('platform-sales.view') ? route('admin.sales', ['evenement' => $event->id]) : null);
+            @endphp
+            <tr wire:key="event-{{ $event->id }}" @class(['hover:bg-fill-subtle', 'cursor-pointer' => $eventUrl]) @if ($eventUrl) onclick="window.location='{{ $eventUrl }}'" @endif>
                 <td>
-                    <a href="{{ route('admin.events.edit', $event) }}" class="font-medium hover:text-brand-text">{{ $event->name }}</a>
+                    @if ($eventUrl)
+                        <a href="{{ $eventUrl }}" class="font-medium hover:text-brand-text">{{ $event->name }}</a>
+                    @else
+                        <span class="font-medium">{{ $event->name }}</span>
+                    @endif
                     <p class="text-[13px] text-ink-secondary">{{ $event->venue->name }}</p>
                 </td>
                 <td class="whitespace-nowrap">
@@ -34,7 +45,9 @@
         @empty
             <tr><td colspan="6">
                 <x-ui.empty-state icon="calendar" title="Aucun événement" description="Créez un événement : informations, points d'embarquement, grille tarifaire, puis canaux et publication.">
-                    <x-ui.button :href="route('admin.events.create')">Créer un événement</x-ui.button>
+                    @if ($this->canManage())
+                        <x-ui.button :href="route('admin.events.create')">Créer un événement</x-ui.button>
+                    @endif
                 </x-ui.empty-state>
             </td></tr>
         @endforelse

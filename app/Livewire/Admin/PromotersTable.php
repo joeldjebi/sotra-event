@@ -67,6 +67,11 @@ class PromotersTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::PromotersView;
+    }
+
+    protected function managePermission(): ?Permission
+    {
         return Permission::PromotersManage;
     }
 
@@ -77,6 +82,7 @@ class PromotersTable extends Component
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['name', 'email', 'phone', 'address', 'rccm_number', 'rccm_document', 'identity_document', 'editingId', 'account_name', 'account_email', 'account_password']);
         $this->createAccount = true;
         $this->resetValidation();
@@ -85,6 +91,7 @@ class PromotersTable extends Component
 
     public function edit(int $promoterId): void
     {
+        $this->authorizeManage();
         $promoter = Promoter::query()->findOrFail($promoterId);
         $this->resetValidation();
         $this->editingId = $promoter->id;
@@ -102,6 +109,7 @@ class PromotersTable extends Component
 
     public function save(AttachPromoterDocument $attachDocument): void
     {
+        $this->authorizeManage();
         $data = $this->validate([
             'name' => ['required', 'string', 'max:120', Rule::unique('promoters', 'name')->ignore($this->editingId)],
             'email' => ['nullable', 'email', 'max:180'],
@@ -176,6 +184,7 @@ class PromotersTable extends Component
 
     public function approve(ReviewPromoter $review): void
     {
+        $this->authorizeManage();
         $promoter = $this->reviewed();
         $review->approve($promoter);
         $this->closeReview("{$promoter->name} validé ; il est prévenu par SMS.");
@@ -183,6 +192,7 @@ class PromotersTable extends Component
 
     public function reject(ReviewPromoter $review): void
     {
+        $this->authorizeManage();
         $this->validateNote();
         $promoter = $this->reviewed();
         $review->reject($promoter, trim($this->decisionNote));
@@ -191,6 +201,7 @@ class PromotersTable extends Component
 
     public function suspend(ReviewPromoter $review): void
     {
+        $this->authorizeManage();
         $this->validateNote();
         $promoter = $this->reviewed();
         $review->suspend($promoter, trim($this->decisionNote));
@@ -199,6 +210,7 @@ class PromotersTable extends Component
 
     public function reactivate(ReviewPromoter $review): void
     {
+        $this->authorizeManage();
         $promoter = $this->reviewed();
         $review->reactivate($promoter);
         $this->closeReview("{$promoter->name} réactivé.");

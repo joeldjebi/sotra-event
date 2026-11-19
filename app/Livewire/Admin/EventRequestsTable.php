@@ -29,6 +29,11 @@ class EventRequestsTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::EventsView;
+    }
+
+    protected function managePermission(): ?Permission
+    {
         return Permission::EventsManage;
     }
 
@@ -39,11 +44,13 @@ class EventRequestsTable extends Component
 
     public function accept(int $requestId): void
     {
+        $this->authorizeManage();
         $this->redirectRoute('admin.events.create', ['demande' => $this->pending($requestId)->id]);
     }
 
     public function startRejection(int $requestId): void
     {
+        $this->authorizeManage();
         $this->rejectingId = $this->pending($requestId)->id;
         $this->reason = '';
         $this->resetValidation();
@@ -52,6 +59,7 @@ class EventRequestsTable extends Component
 
     public function reject(SmsSender $sms): void
     {
+        $this->authorizeManage();
         $this->validate(['reason' => ['required', 'string', 'max:500']], attributes: ['reason' => 'motif']);
 
         $request = $this->pending((int) $this->rejectingId);

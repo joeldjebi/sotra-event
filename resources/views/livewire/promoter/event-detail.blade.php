@@ -132,80 +132,15 @@
             @break
 
         @case('transport')
-            <div class="mb-6 grid gap-4 sm:grid-cols-3">
-                <x-ui.kpi label="Départs confirmés" :value="$fmt($transport['departed']).' / '.$fmt($transport['planned'])" icon="bus" />
-                <x-ui.kpi label="Départs à l'heure" :value="$transport['on_time_rate'] === null ? '—' : $transport['on_time_rate'].' %'" :hint="'Tolérance de '.\App\Services\Reporting\QualityMetrics::tolerance().' min'" icon="clock" />
-                <x-ui.kpi label="Bus arrivés" :value="$fmt($transport['arrived'])" icon="map-pin" />
-            </div>
-            <x-ui.table>
-                <x-slot:head>
-                    <th>Sens · point</th><th>Offre</th><th>Bus</th><th class="text-right">Passagers</th>
-                    <th>Départ prévu · réel</th><th>Écart</th><th>Arrivée</th><th>Statut</th>
-                </x-slot:head>
-                @forelse ($transport['rows'] as $row)
-                    <tr wire:key="mission-{{ $loop->index }}" @class(['opacity-55' => $row['replaced']])>
-                        <td><p class="font-medium">{{ $row['direction']->label() }}</p><p class="text-[12px] text-ink-secondary">{{ $row['point'] }}</p></td>
-                        <td>{{ $row['offer']->label() }}</td>
-                        <td>{{ $row['bus'] ? 'Bus '.$row['bus'] : 'À affecter' }}@if ($row['replaced'])<p class="text-[12px] text-ink-secondary">Remplacé après panne</p>@endif</td>
-                        <td class="text-right tabular-nums">{{ $fmt($row['boarded']) }} <span class="text-ink-tertiary">/ {{ $fmt($row['capacity']) }}</span></td>
-                        <td class="tabular-nums">{{ $row['planned_at']->format('H\hi') }} · {{ $row['actual_at']?->format('H\hi') ?? '—' }}</td>
-                        <td>
-                            @if ($row['on_time'] === null)
-                                <span class="text-ink-tertiary">{{ $row['gap_label'] }}</span>
-                            @else
-                                <x-ui.badge :tone="$row['on_time'] ? 'success' : 'warning'">{{ $row['gap_label'] }}</x-ui.badge>
-                            @endif
-                        </td>
-                        <td class="tabular-nums">{{ $row['arrived_at']?->format('H\hi') ?? '—' }}</td>
-                        <td><x-ui.badge :tone="$row['status']->tone()">{{ $row['status']->label() }}</x-ui.badge></td>
-                    </tr>
-                @empty
-                    <tr><td colspan="8"><x-ui.empty-state icon="bus" title="Plan de transport à venir" description="La compagnie répartit les bus selon les ventes, avant le jour J." /></td></tr>
-                @endforelse
-            </x-ui.table>
+            @include('partials.event-tabs.transport')
             @break
 
         @case('carte')
-            <div wire:poll.15s>
-                @if ($live['tracked'] === 0)
-                    <x-ui.alert tone="info" class="mb-4">Aucun bus en mission pour le moment. Les positions s'affichent pendant les trajets, envoyées par le téléphone du convoyeur.</x-ui.alert>
-                @endif
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-                    <x-ui.map :data="$live['map']" label="Carte des bus en direct" :height="460" wire:key="live-map-{{ $event->id }}" />
-                    <x-ui.table>
-                        <x-slot:head><th>Bus</th><th>Statut</th><th class="text-right">À bord</th><th class="text-right">Arrivée estimée</th></x-slot:head>
-                        @forelse ($live['buses'] as $bus)
-                            <tr wire:key="live-bus-{{ $loop->index }}">
-                                <td><p class="font-medium">{{ $bus['label'] }}</p><p class="text-[12px] text-ink-secondary">{{ $bus['direction']->label() }} · {{ $bus['point'] }}{{ $bus['seen_at'] ? ' · vu '.$bus['seen_at']->diffForHumans() : '' }}</p></td>
-                                <td><x-ui.badge :tone="$bus['status']->tone()">{{ $bus['status']->label() }}</x-ui.badge></td>
-                                <td class="text-right tabular-nums">{{ $fmt($bus['passengers']) }}</td>
-                                <td class="text-right tabular-nums">{{ $bus['eta'] === null ? '—' : 'dans '.$bus['eta'].' min' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="4" class="text-[14px] text-ink-secondary">Aucun bus en mission.</td></tr>
-                        @endforelse
-                    </x-ui.table>
-                </div>
-                <p class="mt-3 text-[12px] text-ink-tertiary">Mise à jour automatique toutes les 15 secondes. Les cercles sont les zones de dépose et de reprise.</p>
-            </div>
+            @include('partials.event-tabs.carte')
             @break
 
         @case('incidents')
-            <x-ui.table>
-                <x-slot:head><th>Signalée</th><th>Bus · point</th><th>Panne</th><th class="text-right">Passagers à bord</th><th>Issue</th><th>Statut</th></x-slot:head>
-                @forelse ($incidents as $row)
-                    <tr wire:key="incident-{{ $loop->index }}">
-                        <td class="whitespace-nowrap">{{ $row['at']->translatedFormat('j M · H\hi') }}</td>
-                        <td><p>{{ $row['bus'] ? 'Bus '.$row['bus'] : '—' }}</p><p class="text-[12px] text-ink-secondary">{{ $row['point'] ?? '' }}{{ $row['place'] ? ' · '.$row['place'] : '' }}</p></td>
-                        <td>{{ $row['type'] }} @if ($row['urgent'])<x-ui.badge tone="danger" class="ml-1">Urgent</x-ui.badge>@endif</td>
-                        <td class="text-right tabular-nums">{{ $fmt($row['passengers']) }}</td>
-                        <td>{{ $row['result'] ?? 'En cours' }}@if ($row['duration'] !== null)<p class="text-[12px] text-ink-secondary">Résolue en {{ $row['duration'] }} min</p>@endif</td>
-                        <td><x-ui.badge :tone="$row['status']->tone()">{{ $row['status']->label() }}</x-ui.badge></td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6"><x-ui.empty-state icon="wrench" title="Aucune panne" description="Les pannes signalées par les convoyeurs s'afficheront ici, avec leur prise en charge." /></td></tr>
-                @endforelse
-            </x-ui.table>
+            @include('partials.event-tabs.incidents')
             @break
 
         @case('avis')

@@ -49,6 +49,14 @@ class PassNotifier
         }
     }
 
+    /**
+     * Renvoi d'un Pass à son détenteur (SMS et WhatsApp), à sa demande, par le centre d'appel.
+     */
+    public function resend(Pass $pass): void
+    {
+        $this->sendPasses($pass->holder, [$pass], null);
+    }
+
     public function passTransferred(Pass $pass, Customer $from): void
     {
         $this->sendPasses($pass->holder, [$pass], $from);

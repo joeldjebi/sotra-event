@@ -47,10 +47,10 @@
                     @if ($request->review_note)<p class="mt-1 max-w-56 text-[12px] text-ink-secondary">{{ $request->review_note }}</p>@endif
                 </td>
                 <td class="text-right whitespace-nowrap">
-                    @if ($request->isPending())
+                    @if ($request->isPending() && $this->canManage())
                         <x-ui.button size="sm" type="button" wire:click="accept({{ $request->id }})">Créer l'événement</x-ui.button>
                         <x-ui.button variant="danger-tinted" size="sm" type="button" class="ml-1" wire:click="startRejection({{ $request->id }})">Refuser</x-ui.button>
-                    @elseif ($request->event)
+                    @elseif ($request->event && $this->canManage())
                         <x-ui.button variant="secondary" size="sm" :href="route('admin.events.edit', $request->event)">Voir l'événement</x-ui.button>
                     @endif
                 </td>

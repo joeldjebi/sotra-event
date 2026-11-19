@@ -81,6 +81,14 @@ class BreakdownAlert extends Model
     }
 
     /**
+     * @return BelongsTo<Event, $this>
+     */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class)->withoutGlobalScopes();
+    }
+
+    /**
      * @return BelongsTo<Mission, $this>
      */
     public function mission(): BelongsTo

@@ -83,6 +83,15 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | P.10 | « Exporter (Excel) » et « Bilan PDF » depuis un événement | Classeur à 7 feuilles et bilan détaillé, sans montant ni identité ; refusés pour l'événement d'un autre promoteur | `Promoters/PromoterEventsTest` | |
 | P.7 | Refuser une demande d'événement | Motif envoyé par SMS et visible par le promoteur | `Promoters/PromoterTeamAndRequestsTest` | |
 
+## Évolution — Équipes ACCES TRANS (19/11/2026)
+
+| # | Scénario | Résultat attendu | Test | Statut |
+|---|---|---|---|---|
+| E.1 | Direction commerciale : ventes, événements, promoteurs, demandes, reversements | Consultation seule : aucun bouton de création, de validation ni de paiement ; actions refusées | `Admin/AccesTransTeamsTest` | |
+| E.2 | Direction technique : supervision en direct et terminaux | Pannes en cours de tous les événements, carte, départs, terminaux à vérifier ; aucun montant | `Admin/AccesTransTeamsTest` | |
+| E.3 | Centre d'appel : chercher un numéro, renvoyer le Pass, ouvrir une réclamation, noter l'appel | Fiche du spectateur, SMS renvoyé, réclamation créée, appels au journal | `Admin/AccesTransTeamsTest` | |
+| E.4 | Centre d'appel : annuler un Pass | Règles du spectateur (RG-19) : retenue de 8 %, refus à moins de 24 h | `Admin/AccesTransTeamsTest` | |
+
 ## Lot 5 — Finance et pilote (partie web et API)
 
 | # | Scénario | Résultat attendu | Test | Statut |

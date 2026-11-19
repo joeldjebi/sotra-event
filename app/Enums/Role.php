@@ -9,6 +9,9 @@ enum Role: string
 {
     case SuperAdmin = 'super_admin';
     case Operator = 'operateur';
+    case PlatformCommercial = 'direction_commerciale';
+    case PlatformTechnical = 'direction_technique';
+    case CallCenter = 'centre_appel';
     case Commercial = 'commercial';
     case Quality = 'qualite';
     case Operations = 'exploitation';
@@ -20,6 +23,9 @@ enum Role: string
         return match ($this) {
             self::SuperAdmin => 'Super admin',
             self::Operator => 'Opérateur ACCES EVENT',
+            self::PlatformCommercial => 'Direction commerciale ACCES TRANS',
+            self::PlatformTechnical => 'Direction technique ACCES TRANS',
+            self::CallCenter => 'Centre d\'appel',
             self::Commercial => 'Direction commerciale',
             self::Quality => 'Direction qualité',
             self::Operations => 'Exploitation',
@@ -31,7 +37,7 @@ enum Role: string
     public function space(): Space
     {
         return match ($this) {
-            self::SuperAdmin, self::Operator => Space::Admin,
+            self::SuperAdmin, self::Operator, self::PlatformCommercial, self::PlatformTechnical, self::CallCenter => Space::Admin,
             self::Commercial, self::Quality, self::Operations => Space::Company,
             self::TransportLead, self::PromoterAdmin => Space::Promoter,
         };
@@ -46,14 +52,23 @@ enum Role: string
             Permission::PlatformDashboard, Permission::EventsManage, Permission::CompaniesManage,
             Permission::PromotersManage, Permission::PassesManage, Permission::PayoutsManage,
             Permission::UsersManage, Permission::AuditView,
+            Permission::EventsView, Permission::PromotersView, Permission::PayoutsView, Permission::PlatformSalesView,
+            Permission::OperationsSupervise, Permission::CallCenterAccess,
         ];
 
         return match ($this) {
             self::SuperAdmin => $admin,
             self::Operator => array_values(array_filter(
                 $admin,
-                fn (Permission $permission): bool => ! in_array($permission, [Permission::UsersManage, Permission::PayoutsManage], true),
+                fn (Permission $permission): bool => ! in_array($permission, [Permission::UsersManage, Permission::PayoutsManage, Permission::PayoutsView], true),
             )),
+            // Équipes ACCES TRANS : consultation, sans les réglages ni les comptes.
+            self::PlatformCommercial => [
+                Permission::PlatformDashboard, Permission::PlatformSalesView, Permission::EventsView,
+                Permission::PromotersView, Permission::PayoutsView,
+            ],
+            self::PlatformTechnical => [Permission::OperationsSupervise],
+            self::CallCenter => [Permission::CallCenterAccess],
             self::Commercial => [
                 Permission::SalesView, Permission::ProposedEventsRespond, Permission::PricingView,
                 Permission::DemandView, Permission::CompanyPayoutsView, Permission::ReportsView,

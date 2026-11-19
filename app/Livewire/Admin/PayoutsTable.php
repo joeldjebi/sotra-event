@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Models\Payout;
 use App\Models\User;
 use App\Services\Finance\PayoutCalculator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -45,7 +46,15 @@ class PayoutsTable extends Component
 
     protected function permission(): Permission
     {
-        return Permission::PayoutsManage;
+        return Permission::PayoutsView;
+    }
+
+    /**
+     * Valider, recalculer et payer restent réservés à la permission de gestion des reversements.
+     */
+    public function canManage(): bool
+    {
+        return Gate::allows(Permission::PayoutsManage->value);
     }
 
     public function show(int $payoutId): void
@@ -60,6 +69,7 @@ class PayoutsTable extends Component
 
     public function recalculate(PayoutCalculator $calculator): void
     {
+        Gate::authorize(Permission::PayoutsManage->value);
         $payout = $this->viewing();
         $calculator->generate($payout->event);
         $this->notify("Relevé {$payout->reference} recalculé.");
@@ -67,6 +77,7 @@ class PayoutsTable extends Component
 
     public function validatePayout(): void
     {
+        Gate::authorize(Permission::PayoutsManage->value);
         $payout = $this->viewing();
         abort_unless($payout->status === PayoutStatus::Calculated, 409);
         $payout->update(['status' => PayoutStatus::Validated, 'validated_by' => $this->user()->id, 'validated_at' => now()]);
@@ -75,6 +86,7 @@ class PayoutsTable extends Component
 
     public function markPaid(): void
     {
+        Gate::authorize(Permission::PayoutsManage->value);
         $payout = $this->viewing();
         abort_unless($payout->status === PayoutStatus::Validated, 409);
 

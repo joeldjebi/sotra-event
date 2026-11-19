@@ -33,7 +33,7 @@
                         · le {{ ($payout?->due_on ?? $dueOn)->translatedFormat('j F Y') }}, 5 jours ouvrés après l'événement</span>
                 </p>
                 @can(\App\Enums\Permission::CompanyPayoutsView->value)
-                    <a href="{{ route('company.payouts') }}" class="font-medium text-brand-text hover:underline">Historique des reversements</a>
+                    <a href="{{ auth()->user()->company_id ? route('company.payouts') : route('admin.payouts') }}" class="font-medium text-brand-text hover:underline">Historique des reversements</a>
                 @endcan
             </div>
         </x-ui.card>

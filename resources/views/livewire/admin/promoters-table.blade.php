@@ -13,7 +13,9 @@
                 @endforeach
             </x-ui.segmented>
         </div>
-        <x-ui.button wire:click="create" type="button" icon="sparkles">Nouveau promoteur</x-ui.button>
+        @if ($this->canManage())
+            <x-ui.button wire:click="create" type="button" icon="sparkles">Nouveau promoteur</x-ui.button>
+        @endif
     </div>
 
     <x-ui.table>
@@ -53,9 +55,11 @@
                 <td><x-ui.badge :tone="$promoter->status->tone()">{{ $promoter->status->label() }}</x-ui.badge></td>
                 <td class="text-right whitespace-nowrap">
                     <x-ui.button :variant="$promoter->status === \App\Enums\PromoterStatus::Pending ? 'primary' : 'secondary'" size="sm" type="button" wire:click="review({{ $promoter->id }})">
-                        {{ $promoter->status === \App\Enums\PromoterStatus::Pending ? 'Examiner' : 'Dossier' }}
+                        {{ $promoter->status === \App\Enums\PromoterStatus::Pending && $this->canManage() ? 'Examiner' : 'Dossier' }}
                     </x-ui.button>
-                    <x-ui.button variant="secondary" size="sm" type="button" class="ml-1" wire:click="edit({{ $promoter->id }})">Modifier</x-ui.button>
+                    @if ($this->canManage())
+                        <x-ui.button variant="secondary" size="sm" type="button" class="ml-1" wire:click="edit({{ $promoter->id }})">Modifier</x-ui.button>
+                    @endif
                 </td>
             </tr>
         @empty
@@ -162,7 +166,7 @@
                     </p>
                 @endif
 
-                @if (in_array($reviewing->status, [\App\Enums\PromoterStatus::Pending, \App\Enums\PromoterStatus::Approved], true))
+                @if ($this->canManage() && in_array($reviewing->status, [\App\Enums\PromoterStatus::Pending, \App\Enums\PromoterStatus::Approved], true))
                     <x-ui.textarea :label="$reviewing->status === \App\Enums\PromoterStatus::Pending ? 'Motif du refus (envoyé au promoteur par SMS)' : 'Motif de la suspension (envoyé au promoteur par SMS)'" name="decisionNote" rows="2" wire:model="decisionNote" />
                 @endif
                 @error('status')<p class="text-danger">{{ $message }}</p>@enderror
@@ -170,7 +174,7 @@
         @endif
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Fermer</x-ui.button>
-            @if ($reviewing)
+            @if ($reviewing && $this->canManage())
                 @switch($reviewing->status)
                     @case(\App\Enums\PromoterStatus::Pending)
                         <x-ui.button variant="danger-tinted" type="button" wire:click="reject">Refuser</x-ui.button>

@@ -49,7 +49,7 @@
                     @if ($viewing->proof_path)
                         <x-ui.button variant="secondary" size="sm" icon="document" :href="route('admin.payouts.proof', $viewing)">Justificatif</x-ui.button>
                     @endif
-                    @if ($viewing->status->value === 'calcule')
+                    @if ($viewing->status->value === 'calcule' && $this->canManage())
                         <x-ui.button variant="ghost" size="sm" type="button" wire:click="recalculate">Recalculer</x-ui.button>
                     @endif
                 </div>
@@ -60,7 +60,7 @@
                     @if ($viewing->paid_at)<li>Payé le {{ $viewing->paid_at->format('d/m/Y H\hi') }} par {{ $viewing->payer?->name }} · {{ $viewing->payment_method?->label() }} · {{ $viewing->payment_reference }}</li>@endif
                 </ol>
 
-                @if ($viewing->status->value === 'valide')
+                @if ($viewing->status->value === 'valide' && $this->canManage())
                     <form id="pay-form" wire:submit="markPaid" class="space-y-4 rounded-xl bg-fill p-4">
                         <h3 class="text-[15px] font-semibold">Enregistrer le paiement</h3>
                         <x-ui.select label="Mode" name="paymentMethod" wire:model="paymentMethod" :options="$methods" />
@@ -76,7 +76,8 @@
         @endif
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Fermer</x-ui.button>
-            @if ($viewing?->status->value === 'calcule')
+            @if (! $this->canManage())
+            @elseif ($viewing?->status->value === 'calcule')
                 <x-ui.button type="button" wire:click="validatePayout" wire:confirm="Valider ce relevé ? Il ne sera plus recalculé.">Valider le relevé</x-ui.button>
             @elseif ($viewing?->status->value === 'valide')
                 <x-ui.button form="pay-form">Marquer payé</x-ui.button>
