@@ -347,18 +347,20 @@ class DemoOperationsSeeder extends Seeder
             'Ce soir, ouverture des portes à '.($event->doors_open_at?->format('H\hi') ?? '').'. Les bus vous déposent au parking Nord.', ['push', 'sms', 'whatsapp']);
 
         $breakdownDone = false;
+        $aboBuses = 0;
 
-        foreach ($this->missions($event, Direction::Outbound) as $index => $mission) {
+        foreach ($this->missions($event, Direction::Outbound) as $mission) {
             $commune = $mission->boardingPoint->commune_code;
             $breakdown = $commune === 'COC' && ! $breakdownDone;
             $breakdownDone = $breakdownDone || $breakdown;
+            $aboBuses += $commune === 'ABO' ? 1 : 0;
             $this->board($mission, $mission->planned_departure_at->copy()->subMinutes(20)->min($realNow->copy()->subMinutes(2)), $commune === 'MAR' ? 0.45 : 0.92, $realNow);
 
             match (true) {
                 // Yopougon : partis à l'heure, arrivés au stade.
                 $commune === 'YOP' => $this->liveArrived($mission, $realNow),
                 // Abobo : un bus en route, le suivant n'est toujours pas parti (retard > 20 min).
-                $commune === 'ABO' && $index % 2 === 1 => $this->delays->check($mission),
+                $commune === 'ABO' && $aboBuses === 2 => $this->delays->check($mission),
                 $commune === 'ABO' => $this->liveOnRoute($mission, 6, 0.55, $realNow),
                 // Cocody : panne urgente avec passagers à bord, équipe en route, remplacement à décider.
                 $breakdown => $this->liveBreakdown($event, $mission, $realNow),
