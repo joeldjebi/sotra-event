@@ -41,4 +41,6 @@ enum Permission: string
     case EventTracking = 'event.tracking';
     case PromoterMessagesSend = 'promoter-messages.send';
     case PromoKitView = 'promo-kit.view';
+    case PromoterTeamManage = 'promoter-team.manage';
+    case EventRequestsSubmit = 'event-requests.submit';
 }

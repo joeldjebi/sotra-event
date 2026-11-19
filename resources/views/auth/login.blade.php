@@ -23,4 +23,7 @@
 
         <x-ui.button size="lg" class="w-full">Se connecter</x-ui.button>
     </form>
+    <p class="mt-6 text-center text-[14px] text-ink-secondary">
+        Organisateur d'événements ? <a href="{{ route('promoters.apply') }}" class="font-medium text-brand-text hover:underline">Devenir promoteur</a>
+    </p>
 </x-layouts.auth>

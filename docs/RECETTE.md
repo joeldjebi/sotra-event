@@ -2,12 +2,12 @@
 
 Pour ACCES EVENT et la SOTRA, qui recettent la plateforme lot par lot (§ 15 du CDC).
 Chaque scénario se joue à la main sur l'environnement de recette. La colonne « Test » renvoie au test
-automatisé qui vérifie la même règle à chaque modification (`composer check`, 282 tests au 13/11/2026).
+automatisé qui vérifie la même règle à chaque modification (`composer check`, 323 tests au 19/11/2026).
 
 **Comptes de démonstration** (recette uniquement, mot de passe `password`) :
 - `admin@eventtrans.test` (console) ;
 - `commercial@sotra.test`, `qualite@sotra.test`, `exploitation@sotra.test` (espace compagnie) ;
-- `chef.projet@promoteur.test` (espace promoteur).
+- `admin@promoteur.test` (administrateur du promoteur) et `chef.projet@promoteur.test` (chef de projet transport).
 
 Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en local ; en recette, il arrive par SMS réel avec MTarget.
 
@@ -66,6 +66,18 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | 4.8 | Promoteur : suivre les arrivées | Spectateurs arrivés, bus, retards, flux prévu et réel par 15 min (PR-02, PR-03) | `Quality/PromoterSpaceTest` | |
 | 4.9 | Promoteur : message aux passagers d'un bus | Seuls ses passagers le reçoivent ; message journalisé ; plafond respecté (PR-04, PR-08) | `Quality/PromoterSpaceTest` | |
 | 4.10 | Spectateur : avis et réclamation depuis « Mon Pass » | Avis seulement après le trajet, une fois ; réclamation suivie (SP-22, SP-23) | `Quality/FeedbackTest` | |
+
+## Évolution — Promoteurs autonomes (19/11/2026)
+
+| # | Scénario | Résultat attendu | Test | Statut |
+|---|---|---|---|---|
+| P.1 | S'inscrire sur `/devenir-promoteur` sans justificatif | Code SMS demandé ; demande « En attente de validation », dossier incomplet ; ACCES EVENT prévenu | `Promoters/PromoterOnboardingTest` | |
+| P.2 | Se connecter avant validation | Page de suivi de la demande, sans accès à l'espace ; dossier complétable | `Promoters/PromoterOnboardingTest` | |
+| P.3 | Valider, refuser (motif), suspendre, réactiver dans la console | Statut changé, SMS au promoteur, décision journalisée ; espace fermé si suspendu | `Promoters/PromoterOnboardingTest` | |
+| P.4 | Créer un promoteur dans la console | Validé d'office ; son compte est administrateur du promoteur | `Promoters/PromoterOnboardingTest` | |
+| P.5 | Administrateur du promoteur : créer un chef de projet | Compte rattaché à son seul promoteur, mot de passe initial à changer | `Promoters/PromoterTeamAndRequestsTest` | |
+| P.6 | Proposer un événement, puis ACCES EVENT le crée | Formulaire de la console prérempli ; demande « Acceptée » liée à l'événement ; prix fixés par la console | `Promoters/PromoterTeamAndRequestsTest` | |
+| P.7 | Refuser une demande d'événement | Motif envoyé par SMS et visible par le promoteur | `Promoters/PromoterTeamAndRequestsTest` | |
 
 ## Lot 5 — Finance et pilote (partie web et API)
 

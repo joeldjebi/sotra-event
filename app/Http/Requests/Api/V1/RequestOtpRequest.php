@@ -22,7 +22,7 @@ class RequestOtpRequest extends FormRequest
     {
         return [
             'phone' => ['required', 'string', new ValidPhoneNumber],
-            'audience' => ['required', Rule::enum(OtpAudience::class)],
+            'audience' => ['required', Rule::enum(OtpAudience::class)->only([OtpAudience::Customer, OtpAudience::Staff])],
         ];
     }
 

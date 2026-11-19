@@ -75,7 +75,7 @@ it('crée un promoteur avec le compte de connexion de son chef de projet et un m
     $user = User::query()->where('email', 'contact@livenation.ci')->sole();
 
     expect($user->promoter_id)->toBe($promoter->id)
-        ->and($user->hasRole(Role::TransportLead->value))->toBeTrue()
+        ->and($user->hasRole(Role::PromoterAdmin->value))->toBeTrue()
         ->and($user->must_change_password)->toBeTrue()
         ->and(Hash::check('Promoteur2026ok', $user->password))->toBeTrue();
 

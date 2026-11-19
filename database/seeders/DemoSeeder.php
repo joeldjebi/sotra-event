@@ -47,6 +47,7 @@ class DemoSeeder extends Seeder
             ['Quentin Qualité', 'qualite@sotra.test', Role::Quality, ['company_id' => $sotra->id]],
             ['Edouard Exploitation', 'exploitation@sotra.test', Role::Operations, ['company_id' => $sotra->id]],
             ['Paul Chef de projet', 'chef.projet@promoteur.test', Role::TransportLead, ['promoter_id' => $promoter->id]],
+            ['Mariam Admin promoteur', 'admin@promoteur.test', Role::PromoterAdmin, ['promoter_id' => $promoter->id]],
         ];
 
         foreach ($accounts as [$name, $email, $role, $attributes]) {

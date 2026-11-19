@@ -3,6 +3,7 @@
 use App\Enums\Permission;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\EventEditorController;
+use App\Http\Controllers\Web\Admin\PromoterDocumentController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Company\QualityReportController;
 use App\Http\Controllers\Web\PayoutDocumentController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Web\SpaceRedirectController;
 use App\Http\Controllers\Web\ThemePreferenceController;
 use App\Http\Controllers\Web\TwoFactorEnrollmentController;
 use App\Livewire\Site\Account as SiteAccount;
+use App\Livewire\Site\BecomePromoter;
 use App\Livewire\Site\ChoosePass;
 use App\Livewire\Site\DeleteAccount;
 use App\Livewire\Site\Home as SiteHome;
@@ -35,6 +37,7 @@ Route::get('/evenements/{slug}', ChoosePass::class)->name('site.events.show');
 Route::get('/connexion', SiteLogin::class)->middleware('guest:customer')->name('site.login');
 Route::get('/pass/{pass}', PublicPassController::class)->middleware('signed')->name('site.passes.public');
 Route::get('/mon-trajet', SiteTrip::class)->name('site.trip');
+Route::get('/devenir-promoteur', BecomePromoter::class)->name('promoters.apply');
 
 // Textes légaux (NF-12, NF-14).
 Route::view('/cgv', 'site.legal.terms')->name('legal.terms');
@@ -58,6 +61,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('/preferences/theme', ThemePreferenceController::class)->name('preferences.theme');
     Route::get('/securite/double-authentification', TwoFactorEnrollmentController::class)->name('security.two-factor');
     Route::view('/securite/mot-de-passe', 'security.password')->name('security.password');
+    // Suivi de la demande d'un promoteur pas encore validé (ou refusé, suspendu) : hors de l'espace promoteur.
+    Route::get('/promoteur/demande', function () {
+        $promoter = request()->user()->promoter;
+        abort_if($promoter === null, 403);
+
+        return $promoter->isApproved() ? redirect()->route('space') : view('promoter.application');
+    })->name('promoter.application');
 
     // La 2FA est obligatoire (NF-03) : la désactivation proposée par Fortify est neutralisée.
     // Seul un administrateur peut la réinitialiser (Utilisateurs & rôles).
@@ -66,7 +76,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('two-factor.disable');
     }
 
-    Route::middleware(['two-factor.enrolled', 'password.changed'])->group(function () {
+    // Un promoteur non validé ne voit que le suivi de sa demande (avant même l'activation de la 2FA).
+    Route::middleware(['promoter.approved', 'two-factor.enrolled', 'password.changed'])->group(function () {
         Route::prefix('admin')->name('admin.')->middleware('space:admin')->group(function () {
             Route::get('/', AdminDashboardController::class)->name('dashboard');
 
@@ -78,6 +89,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             });
             LivewirePage::route('compagnies', 'companies', 'admin.companies-table', 'Compagnies', Permission::CompaniesManage);
             LivewirePage::route('promoteurs', 'promoters', 'admin.promoters-table', 'Promoteurs', Permission::PromotersManage);
+            Route::get('promoteurs/{promoter}/justificatifs/{document}', PromoterDocumentController::class)
+                ->middleware('can:'.Permission::PromotersManage->value)->name('promoters.document');
+            LivewirePage::route('demandes-evenements', 'event-requests', 'admin.event-requests-table', 'Demandes des promoteurs', Permission::EventsManage);
             LivewirePage::route('pass', 'passes', 'admin.passes-table', 'Pass & ventes', Permission::PassesManage);
             LivewirePage::route('remboursements', 'refunds', 'admin.refunds-table', 'Remboursements', Permission::PassesManage);
             LivewirePage::route('reversements', 'payouts', 'admin.payouts-table', 'Reversements', Permission::PayoutsManage);
@@ -125,6 +139,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             LivewirePage::route('zones-de-depose', 'drop-zones', 'promoter.drop-zones', 'Zones de dépose', Permission::EventTracking);
             LivewirePage::route('messages', 'messages', 'promoter.messages', 'Messages aux spectateurs', Permission::EventTracking);
             LivewirePage::route('bilan', 'report', 'promoter.report', 'Bilan', Permission::EventTracking);
+            LivewirePage::route('demandes', 'event-requests', 'promoter.event-requests', 'Demandes d\'événement', Permission::EventRequestsSubmit);
+            LivewirePage::route('equipe', 'team', 'promoter.team-table', 'Mon équipe', Permission::PromoterTeamManage);
+            LivewirePage::route('structure', 'organisation', 'promoter.organisation', 'Ma structure', Permission::PromoterTeamManage);
             Route::get('bilan/{event}.pdf', PromoterReportController::class)->middleware('can:'.Permission::EventTracking->value)->name('report.pdf');
             Route::middleware('can:'.Permission::PromoKitView->value)->group(function () {
                 Route::get('kit', [PromoKitController::class, 'index'])->name('kit');

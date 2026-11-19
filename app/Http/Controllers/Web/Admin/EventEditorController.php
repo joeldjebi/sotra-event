@@ -19,9 +19,17 @@ class EventEditorController extends Controller
         4 => 'Canaux & publication',
     ];
 
-    public function create(): View
+    /**
+     * Nouvel événement, éventuellement prérempli avec une demande de promoteur (?demande=).
+     */
+    public function create(Request $request): View
     {
-        return view('admin.events.edit', ['event' => null, 'step' => 1, 'steps' => self::STEPS]);
+        return view('admin.events.edit', [
+            'event' => null,
+            'step' => 1,
+            'steps' => self::STEPS,
+            'eventRequestId' => $request->integer('demande') ?: null,
+        ]);
     }
 
     public function edit(Request $request, Event $event): View

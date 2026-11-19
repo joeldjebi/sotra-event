@@ -9,4 +9,5 @@ enum OtpAudience: string
 {
     case Customer = 'customer';
     case Staff = 'staff';
+    case PromoterApplicant = 'promoter_applicant';
 }

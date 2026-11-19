@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\EnsurePromoterApproved;
 use App\Http\Middleware\EnsureSpace;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'space' => EnsureSpace::class,
             'two-factor.enrolled' => EnsureTwoFactorEnrolled::class,
             'password.changed' => EnsurePasswordChanged::class,
+            'promoter.approved' => EnsurePromoterApproved::class,
             'active' => EnsureUserIsActive::class,
             'staff.device' => ResolveStaffDevice::class,
         ]);

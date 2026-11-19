@@ -13,6 +13,7 @@ enum Role: string
     case Quality = 'qualite';
     case Operations = 'exploitation';
     case TransportLead = 'chef_projet';
+    case PromoterAdmin = 'admin_promoteur';
 
     public function label(): string
     {
@@ -23,6 +24,7 @@ enum Role: string
             self::Quality => 'Direction qualité',
             self::Operations => 'Exploitation',
             self::TransportLead => 'Chef de projet transport',
+            self::PromoterAdmin => 'Administrateur promoteur',
         };
     }
 
@@ -31,7 +33,7 @@ enum Role: string
         return match ($this) {
             self::SuperAdmin, self::Operator => Space::Admin,
             self::Commercial, self::Quality, self::Operations => Space::Company,
-            self::TransportLead => Space::Promoter,
+            self::TransportLead, self::PromoterAdmin => Space::Promoter,
         };
     }
 
@@ -62,6 +64,11 @@ enum Role: string
                 Permission::BreakdownsManage, Permission::TechTeamsManage, Permission::DevicesManage,
             ],
             self::TransportLead => [Permission::EventTracking, Permission::PromoterMessagesSend, Permission::PromoKitView],
+            // L'administrateur du promoteur : mêmes écrans, plus son équipe et ses demandes d'événement.
+            self::PromoterAdmin => [
+                Permission::EventTracking, Permission::PromoterMessagesSend, Permission::PromoKitView,
+                Permission::PromoterTeamManage, Permission::EventRequestsSubmit,
+            ],
         };
     }
 

@@ -4,6 +4,14 @@
             @if ($locked)
                 <x-ui.alert tone="info">Événement proposé à la compagnie : les informations sont verrouillées. Elles redeviennent modifiables si la compagnie ouvre une négociation.</x-ui.alert>
             @endif
+            @if ($eventRequest)
+                <x-ui.alert tone="info">
+                    Demande de {{ $eventRequest->promoter->name }}, préremplie. Lieu indiqué : {{ $eventRequest->venueLabel() }}.
+                    @if ($eventRequest->expected_attendance) Public attendu : {{ number_format($eventRequest->expected_attendance, 0, ',', ' ') }}. @endif
+                    @if ($eventRequest->desired_communes) Communes souhaitées : {{ $eventRequest->desired_communes }}. @endif
+                    Choisissez la compagnie et vérifiez la commission : la demande sera acceptée à l'enregistrement.
+                </x-ui.alert>
+            @endif
 
             <section class="space-y-4">
                 <x-ui.section-title title="Événement" />

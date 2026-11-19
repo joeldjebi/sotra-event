@@ -50,7 +50,7 @@ docker compose -f docker-compose.prod.yml exec web php artisan db:seed --class=R
 docker compose -f docker-compose.prod.yml exec web php artisan users:create-admin admin@<domaine> "Nom Prénom"
 ```
 
-- Au démarrage, `web` applique les migrations (`RUN_MIGRATIONS=1`) et reconstruit les caches de configuration, de routes et de vues.
+- Au démarrage, `web` applique les migrations et met à jour les rôles et permissions (`RUN_MIGRATIONS=1`), puis reconstruit les caches de configuration, de routes et de vues.
 - Le premier super administrateur, créé par `users:create-admin` (mot de passe saisi au clavier), active sa double authentification à sa première connexion. Il crée ensuite les autres comptes dans « Utilisateurs & rôles ».
 
 Vérifications :

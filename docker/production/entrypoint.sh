@@ -14,6 +14,8 @@ as_app php artisan storage:link --quiet 2>/dev/null || true
 
 if [ "${RUN_MIGRATIONS:-0}" = "1" ] && [ "${1:-web}" = "web" ]; then
     as_app php artisan migrate --force
+    # Rôles et permissions tirés des enums : idempotent, met à jour les droits à chaque déploiement.
+    as_app php artisan db:seed --class=RolesAndPermissionsSeeder --force
 fi
 
 case "${1:-web}" in

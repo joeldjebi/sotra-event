@@ -17,6 +17,11 @@ class SpaceRedirectController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 403);
 
+        // Promoteur pas encore validé : suivi de sa demande, sans accès à l'espace.
+        if ($user->promoter !== null && ! $user->promoter->isApproved()) {
+            return redirect()->route('promoter.application');
+        }
+
         if ($user->mustEnrollTwoFactor()) {
             return redirect()->route('security.two-factor');
         }

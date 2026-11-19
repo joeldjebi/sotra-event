@@ -45,6 +45,7 @@
         · <a href="{{ route('legal.privacy') }}" class="hover:text-ink">Confidentialité</a>
         · <a href="{{ route('legal.notice') }}" class="hover:text-ink">Mentions légales</a>
         · <a href="{{ route('legal.account-deletion') }}" class="hover:text-ink">Supprimer mon compte</a>
+        · <a href="{{ route('promoters.apply') }}" class="hover:text-ink">Devenir promoteur</a>
         · <a href="{{ route('login') }}" class="hover:text-ink">Espace professionnel</a>
     </footer>
 

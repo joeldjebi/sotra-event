@@ -18,7 +18,7 @@
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="min-w-0">
             @switch($step)
-                @case(1) @livewire('admin.events.information-step', ['event' => $event]) @break
+                @case(1) @livewire('admin.events.information-step', ['event' => $event, 'eventRequestId' => $eventRequestId ?? null]) @break
                 @case(2) @livewire('admin.events.boarding-points-step', ['event' => $event]) @break
                 @case(3) @livewire('admin.events.pricing-step', ['event' => $event]) @break
                 @case(4) @livewire('admin.events.publication-step', ['event' => $event]) @break

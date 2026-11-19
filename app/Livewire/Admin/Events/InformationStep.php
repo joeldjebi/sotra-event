@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Admin\Events;
 
+use App\Enums\EventRequestStatus;
 use App\Enums\EventStatus;
 use App\Enums\Permission;
 use App\Enums\Role;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\Company;
 use App\Models\Event;
+use App\Models\EventRequest;
 use App\Models\Promoter;
 use App\Models\User;
 use App\Models\Venue;
@@ -55,17 +57,22 @@ class InformationStep extends Component
 
     public string $fee_rate = '';
 
+    /** Demande de promoteur à l'origine de l'événement : acceptée à la création. */
+    public ?int $eventRequestId = null;
+
     protected function permission(): Permission
     {
         return Permission::EventsManage;
     }
 
-    public function mount(?Event $event = null): void
+    public function mount(?Event $event = null, ?int $eventRequestId = null): void
     {
         $this->event = $event;
         $this->fee_rate = (string) config('eventtrans.events.default_fee_rate');
 
         if ($event === null) {
+            $this->prefillFromRequest($eventRequestId);
+
             return;
         }
 
@@ -83,6 +90,33 @@ class InformationStep extends Component
             'company_id' => $event->company_id,
             'commission_rate' => (string) (float) $event->commission_rate,
             'fee_rate' => (string) (float) $event->fee_rate,
+        ]);
+    }
+
+    /**
+     * Reprend une demande de promoteur encore à l'étude : nom, date, lieu, promoteur et Pass estimés.
+     */
+    private function prefillFromRequest(?int $eventRequestId): void
+    {
+        $request = $eventRequestId === null ? null : EventRequest::query()
+            ->where('status', EventRequestStatus::Submitted)
+            ->find($eventRequestId);
+
+        if ($request === null) {
+            return;
+        }
+
+        $this->eventRequestId = $request->id;
+        $this->fill([
+            'name' => $request->name,
+            'description' => (string) $request->description,
+            'venue_id' => $request->venue_id,
+            'date' => $request->starts_at->toDateString(),
+            'start_time' => $request->starts_at->format('H:i'),
+            'end_time' => $request->ends_at?->format('H:i') ?? $request->starts_at->copy()->addHours(4)->format('H:i'),
+            'estimated_passes' => (string) $request->estimated_passes,
+            'promoter_id' => $request->promoter_id,
+            'transport_lead_id' => $request->submitted_by,
         ]);
     }
 
@@ -159,6 +193,19 @@ class InformationStep extends Component
                 'created_by' => auth()->id(),
             ]);
 
+            if ($this->eventRequestId !== null) {
+                EventRequest::query()
+                    ->whereKey($this->eventRequestId)
+                    ->where('status', EventRequestStatus::Submitted)
+                    ->first()
+                    ?->update([
+                        'status' => EventRequestStatus::Accepted,
+                        'event_id' => $event->id,
+                        'reviewed_at' => now(),
+                        'reviewed_by' => auth()->id(),
+                    ]);
+            }
+
             session()->flash('flash', 'Événement créé. Ajoutez maintenant les points d\'embarquement.');
 
             return $this->redirectRoute('admin.events.edit', ['event' => $event, 'etape' => 2]);
@@ -206,12 +253,13 @@ class InformationStep extends Component
             'companies' => Company::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all(),
             'transportLeads' => $this->promoter_id === null ? [] : User::query()
                 ->where('promoter_id', $this->promoter_id)
-                ->role(Role::TransportLead->value)
+                ->role([Role::TransportLead->value, Role::PromoterAdmin->value])
                 ->orderBy('name')
                 ->get()
                 ->mapWithKeys(fn (User $user): array => [$user->id => $user->name.($user->phone ? ' · '.$user->phone : '')])
                 ->all(),
             'locked' => $this->isLocked(),
+            'eventRequest' => $this->eventRequestId === null ? null : EventRequest::query()->with(['promoter', 'venue'])->find($this->eventRequestId),
         ]);
     }
 }
