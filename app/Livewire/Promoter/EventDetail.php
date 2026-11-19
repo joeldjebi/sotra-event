@@ -13,7 +13,7 @@ use Livewire\Component;
 
 /**
  * Espace promoteur · Détail d'un événement, en onglets : Résumé, Ventes, Points d'embarquement, Embarquement,
- * Transport, Incidents, Avis, Réclamations, Messages et Annulations.
+ * Transport, Carte en direct (rafraîchie toutes les 15 s), Incidents, Avis, Réclamations, Messages et Annulations.
  * Volumes seulement : ni montants, ni données nominatives des spectateurs.
  */
 class EventDetail extends Component
@@ -26,6 +26,7 @@ class EventDetail extends Component
         'points' => 'Points d\'embarquement',
         'embarquement' => 'Embarquement',
         'transport' => 'Transport',
+        'carte' => 'Carte en direct',
         'incidents' => 'Incidents',
         'avis' => 'Avis',
         'reclamations' => 'Réclamations',
@@ -78,6 +79,7 @@ class EventDetail extends Component
             'points' => $tab === 'points' ? $insights->points($event) : null,
             'boarding' => $tab === 'embarquement' ? $insights->boarding($event) : null,
             'transport' => $tab === 'transport' ? $insights->transport($event) : null,
+            'live' => $tab === 'carte' ? $insights->liveMap($event) : null,
             'incidents' => $tab === 'incidents' ? $insights->incidents($event) : null,
             'reviews' => $tab === 'avis' ? $insights->reviews($event) : null,
             'complaints' => $tab === 'reclamations' ? $insights->complaints($event) : null,

@@ -78,6 +78,8 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | P.5 | Administrateur du promoteur : créer un chef de projet | Compte rattaché à son seul promoteur, mot de passe initial à changer | `Promoters/PromoterTeamAndRequestsTest` | |
 | P.6 | Proposer un événement, puis ACCES EVENT le crée | Formulaire de la console prérempli ; demande « Acceptée » liée à l'événement ; prix fixés par la console | `Promoters/PromoterTeamAndRequestsTest` | |
 | P.8 | « Mes événements » puis le détail d'un événement | Liste à partir de l'acceptation ; onglets Résumé, Ventes, Points, Embarquement, Transport, Incidents, Avis, Réclamations, Messages, Annulations ; volumes seulement, ni montant ni nom de spectateur ; événement d'un autre promoteur introuvable | `Promoters/PromoterEventsTest` | |
+| P.9 | Pendant un trajet : onglet « Carte en direct » | Bus en mission placés sur la carte, statut, passagers à bord, arrivée estimée ; mise à jour toutes les 15 s | `Promoters/PromoterEventsTest` | |
+| P.10 | « Exporter (Excel) » et « Bilan PDF » depuis un événement | Classeur à 7 feuilles et bilan détaillé, sans montant ni identité ; refusés pour l'événement d'un autre promoteur | `Promoters/PromoterEventsTest` | |
 | P.7 | Refuser une demande d'événement | Motif envoyé par SMS et visible par le promoteur | `Promoters/PromoterTeamAndRequestsTest` | |
 
 ## Lot 5 — Finance et pilote (partie web et API)

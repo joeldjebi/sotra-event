@@ -24,6 +24,7 @@ use App\Models\Pass;
 use App\Models\Refund;
 use App\Models\Review;
 use App\Models\Scan;
+use App\Services\Operations\TripTracker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,10 @@ use Illuminate\Support\Facades\DB;
  */
 class PromoterEventInsights
 {
-    public function __construct(private readonly EventSalesReport $sales) {}
+    public function __construct(
+        private readonly EventSalesReport $sales,
+        private readonly TripTracker $tracker,
+    ) {}
 
     /**
      * Statuts visibles par le promoteur : à partir de l'acceptation par la compagnie (les tarifs sont alors fixés).
@@ -359,6 +363,89 @@ class PromoterEventInsights
             'by_reason' => $refunds->groupBy(fn (Refund $refund): string => $refund->reason->label())
                 ->map(fn ($group, $label): array => ['label' => (string) $label, 'count' => $group->count()])
                 ->sortByDesc('count')->values()->all(),
+        ];
+    }
+
+    /**
+     * Carte en direct : dernière position des bus en mission (embarquement, en route, panne, arrivés),
+     * le lieu de l'événement et les zones de dépose et de reprise ; heure d'arrivée estimée par bus.
+     *
+     * @return array{
+     *     map: array{center: list<float>, zoom: int, fit: bool, markers: list<array{id: int, lat: float, lng: float, label: string, tone: string}>, zones: list<array{lat: float, lng: float, radius: int, label: string}>},
+     *     buses: list<array{label: string, direction: Direction, point: string, status: MissionStatus, passengers: int, eta: int|null, seen_at: Carbon|null}>,
+     *     tracked: int
+     * }
+     */
+    public function liveMap(Event $event): array
+    {
+        $event->loadMissing(['venue', 'dropZones']);
+
+        $missions = Mission::query()
+            ->with(['bus', 'boardingPoint'])
+            ->where('event_id', $event->id)
+            ->whereNull('replaced_by_mission_id')
+            ->whereIn('status', [MissionStatus::Boarding, MissionStatus::OnRoute, MissionStatus::Incident, MissionStatus::Arrived])
+            ->orderBy('direction')->orderBy('planned_departure_at')
+            ->get();
+
+        $buses = $missions->map(function (Mission $mission): array {
+            $position = $mission->lastPosition();
+
+            return [
+                'mission' => $mission,
+                'position' => $position,
+                'label' => $mission->bus !== null ? 'Bus '.$mission->bus->number : $mission->boardingPoint->commune,
+                'eta' => $this->tracker->etaMinutes($mission),
+            ];
+        });
+
+        $venue = $event->venue;
+        $markers = [[
+            'id' => 0, 'lat' => $venue->location->getLatitude(), 'lng' => $venue->location->getLongitude(), 'label' => $venue->name, 'tone' => 'neutral',
+        ]];
+
+        foreach ($buses as $bus) {
+            if ($bus['position'] === null) {
+                continue;
+            }
+
+            $markers[] = [
+                'id' => $bus['mission']->id,
+                'lat' => $bus['position']->location->getLatitude(),
+                'lng' => $bus['position']->location->getLongitude(),
+                'label' => $bus['label'].' · '.$bus['mission']->status->label(),
+                'tone' => match ($bus['mission']->status) {
+                    MissionStatus::Incident => 'danger',
+                    MissionStatus::Boarding => 'warning',
+                    default => 'success',
+                },
+            ];
+        }
+
+        return [
+            'map' => [
+                'center' => [$venue->location->getLatitude(), $venue->location->getLongitude()],
+                'zoom' => 11,
+                'fit' => true,
+                'markers' => $markers,
+                'zones' => $event->dropZones->map(fn ($zone): array => [
+                    'lat' => $zone->location->getLatitude(),
+                    'lng' => $zone->location->getLongitude(),
+                    'radius' => (int) $zone->radius_m,
+                    'label' => $zone->name.' · '.$zone->usage->label(),
+                ])->values()->all(),
+            ],
+            'buses' => $buses->map(fn (array $bus): array => [
+                'label' => $bus['label'],
+                'direction' => $bus['mission']->direction,
+                'point' => $bus['mission']->boardingPoint->commune,
+                'status' => $bus['mission']->status,
+                'passengers' => $bus['mission']->onBoardCount(),
+                'eta' => $bus['eta'],
+                'seen_at' => $bus['position']?->recorded_at,
+            ])->values()->all(),
+            // Le premier repère est le lieu de l'événement.
+            'tracked' => count($markers) - 1,
         ];
     }
 

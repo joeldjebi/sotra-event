@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Admin\PromoterDocumentController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Company\QualityReportController;
 use App\Http\Controllers\Web\PayoutDocumentController;
+use App\Http\Controllers\Web\Promoter\EventExportController as PromoterEventExportController;
 use App\Http\Controllers\Web\Promoter\PromoKitController;
 use App\Http\Controllers\Web\Promoter\ReportController as PromoterReportController;
 use App\Http\Controllers\Web\Site\PaymentSimulatorController;
@@ -141,6 +142,8 @@ Route::middleware(['auth', 'active'])->group(function () {
                 'parameters' => ['eventId' => $eventId],
                 'title' => 'Mes événements',
             ]))->whereNumber('eventId')->middleware('can:'.Permission::EventTracking->value)->name('events.show');
+            Route::get('evenements/{eventId}/export.xlsx', PromoterEventExportController::class)
+                ->whereNumber('eventId')->middleware('can:'.Permission::EventTracking->value)->name('events.export');
             LivewirePage::route('evenement', 'event', 'promoter.event-sheet', 'Fiche événement', Permission::EventTracking);
             LivewirePage::route('zones-de-depose', 'drop-zones', 'promoter.drop-zones', 'Zones de dépose', Permission::EventTracking);
             LivewirePage::route('messages', 'messages', 'promoter.messages', 'Messages aux spectateurs', Permission::EventTracking);

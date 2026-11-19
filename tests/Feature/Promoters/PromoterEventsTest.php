@@ -9,6 +9,7 @@ use App\Enums\EventStatus;
 use App\Enums\PassType;
 use App\Enums\RefundReason;
 use App\Enums\Role;
+use App\Exports\PromoterEventExport;
 use App\Livewire\Promoter\EventDetail;
 use App\Livewire\Promoter\EventsIndex;
 use App\Models\BreakdownAlert;
@@ -17,9 +18,11 @@ use App\Models\Event;
 use App\Models\Promoter;
 use App\Models\Review;
 use App\Services\Reporting\PromoterEventInsights;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
+use Maatwebsite\Excel\Facades\Excel;
 
 beforeEach(function () {
     $this->event = eventOnSale(seats: 10, attributes: ['sale_opened_at' => '2026-11-11 09:00']);
@@ -172,4 +175,61 @@ it('compte les annulations et les messages envoyés, sans montant (lot B)', func
         ->assertSee(RefundReason::Customer->label())->assertDontSee('FCFA')->assertDontSee('2 815');
     Livewire::test(EventDetail::class, ['eventId' => $this->event->id])->set('tab', 'messages')
         ->assertSee('Portes ouvertes à 17h.')->assertSee('Tous les détenteurs de Pass');
+});
+
+it('montre les bus en mission sur la carte en direct avec l\'arrivée estimée (lot C)', function () {
+    staffedMissions($this->event);
+    [$bus] = outboundMissions($this->event);
+    boardMission($bus, [$this->order->passes->first()]);
+    departAfter($bus, 0);
+    $bus->positions()->create(['recorded_at' => now(), 'location' => Point::makeGeodetic(5.40, -4.08), 'speed_kmh' => 40]);
+
+    $live = app(PromoterEventInsights::class)->liveMap($this->event);
+
+    expect($live['tracked'])->toBe(1)
+        ->and($live['buses'][0])->toMatchArray(['label' => 'Bus '.$bus->fresh()->bus->number, 'passengers' => 1])
+        ->and($live['buses'][0]['eta'])->toBeGreaterThan(0)
+        ->and(collect($live['map']['markers'])->pluck('tone')->all())->toContain('success');
+
+    $this->actingAs($this->lead);
+    Livewire::test(EventDetail::class, ['eventId' => $this->event->id])->set('tab', 'carte')
+        ->assertSee('Bus '.$bus->fresh()->bus->number)->assertSee('wire:poll.15s', false);
+});
+
+it('exporte l\'événement en Excel, sans montant, pour son seul promoteur (lot C)', function () {
+    Excel::fake();
+    $this->actingAs($this->lead);
+
+    $this->get(route('promoter.events.export', $this->event->id))->assertOk();
+
+    Excel::assertDownloaded('evenement-'.Str::slug($this->event->name).'.xlsx', function (PromoterEventExport $export): bool {
+        $sheets = $export->sheets();
+        $headings = collect($sheets)->flatMap(fn ($sheet) => $sheet->headings())->implode(' ');
+
+        return count($sheets) === 7
+            && $sheets[0]->array()[2] === ['Pass vendus', 4]
+            && ! str_contains($headings, 'FCFA')
+            && ! str_contains($headings, 'Recette');
+    });
+
+    $other = eventOnSale(attributes: ['promoter_id' => Promoter::factory()->create()->id]);
+    $this->get(route('promoter.events.export', $other->id))->assertNotFound();
+});
+
+it('télécharge le bilan PDF enrichi de son événement seulement (lot C)', function () {
+    $this->actingAs($this->lead);
+
+    $this->get(route('promoter.report.pdf', $this->event))->assertOk()->assertHeader('content-type', 'application/pdf');
+
+    $other = eventOnSale(attributes: ['promoter_id' => Promoter::factory()->create()->id]);
+    $this->get(route('promoter.report.pdf', $other))->assertNotFound();
+});
+
+it('génère un vrai classeur Excel à 7 feuilles (lot C)', function () {
+    staffedMissions($this->event);
+    $this->actingAs($this->lead);
+
+    $content = Excel::raw(new PromoterEventExport($this->event), Maatwebsite\Excel\Excel::XLSX);
+
+    expect(substr($content, 0, 2))->toBe('PK');
 });
