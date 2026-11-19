@@ -517,7 +517,7 @@ class DemoOperationsSeeder extends Seeder
 
         while ($sold < $target && $attempts++ < $target * 3) {
             Carbon::setTestNow($from->copy()->addMinutes((int) ($span * (mt_rand(0, 1000) / 1000) ** 0.6)));
-            $customer = Customer::query()->create(['phone' => $this->msisdn(), 'first_name' => fake('fr_FR')->firstName(), 'last_name' => fake('fr_FR')->lastName(), 'locale' => 'fr']);
+            $customer = Customer::query()->create(['phone' => $this->msisdn(), 'first_name' => $this->firstName(), 'last_name' => $this->lastName(), 'locale' => 'fr']);
             $offer = mt_rand(1, 100) > 82 ? Offer::Premium : Offer::Standard;
             $type = mt_rand(1, 100) > 92 ? PassType::Outbound : PassType::RoundTrip;
             $quantity = [1, 1, 2, 2, 2, 3, 4][mt_rand(0, 6)];
@@ -690,7 +690,7 @@ class DemoOperationsSeeder extends Seeder
 
         return Staff::query()->withoutGlobalScopes()->firstOrCreate(
             ['phone' => $prefix.str_pad((string) $slot, 4, '0', STR_PAD_LEFT)],
-            ['company_id' => $this->sotra->id, 'role' => $role, 'first_name' => fake('fr_FR')->firstName('male'), 'last_name' => fake('fr_FR')->lastName(),
+            ['company_id' => $this->sotra->id, 'role' => $role, 'first_name' => $this->firstName(), 'last_name' => $this->lastName(),
                 'employee_number' => ($this->testMode ? 'TEST-' : '').($role === StaffRole::Driver ? 'CH-' : 'CV-').(500 + $slot), 'is_active' => true],
         );
     }
@@ -864,6 +864,23 @@ class DemoOperationsSeeder extends Seeder
             ->where('phone', 'like', self::TEST_PHONE_PREFIX.'%')->delete();
 
         return ['events' => $events->count(), 'customers' => (int) $customers, 'buses' => (int) $buses, 'staff' => (int) $staff];
+    }
+
+    /**
+     * Prénoms et noms fictifs, sans Faker (absent de l'image de production).
+     */
+    private function firstName(): string
+    {
+        $names = ['Aya', 'Koffi', 'Adjoua', 'Yao', 'Aminata', 'Kouassi', 'Mariam', 'Ibrahim', 'Awa', 'Serge', 'Fatou', 'Didier', 'Grace', 'Moussa', 'Nadia', 'Hervé'];
+
+        return $names[mt_rand(0, count($names) - 1)];
+    }
+
+    private function lastName(): string
+    {
+        $names = ['Koné', 'Kouamé', 'Traoré', 'Yao', 'Coulibaly', 'Bamba', 'Ouattara', 'Diallo', 'Kouadio', 'Touré', 'N\'Guessan', 'Konan', 'Soro', 'Aka'];
+
+        return $names[mt_rand(0, count($names) - 1)];
     }
 
     private function msisdn(): string
