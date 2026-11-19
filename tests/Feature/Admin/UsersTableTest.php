@@ -165,3 +165,20 @@ it('redéfinit le mot de passe d’un compte existant', function () {
     expect(Hash::check('Nouveau2026xyz', $user->fresh()->password))->toBeTrue()
         ->and($user->fresh()->must_change_password)->toBeTrue();
 });
+
+it('donne un mot de passe provisoire à un utilisateur existant depuis le menu', function () {
+    $this->actingAs(userWithRole(Role::SuperAdmin));
+    $member = userWithRole(Role::TransportLead, ['promoter_id' => Promoter::factory()->create()->id]);
+
+    Livewire::test(UsersTable::class)
+        ->call('editPassword', $member->id)
+        ->assertSet('showPasswordForm', true)
+        ->call('setPassword')
+        ->assertHasErrors('new_password')
+        ->call('generatePassword', 'new_password')
+        ->call('setPassword')
+        ->assertHasNoErrors()
+        ->assertSet('issuedCredentials.email', $member->email);
+
+    expect($member->refresh()->must_change_password)->toBeTrue();
+});

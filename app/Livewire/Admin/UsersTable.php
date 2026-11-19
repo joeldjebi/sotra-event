@@ -53,6 +53,13 @@ class UsersTable extends Component
     /** Mot de passe initial donné par l'administrateur (facultatif) ; sinon, lien par e-mail. */
     public string $initial_password = '';
 
+    /** Feuille « Donner un mot de passe » : utilisateur visé et mot de passe provisoire. */
+    public ?int $passwordUserId = null;
+
+    public bool $showPasswordForm = false;
+
+    public string $new_password = '';
+
     protected function permission(): Permission
     {
         return Permission::UsersManage;
@@ -160,7 +167,33 @@ class UsersTable extends Component
 
     protected function passwordFields(): array
     {
-        return ['initial_password'];
+        return ['initial_password', 'new_password'];
+    }
+
+    /**
+     * Ouvre la feuille « Donner un mot de passe » pour un utilisateur existant.
+     */
+    public function editPassword(int $userId): void
+    {
+        $this->passwordUserId = User::query()->findOrFail($userId)->id;
+        $this->new_password = '';
+        $this->resetValidation();
+        $this->showPasswordForm = true;
+    }
+
+    /**
+     * Remplace le mot de passe par un mot de passe provisoire, affiché une fois et à changer à la prochaine connexion.
+     */
+    public function setPassword(): void
+    {
+        $this->validate(['new_password' => ['required', 'string', PasswordRule::default()]], attributes: ['new_password' => 'mot de passe']);
+
+        $user = User::query()->findOrFail($this->passwordUserId);
+        $this->issueCredentials($user, trim($this->new_password));
+
+        $this->showPasswordForm = false;
+        $this->new_password = '';
+        $this->notify("Mot de passe provisoire défini pour {$user->name}.");
     }
 
     public function toggleActive(int $userId): void

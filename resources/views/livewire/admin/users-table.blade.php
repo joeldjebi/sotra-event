@@ -58,6 +58,7 @@
                         </button>
                         <div x-cloak x-show="menu" x-on:click.outside="menu = false" x-transition.origin.top.right
                              class="ui-popover elevated absolute right-0 z-20 mt-2 w-64 p-1.5 text-left" role="menu">
+                            <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="editPassword({{ $user->id }})" x-on:click="menu = false">Donner un mot de passe</button>
                             <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="sendInvitation({{ $user->id }})" x-on:click="menu = false">Renvoyer le lien de connexion</button>
                             <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="resetTwoFactor({{ $user->id }})"
                                     wire:confirm="Réinitialiser la double authentification ? L'utilisateur devra la réactiver à sa prochaine connexion." x-on:click="menu = false">Réinitialiser la 2FA</button>
@@ -124,6 +125,22 @@
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
             <x-ui.button form="user-form">{{ $editingId ? 'Enregistrer' : ($initial_password !== '' ? 'Créer le compte' : 'Créer et inviter') }}</x-ui.button>
+        </x-slot:footer>
+    </x-ui.sheet>
+
+    <x-ui.sheet model="showPasswordForm" title="Donner un mot de passe" subtitle="Mot de passe provisoire, affiché une seule fois : l'utilisateur le change à sa prochaine connexion.">
+        <form id="password-form" wire:submit="setPassword" class="space-y-4">
+            <div class="flex items-end gap-2">
+                <div class="min-w-0 flex-1">
+                    <x-ui.input label="Mot de passe provisoire" name="new_password" wire:model="new_password" autocomplete="off"
+                                hint="Au moins 12 caractères, avec des lettres et des chiffres." />
+                </div>
+                <x-ui.button variant="secondary" type="button" wire:click="generatePassword('new_password')" class="mb-[1px]">Générer</x-ui.button>
+            </div>
+        </form>
+        <x-slot:footer>
+            <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
+            <x-ui.button form="password-form">Enregistrer le mot de passe</x-ui.button>
         </x-slot:footer>
     </x-ui.sheet>
 </div>
