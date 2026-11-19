@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -33,10 +34,16 @@ class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
+            // Le super administrateur ne se connecte que par son adresse dédiée, et elle est réservée à lui seul.
+            // Le refus est le même qu'un mauvais mot de passe : rien n'indique où se connecter.
+            if ($user->hasRole(Role::SuperAdmin->value) !== $request->routeIs('super-admin.login.store')) {
+                return null;
+            }
+
             return $user;
         });
 
-        Fortify::loginView(fn () => view('auth.login'));
+        Fortify::loginView(fn () => view('auth.login', ['superAdmin' => false]));
         Fortify::twoFactorChallengeView(fn () => view('auth.two-factor-challenge'));
         Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
         Fortify::resetPasswordView(fn (Request $request) => view('auth.reset-password', ['request' => $request]));

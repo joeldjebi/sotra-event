@@ -10,6 +10,14 @@ return [
     ],
 
     /*
+    | Le super administrateur se connecte uniquement par cette adresse, distincte de /login
+    | (réservée aux autres comptes). Choisir un chemin difficile à deviner en production.
+    */
+    'super_admin' => [
+        'login_path' => trim((string) env('SUPER_ADMIN_LOGIN_PATH', 'console-sa/connexion'), '/'),
+    ],
+
+    /*
     | Codes OTP (spectateurs, convoyeurs, techniciens).
     */
     'otp' => [

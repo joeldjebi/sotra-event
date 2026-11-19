@@ -1,14 +1,20 @@
-<x-layouts.auth title="Connexion">
+@php($superAdmin ??= false)
+<x-layouts.auth :title="$superAdmin ? 'Console super administrateur' : 'Connexion'">
+    @if ($superAdmin)
+        @push('head')<meta name="robots" content="noindex, nofollow">@endpush
+    @endif
     <div class="text-center">
-        <h1 class="text-title-1">Connexion</h1>
-        <p class="mt-2 text-[15px] leading-snug text-ink-secondary">Espace professionnel ACCES EVENT, compagnies et promoteurs.</p>
+        <h1 class="text-title-1">{{ $superAdmin ? 'Super administrateur' : 'Connexion' }}</h1>
+        <p class="mt-2 text-[15px] leading-snug text-ink-secondary">
+            {{ $superAdmin ? 'Accès réservé au super administrateur ACCES TRANS.' : 'Espace professionnel ACCES EVENT, compagnies et promoteurs.' }}
+        </p>
     </div>
 
     @if (session('status'))
         <x-ui.alert class="mt-6">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <form method="POST" action="{{ route('login.store') }}" class="mt-8 space-y-3">
+    <form method="POST" action="{{ $superAdmin ? route('super-admin.login.store') : route('login.store') }}" class="mt-8 space-y-3">
         @csrf
         <x-ui.input floating label="Adresse e-mail" name="email" type="email" autocomplete="username" required autofocus placeholder="prenom.nom@exemple.ci" />
         <x-ui.input floating label="Mot de passe" name="password" type="password" autocomplete="current-password" required />
@@ -23,7 +29,9 @@
 
         <x-ui.button size="lg" class="w-full">Se connecter</x-ui.button>
     </form>
-    <p class="mt-6 text-center text-[14px] text-ink-secondary">
-        Organisateur d'événements ? <a href="{{ route('promoters.apply') }}" class="font-medium text-brand-text hover:underline">Devenir promoteur</a>
-    </p>
+    @unless ($superAdmin)
+        <p class="mt-6 text-center text-[14px] text-ink-secondary">
+            Organisateur d'événements ? <a href="{{ route('promoters.apply') }}" class="font-medium text-brand-text hover:underline">Devenir promoteur</a>
+        </p>
+    @endunless
 </x-layouts.auth>

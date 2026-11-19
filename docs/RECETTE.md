@@ -26,6 +26,7 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | 1.5 | Proposer l'événement, l'accepter côté compagnie, ouvrir la vente | Parcours complet ; la vente reste fermée sans zones de dépose ni de reprise | `Events/EventWorkflowTest` | |
 | 1.6 | Payer un Pass ; le webhook arrive 3 fois | Un seul jeu de Pass émis (PA-02) | `Sales/PaymentApiTest` | |
 | 1.7 | Payer sans que le webhook n'arrive | Paiement confirmé par la réconciliation (PA-03) | `Sales/PaymentApiTest` | |
+| 1.9 | Super admin : se connecter par `/login`, puis par son adresse dédiée | Refusé sur `/login` ; accepté sur l'adresse dédiée, qui refuse les autres comptes | `Auth/WebLoginTest` | |
 | 1.8 | Créer un utilisateur, changer ses rôles, le désactiver | Invitation, rôles journalisés, session coupée (AD-12) | `Admin/UsersTableTest`, `Auth/WebLoginTest` | |
 
 ## Lot 2 — Vente

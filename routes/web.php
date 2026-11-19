@@ -29,6 +29,7 @@ use App\Models\OutboundMessage;
 use App\Models\SmsMessage;
 use App\Support\LivewirePage;
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 
 /*
 | Site spectateur (SP-01 à SP-25) : catalogue public, achat, Mes Pass. Session « customer » (connexion OTP).
@@ -56,6 +57,17 @@ Route::middleware('auth:customer')->group(function () {
 // Simulateur de l'agrégateur (pilote « fake », jamais en production).
 Route::get('/simulateur-paiement/{reference}', [PaymentSimulatorController::class, 'show'])->name('payments.simulator');
 Route::post('/simulateur-paiement/{reference}', [PaymentSimulatorController::class, 'respond'])->name('payments.simulator.respond');
+
+/*
+| Connexion du super administrateur, à une adresse distincte de /login (config eventtrans.super_admin.login_path).
+| Même traitement que Fortify (limitation des essais, double authentification), réservé au rôle super admin.
+*/
+Route::middleware('guest:'.config('fortify.guard'))->group(function () {
+    Route::get(config('eventtrans.super_admin.login_path'), fn () => view('auth.login', ['superAdmin' => true]))->name('super-admin.login');
+    Route::post(config('eventtrans.super_admin.login_path'), [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:'.config('fortify.limiters.login'))
+        ->name('super-admin.login.store');
+});
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/espace', SpaceRedirectController::class)->name('space');

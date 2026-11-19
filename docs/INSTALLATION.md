@@ -51,7 +51,7 @@ docker compose -f docker-compose.prod.yml exec web php artisan users:create-admi
 ```
 
 - Au démarrage, `web` applique les migrations et met à jour les rôles et permissions (`RUN_MIGRATIONS=1`), puis reconstruit les caches de configuration, de routes et de vues.
-- Le premier super administrateur, créé par `users:create-admin` (mot de passe saisi au clavier), active sa double authentification à sa première connexion. Il crée ensuite les autres comptes dans « Utilisateurs & rôles ».
+- Le premier super administrateur, créé par `users:create-admin` (mot de passe saisi au clavier), se connecte à l'adresse `SUPER_ADMIN_LOGIN_PATH` (et non `/login`) et active sa double authentification à sa première connexion. Il crée ensuite les autres comptes dans « Utilisateurs & rôles ».
 
 Vérifications :
 ```bash
@@ -73,6 +73,7 @@ Elles sont lues au démarrage et ne sont jamais incluses dans l'image. Ne jamais
 | `TRUSTED_PROXIES` | `*` ou IP du proxy | Variable d'environnement réelle (pas seulement `.env`) : nécessaire pour reconnaître le HTTPS |
 | `SESSION_SECURE_COOKIE` | `true` | Cookies uniquement en HTTPS |
 | `TWO_FACTOR_ENFORCED` | `true` | 2FA obligatoire sur les espaces web (NF-03) |
+| `SUPER_ADMIN_LOGIN_PATH` | chemin à choisir | Adresse de connexion du super administrateur, distincte de `/login` (qui lui est refusée) ; par défaut `console-sa/connexion` |
 | `DB_*`, `REDIS_*` | — | Base et Redis |
 | `QUEUE_CONNECTION` | `redis` | Files traitées par Horizon |
 | `REVERB_*` | — | Temps réel ; `REVERB_HOST` est autorisé dans la CSP |

@@ -48,6 +48,7 @@ class CreateSuperAdmin extends Command
         AuditLog::record('user_created', $user, [], ['role' => Role::SuperAdmin->value, 'via' => 'console']);
 
         $this->info("Super administrateur {$email} créé. Il activera sa double authentification à la première connexion.");
+        $this->line('Adresse de connexion du super administrateur (distincte de /login) : '.route('super-admin.login'));
 
         return self::SUCCESS;
     }
