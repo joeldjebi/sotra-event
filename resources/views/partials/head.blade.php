@@ -26,5 +26,14 @@
         media.addEventListener('change', () => root.dataset.themePreference === 'system' && apply('system'));
     })();
 </script>
+@if (config('broadcasting.default') === 'reverb' && filled(config('broadcasting.connections.reverb.key')))
+    {{-- Temps réel : configuration lue au chargement (et non figée à la construction de l'image). La clé est publique. --}}
+    <meta name="reverb-config" content="{{ json_encode([
+        'key' => config('broadcasting.connections.reverb.key'),
+        'host' => config('broadcasting.connections.reverb.options.host') ?: request()->getHost(),
+        'port' => (int) config('broadcasting.connections.reverb.options.port'),
+        'scheme' => config('broadcasting.connections.reverb.options.scheme'),
+    ]) }}">
+@endif
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @livewireStyles

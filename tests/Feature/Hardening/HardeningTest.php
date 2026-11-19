@@ -150,3 +150,13 @@ it('génère une clé de signature des QR utilisable par l\'application (NF-01)'
     expect(app(PassTokenService::class)->publicKeyBase64())->toBe(base64_encode(sodium_crypto_sign_publickey_from_secretkey(base64_decode($secret))))
         ->and(app(PassTokenService::class)->verify($token))->not->toBeNull();
 });
+
+it('fournit la configuration du temps réel au chargement de la page, sans le secret', function () {
+    config(['broadcasting.default' => 'reverb', 'broadcasting.connections.reverb.key' => 'cle-publique', 'broadcasting.connections.reverb.secret' => 'secret-serveur',
+        'broadcasting.connections.reverb.options.host' => 'accestrans.com', 'broadcasting.connections.reverb.options.port' => 443]);
+
+    $this->get('/login')->assertOk()->assertSee('name="reverb-config"', false)->assertSee('cle-publique')->assertDontSee('secret-serveur');
+
+    config(['broadcasting.connections.reverb.key' => null]);
+    $this->get('/login')->assertDontSee('reverb-config');
+});
