@@ -96,7 +96,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7"><x-ui.empty-state icon="route" title="Aucune mission" description="Générez le plan de transport pour voir les bus ici." /></td></tr>
+                <tr><td colspan="7"><x-ui.empty-state icon="route" title="Aucune mission" description="Les bus apparaissent ici une fois le plan de transport généré." /></td></tr>
             @endforelse
         </x-ui.table>
     @endif

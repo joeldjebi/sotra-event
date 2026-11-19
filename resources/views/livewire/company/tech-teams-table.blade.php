@@ -35,7 +35,7 @@
             </x-ui.card>
         @empty
             <x-ui.card class="md:col-span-2 xl:col-span-3" padding="p-0">
-                <x-ui.empty-state icon="wrench" title="Aucune équipe technique" description="Créez vos équipes de dépannage (ex. T1, T3) et affectez-leur des techniciens." />
+                <x-ui.empty-state icon="wrench" title="Aucune équipe technique" :description="$this->canManage() ? 'Créez vos équipes de dépannage (ex. T1, T3) et affectez-leur des techniciens.' : 'Aucune équipe de dépannage pour le moment.'" />
             </x-ui.card>
         @endforelse
     </div>

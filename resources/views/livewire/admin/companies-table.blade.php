@@ -21,7 +21,7 @@
         @forelse ($companies as $company)
             <tr wire:key="company-{{ $company->id }}" class="hover:bg-fill-subtle">
                 <td>
-                    <p class="font-medium">{{ $company->name }}</p>
+                    <p class="font-medium whitespace-nowrap">{{ $company->name }}</p>
                     <p class="text-[13px] text-ink-secondary">{{ $company->legal_name ?? $company->email ?? '—' }}</p>
                 </td>
                 <td class="tabular-nums">{{ rtrim(rtrim($company->default_commission_rate, '0'), '.') }} %</td>
@@ -36,13 +36,19 @@
                 <td class="text-right tabular-nums">{{ $company->users_count }}</td>
                 <td class="text-right tabular-nums">{{ $company->buses_count }}</td>
                 <td><x-ui.badge :tone="$company->is_active ? 'success' : 'neutral'">{{ $company->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
-                <td class="text-right whitespace-nowrap">
-                    <x-ui.button variant="tinted" size="sm" type="button" wire:click="createAdmin({{ $company->id }})">Créer l'administrateur</x-ui.button>
-                    <x-ui.button variant="ghost" size="sm" type="button" wire:click="toggleActive({{ $company->id }})"
-                                 wire:confirm="{{ $company->is_active ? 'Désactiver cette compagnie ?' : 'Réactiver cette compagnie ?' }}">
-                        {{ $company->is_active ? 'Désactiver' : 'Réactiver' }}
-                    </x-ui.button>
-                    <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $company->id }})">Modifier</x-ui.button>
+                <td class="text-right whitespace-nowrap" x-data="{ menu: false }">
+                    <div class="relative inline-block text-left">
+                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $company->id }})">Modifier</x-ui.button>
+                        <button type="button" class="ml-1 inline-grid size-8 place-items-center rounded-full bg-fill text-ink-secondary transition hover:bg-fill-strong hover:text-ink active:scale-90" x-on:click="menu = !menu" aria-label="Plus d'actions" :aria-expanded="menu">
+                            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                        <div x-cloak x-show="menu" x-on:click.outside="menu = false" x-transition.origin.top.right
+                             class="ui-popover elevated absolute right-0 z-20 mt-2 w-60 p-1.5 text-left" role="menu">
+                            <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="createAdmin({{ $company->id }})" x-on:click="menu = false">Créer l'administrateur</button>
+                            <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="toggleActive({{ $company->id }})"
+                                    wire:confirm="{{ $company->is_active ? 'Désactiver cette compagnie ?' : 'Réactiver cette compagnie ?' }}" x-on:click="menu = false">{{ $company->is_active ? 'Désactiver la compagnie' : 'Réactiver la compagnie' }}</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         @empty

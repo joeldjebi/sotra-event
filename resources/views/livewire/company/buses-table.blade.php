@@ -49,7 +49,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="7"><x-ui.empty-state icon="bus" title="Aucun bus" description="Ajoutez vos bus un par un ou importez toute la flotte depuis un fichier Excel." /></td></tr>
+            <tr><td colspan="7"><x-ui.empty-state icon="bus" title="Aucun bus" :description="$this->canManage() ? 'Ajoutez vos bus un par un ou importez toute la flotte depuis un fichier Excel.' : 'La direction de l\'exploitation n\'a pas encore enregistré de bus.'" /></td></tr>
         @endforelse
 
         @if ($buses->hasPages())

@@ -51,10 +51,10 @@ final class Navigation
                 ['Direction commerciale', [
                     ['Ventes', 'chart', 'company.sales', Permission::SalesView],
                     ['Événements proposés', 'calendar', 'company.proposed-events', Permission::ProposedEventsView],
-                    ['Offres & grille tarifaire', 'tag', null, Permission::PricingView],
-                    ['Demande par commune', 'map-pin', null, Permission::DemandView],
+                    ['Offres & grille tarifaire', 'tag', 'company.pricing', Permission::PricingView],
+                    ['Demande par commune', 'map-pin', 'company.demand', Permission::DemandView],
                     ['Reversements', 'banknotes', 'company.payouts', Permission::CompanyPayoutsView],
-                    ['Rapports', 'document', null, Permission::ReportsView],
+                    ['Rapports', 'document', 'company.reports', Permission::ReportsView],
                 ]],
                 ['Qualité de service', [
                     ['Qualité de service', 'star', 'company.quality.overview', Permission::QualityView],
@@ -107,7 +107,7 @@ final class Navigation
                     continue;
                 }
 
-                $exists = $route !== null && Route::has($route);
+                $exists = Route::has($route);
 
                 $visible[] = [
                     'label' => $label,

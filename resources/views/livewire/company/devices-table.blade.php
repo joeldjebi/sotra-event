@@ -44,7 +44,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="6"><x-ui.empty-state icon="device" title="Aucun terminal" description="Enregistrez les PDA et smartphones remis aux convoyeurs et techniciens." /></td></tr>
+            <tr><td colspan="6"><x-ui.empty-state icon="device" title="Aucun terminal" :description="$this->canManage() ? 'Enregistrez les PDA et smartphones remis aux convoyeurs et techniciens.' : 'Aucun terminal enregistré pour le moment.'" /></td></tr>
         @endforelse
         @if ($devices->hasPages())
             <x-slot:footer>{{ $devices->links() }}</x-slot:footer>

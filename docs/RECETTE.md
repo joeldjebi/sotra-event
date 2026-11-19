@@ -100,6 +100,9 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | S.2 | Administrateur SOTRA : Équipe SOTRA › créer DG, direction commerciale, direction de l'exploitation | Comptes rattachés à SOTRA ; aucun rôle de la console ; pas de compte d'une autre compagnie | `Company/SotraTeamsTest` | |
 | S.3 | Direction générale : parcourir tout l'espace compagnie | Tout est visible ; aucun bouton de création, d'affectation, de validation ni de réponse ; actions refusées | `Company/SotraTeamsTest` | |
 | S.4 | Direction commerciale / direction de l'exploitation | Chacune ne voit que ses menus ; l'exploitation traite aussi la qualité de service et les réclamations | `Company/SotraTeamsTest` | |
+| S.5 | Direction commerciale : Offres & grille tarifaire | Offres (bus, places, capacité), grille zone × offre × trajet et points, en consultation seule | `Company/CommercialPagesTest` | |
+| S.6 | Direction commerciale : Demande par commune | Pass aller / retour par commune et par offre, recette, places prévues et remplissage ; tous les événements ou un seul | `Company/CommercialPagesTest` | |
+| S.7 | Rapports | Par événement : ventes (Excel), qualité (PDF) et relevé de reversement (PDF) selon les droits ; pas les événements d'une autre compagnie | `Company/CommercialPagesTest` | |
 
 ## Lot 5 — Finance et pilote (partie web et API)
 

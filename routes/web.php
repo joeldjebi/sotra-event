@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\Admin\EventEditorController;
 use App\Http\Controllers\Web\Admin\PromoterDocumentController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Company\QualityReportController;
+use App\Http\Controllers\Web\Company\SalesExportController;
 use App\Http\Controllers\Web\PayoutDocumentController;
 use App\Http\Controllers\Web\Promoter\EventExportController as PromoterEventExportController;
 use App\Http\Controllers\Web\Promoter\PromoKitController;
@@ -130,6 +131,10 @@ Route::middleware(['auth', 'active'])->group(function () {
             LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsView);
             LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsView);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);
+            LivewirePage::route('offres-et-grille', 'pricing', 'company.pricing', 'Offres & grille tarifaire', Permission::PricingView);
+            LivewirePage::route('demande-par-commune', 'demand', 'company.demand', 'Demande par commune', Permission::DemandView);
+            LivewirePage::route('rapports', 'reports', 'company.reports', 'Rapports', Permission::ReportsView);
+            Route::get('rapports/{event}/ventes.xlsx', SalesExportController::class)->middleware('can:'.Permission::ReportsView->value)->name('reports.sales');
             LivewirePage::route('reversements', 'payouts', 'company.payouts', 'Reversements', Permission::CompanyPayoutsView);
             Route::middleware('can:'.Permission::CompanyPayoutsView->value)->group(function () {
                 Route::get('reversements/{payout}/releve.pdf', [PayoutDocumentController::class, 'statement'])->name('payouts.statement');

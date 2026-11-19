@@ -46,7 +46,7 @@
                 <td class="text-right">@if ($this->canManage())<x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $member->id }})">Modifier</x-ui.button>@endif</td>
             </tr>
         @empty
-            <tr><td colspan="7"><x-ui.empty-state icon="id-card" title="Aucun membre du personnel" description="Ajoutez vos chauffeurs, convoyeurs et techniciens, ou importez-les depuis Excel." /></td></tr>
+            <tr><td colspan="7"><x-ui.empty-state icon="id-card" title="Aucun membre du personnel" :description="$this->canManage() ? 'Ajoutez vos chauffeurs, convoyeurs et techniciens, ou importez-les depuis Excel.' : 'La direction de l\'exploitation n\'a pas encore enregistré de personnel.'" /></td></tr>
         @endforelse
         @if ($members->hasPages())
             <x-slot:footer>{{ $members->links() }}</x-slot:footer>

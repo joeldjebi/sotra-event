@@ -14,7 +14,7 @@
         <x-ui.card padding="p-0"><x-ui.empty-state icon="bus" title="Aucun événement à affecter" description="Les événements acceptés ou en vente de votre compagnie apparaîtront ici." /></x-ui.card>
     @elseif ($total === 0)
         <x-ui.card padding="p-0">
-            <x-ui.empty-state icon="route" title="Plan de transport non généré" description="Générez d'abord les missions depuis le Plan de transport : le nombre de bus par point découle des ventes.">
+            <x-ui.empty-state icon="route" title="Plan de transport non généré" description="Les missions sont générées depuis le Plan de transport : le nombre de bus par point découle des ventes.">
                 <x-ui.button :href="route('company.transport-plan')">Plan de transport</x-ui.button>
             </x-ui.empty-state>
         </x-ui.card>

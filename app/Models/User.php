@@ -120,7 +120,12 @@ class User extends Authenticatable
 
     public function initials(): string
     {
-        $parts = preg_split('/\s+/', trim($this->name)) ?: [];
+        // Les étiquettes entre crochets (« [TEST] ») et la ponctuation ne comptent pas.
+        $name = trim((string) preg_replace('/\[[^\]]*\]/u', ' ', $this->name));
+        $parts = array_values(array_filter(
+            array_map(fn (string $part): string => (string) preg_replace('/[^\p{L}\p{N}]/u', '', $part), preg_split('/\s+/', $name) ?: []),
+            fn (string $part): bool => $part !== '',
+        ));
 
         return mb_strtoupper(implode('', array_map(fn (string $part): string => mb_substr($part, 0, 1), array_slice($parts, 0, 2))));
     }
