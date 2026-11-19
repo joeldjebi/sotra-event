@@ -27,6 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $promoter_id
  * @property bool $is_active
  * @property bool $must_change_password
+ * @property bool $two_factor_required
  * @property string $theme
  * @property-read Company|null $company
  * @property-read Promoter|null $promoter
@@ -46,6 +47,11 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    /** La 2FA est exigée par défaut, avant même l'enregistrement (NF-03). */
+    protected $attributes = [
+        'two_factor_required' => true,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -53,6 +59,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'two_factor_required' => 'boolean',
             'last_login_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];
@@ -101,9 +108,14 @@ class User extends Authenticatable
         return $this->space() === $space;
     }
 
+    /**
+     * La 2FA est obligatoire (NF-03), sauf pour un compte où un administrateur l'a désactivée.
+     */
     public function mustEnrollTwoFactor(): bool
     {
-        return (bool) config('eventtrans.two_factor.enforced') && ! $this->hasEnabledTwoFactorAuthentication();
+        return (bool) config('eventtrans.two_factor.enforced')
+            && $this->two_factor_required
+            && ! $this->hasEnabledTwoFactorAuthentication();
     }
 
     public function initials(): string

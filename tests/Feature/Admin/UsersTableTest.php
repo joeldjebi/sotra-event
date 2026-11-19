@@ -182,3 +182,27 @@ it('donne un mot de passe provisoire à un utilisateur existant depuis le menu',
 
     expect($member->refresh()->must_change_password)->toBeTrue();
 });
+
+it('désactive puis réactive la double authentification d\'un compte', function () {
+    config(['eventtrans.two_factor.enforced' => true]);
+    $this->actingAs(userWithRole(Role::SuperAdmin));
+    $member = userWithRole(Role::Commercial);
+
+    Livewire::test(UsersTable::class)->call('toggleTwoFactor', $member->id)->assertSee('2FA désactivée');
+
+    $member->refresh();
+    expect($member->two_factor_required)->toBeFalse()
+        ->and($member->hasEnabledTwoFactorAuthentication())->toBeFalse()
+        ->and($member->mustEnrollTwoFactor())->toBeFalse()
+        ->and(AuditLog::query()->where('action', 'two_factor_disabled')->exists())->toBeTrue();
+
+    // Sans 2FA, le compte accède à son espace directement.
+    $this->actingAs($member)->get('/compagnie')->assertOk();
+
+    $this->actingAs(userWithRole(Role::SuperAdmin));
+    Livewire::test(UsersTable::class)->call('toggleTwoFactor', $member->id);
+
+    expect($member->refresh()->two_factor_required)->toBeTrue()
+        ->and($member->mustEnrollTwoFactor())->toBeTrue();
+    $this->actingAs($member)->get('/compagnie')->assertRedirect(route('security.two-factor'));
+});

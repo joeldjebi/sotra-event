@@ -43,7 +43,9 @@
                 </td>
                 <td class="text-ink-secondary">{{ $user->company?->name ?? $user->promoter?->name ?? 'ACCES EVENT' }}</td>
                 <td>
-                    @if ($user->hasEnabledTwoFactorAuthentication())
+                    @if (! $user->two_factor_required)
+                        <x-ui.badge tone="danger">2FA désactivée</x-ui.badge>
+                    @elseif ($user->hasEnabledTwoFactorAuthentication())
                         <x-ui.badge tone="success">2FA active</x-ui.badge>
                     @else
                         <x-ui.badge tone="warning">2FA à activer</x-ui.badge>
@@ -62,6 +64,11 @@
                             <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="sendInvitation({{ $user->id }})" x-on:click="menu = false">Renvoyer le lien de connexion</button>
                             <button type="button" role="menuitem" class="flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors hover:bg-brand hover:text-white" wire:click="resetTwoFactor({{ $user->id }})"
                                     wire:confirm="Réinitialiser la double authentification ? L'utilisateur devra la réactiver à sa prochaine connexion." x-on:click="menu = false">Réinitialiser la 2FA</button>
+                            <button type="button" role="menuitem" @class(['flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors', 'text-danger hover:bg-danger hover:text-white' => $user->two_factor_required, 'hover:bg-brand hover:text-white' => ! $user->two_factor_required])
+                                    wire:click="toggleTwoFactor({{ $user->id }})" x-on:click="menu = false"
+                                    wire:confirm="{{ $user->two_factor_required ? 'Désactiver la double authentification ? Le compte ne sera plus protégé que par son mot de passe.' : 'Activer la double authentification ? L\'utilisateur devra la configurer à sa prochaine connexion.' }}">
+                                {{ $user->two_factor_required ? 'Désactiver la 2FA' : 'Activer la 2FA' }}
+                            </button>
                             @if ($user->id !== auth()->id())
                                 <button type="button" role="menuitem" @class(['flex h-9 w-full items-center rounded-[8px] px-2.5 text-left text-[14px] transition-colors', 'text-danger hover:bg-danger hover:text-white' => $user->is_active, 'hover:bg-brand hover:text-white' => ! $user->is_active])
                                         wire:click="toggleActive({{ $user->id }})" wire:confirm="{{ $user->is_active ? 'Désactiver ce compte ?' : 'Réactiver ce compte ?' }}" x-on:click="menu = false">

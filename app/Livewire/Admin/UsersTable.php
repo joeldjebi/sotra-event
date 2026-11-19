@@ -218,6 +218,27 @@ class UsersTable extends Component
         $this->notify("Double authentification réinitialisée pour {$user->name}.");
     }
 
+    /**
+     * Active ou désactive la double authentification d'un compte. Désactiver efface aussi la 2FA configurée :
+     * l'utilisateur se connecte avec son seul mot de passe. Réactiver l'oblige à la configurer à sa prochaine connexion.
+     */
+    public function toggleTwoFactor(int $userId): void
+    {
+        $user = User::query()->findOrFail($userId);
+        $required = ! $user->two_factor_required;
+
+        $user->forceFill(['two_factor_required' => $required] + ($required ? [] : [
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ]))->save();
+
+        AuditLog::record($required ? 'two_factor_enabled' : 'two_factor_disabled', $user);
+        $this->notify($required
+            ? "Double authentification activée pour {$user->name} : il la configurera à sa prochaine connexion."
+            : "Double authentification désactivée pour {$user->name}.", $required ? 'success' : 'warning');
+    }
+
     public function sendInvitation(int $userId): void
     {
         $user = User::query()->findOrFail($userId);
