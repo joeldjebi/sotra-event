@@ -27,7 +27,10 @@ beforeEach(function () {
     $this->order = paidOrder($this->event, 2);
     staffedMissions($this->event);
     [$this->busA, $this->busB] = outboundMissions($this->event);
-    [$this->first, $this->second] = $this->order->passes->map->fresh()->all();
+    // Chaque Pass monte dans le bus qui lui est affecté (l'ordre des Pass de la commande n'est pas garanti).
+    $passes = $this->order->passes->map->fresh();
+    $this->first = $passes->firstWhere('outbound_mission_id', $this->busA->id);
+    $this->second = $passes->firstWhere('outbound_mission_id', $this->busB->id);
 
     boardMission($this->busA, [$this->first]);
     boardMission($this->busB, [$this->second]);
