@@ -42,7 +42,7 @@
                         <h2 class="text-[17px] font-semibold tracking-tight">Réclamations</h2>
                         <p class="text-[13px] text-ink-secondary">{{ $summary['complaints_open'] }} ouverte(s) · {{ $summary['complaints_resolved'] }} traitée(s)</p>
                     </div>
-                    @can(\App\Enums\Permission::ComplaintsManage->value)
+                    @can(\App\Enums\Permission::QualityView->value)
                         <a href="{{ route('company.quality.complaints', ['evenement' => $event->id]) }}" class="text-[13px] font-medium text-brand-text hover:underline">Toutes les réclamations</a>
                     @endcan
                 </div>

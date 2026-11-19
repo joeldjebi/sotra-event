@@ -44,7 +44,7 @@
                 <td><x-ui.badge :tone="$complaint->status->tone()">{{ $complaint->status->label() }}</x-ui.badge></td>
                 <td class="text-right">
                     <x-ui.button :variant="$complaint->status->value === 'traitee' ? 'secondary' : 'primary'" size="sm" type="button" wire:click="handle({{ $complaint->id }})">
-                        {{ $complaint->status->value === 'traitee' ? 'Voir' : 'Traiter' }}
+                        {{ $complaint->status->value === 'traitee' || ! $this->canManage() ? 'Voir' : 'Traiter' }}
                     </x-ui.button>
                 </td>
             </tr>
@@ -79,7 +79,7 @@
                         <p class="text-ink-secondary">Réponse envoyée le {{ $handling->resolved_at?->format('d/m H\hi') }}</p>
                         <p class="mt-1">{{ $handling->resolution }}</p>
                     </div>
-                @else
+                @elseif ($this->canManage())
                     <form id="resolve-form" wire:submit="resolve">
                         <x-ui.textarea label="Réponse au spectateur (envoyée par SMS)" name="resolution" wire:model="resolution" rows="4"
                                        placeholder="Ex. : Nous vous prions de nous excuser ; votre trajet retour vous est remboursé sous 72 h." />
@@ -89,7 +89,7 @@
         @endif
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Fermer</x-ui.button>
-            @if ($handling && $handling->status->value !== 'traitee')
+            @if ($handling && $this->canManage() && $handling->status->value !== 'traitee')
                 <x-ui.button form="resolve-form">Marquer traitée</x-ui.button>
             @endif
         </x-slot:footer>

@@ -125,26 +125,27 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::prefix('compagnie')->name('company.')->middleware('space:company')->group(function () {
             Route::get('/', CompanyDashboardController::class)->name('dashboard');
 
-            LivewirePage::route('evenements-proposes', 'proposed-events', 'company.proposed-events', 'Événements proposés', Permission::ProposedEventsRespond);
-            LivewirePage::route('plan-de-transport', 'transport-plan', 'company.transport-plan', 'Plan de transport', Permission::OperationsManage);
-            LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsManage);
-            LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsManage);
+            LivewirePage::route('evenements-proposes', 'proposed-events', 'company.proposed-events', 'Événements proposés', Permission::ProposedEventsView);
+            LivewirePage::route('plan-de-transport', 'transport-plan', 'company.transport-plan', 'Plan de transport', Permission::OperationsView);
+            LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsView);
+            LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsView);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);
             LivewirePage::route('reversements', 'payouts', 'company.payouts', 'Reversements', Permission::CompanyPayoutsView);
             Route::middleware('can:'.Permission::CompanyPayoutsView->value)->group(function () {
                 Route::get('reversements/{payout}/releve.pdf', [PayoutDocumentController::class, 'statement'])->name('payouts.statement');
                 Route::get('reversements/{payout}/justificatif', [PayoutDocumentController::class, 'proof'])->name('payouts.proof');
             });
-            LivewirePage::route('affectations', 'assignments', 'company.assignments', 'Bus & affectations', Permission::FleetManage);
-            LivewirePage::route('bus', 'assignments.fleet', 'company.buses-table', 'Flotte', Permission::FleetManage);
-            LivewirePage::route('depots', 'depots', 'company.depots-table', 'Dépôts', Permission::FleetManage);
-            LivewirePage::route('personnel', 'staff', 'company.staff-table', 'Chauffeurs & convoyeurs', Permission::StaffManage);
-            LivewirePage::route('equipes-techniques', 'tech-teams', 'company.tech-teams-table', 'Équipes service technique', Permission::TechTeamsManage);
-            LivewirePage::route('terminaux', 'devices', 'company.devices-table', 'PDA & terminaux', Permission::DevicesManage);
+            LivewirePage::route('affectations', 'assignments', 'company.assignments', 'Bus & affectations', Permission::FleetView);
+            LivewirePage::route('bus', 'assignments.fleet', 'company.buses-table', 'Flotte', Permission::FleetView);
+            LivewirePage::route('depots', 'depots', 'company.depots-table', 'Dépôts', Permission::FleetView);
+            LivewirePage::route('personnel', 'staff', 'company.staff-table', 'Chauffeurs & convoyeurs', Permission::StaffView);
+            LivewirePage::route('equipes-techniques', 'tech-teams', 'company.tech-teams-table', 'Équipes service technique', Permission::TechTeamsView);
+            LivewirePage::route('terminaux', 'devices', 'company.devices-table', 'PDA & terminaux', Permission::DevicesView);
+            LivewirePage::route('equipe', 'team', 'company.team-table', 'Équipe SOTRA', Permission::CompanyTeamManage);
 
             LivewirePage::route('qualite', 'quality.overview', 'company.quality.overview', 'Qualité de service', Permission::QualityView);
             LivewirePage::route('qualite/avis', 'quality.reviews', 'company.quality.reviews', 'Avis des spectateurs', Permission::QualityView);
-            LivewirePage::route('qualite/reclamations', 'quality.complaints', 'company.quality.complaints', 'Réclamations', Permission::ComplaintsManage);
+            LivewirePage::route('qualite/reclamations', 'quality.complaints', 'company.quality.complaints', 'Réclamations', Permission::QualityView);
             LivewirePage::route('qualite/ponctualite', 'quality.punctuality', 'company.quality.punctuality', 'Ponctualité', Permission::QualityView);
             LivewirePage::route('qualite/equipages', 'quality.crews', 'company.quality.crews', 'Équipages', Permission::QualityView);
             LivewirePage::route('qualite/bilans', 'quality.pilot', 'company.quality.pilot-review', 'Bilans du pilote', Permission::QualityView);

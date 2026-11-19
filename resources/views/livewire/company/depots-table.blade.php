@@ -1,7 +1,9 @@
 <div>
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Rechercher un dépôt" />
-        <x-ui.button type="button" wire:click="create" icon="building">Nouveau dépôt</x-ui.button>
+        @if ($this->canManage())
+            <x-ui.button type="button" wire:click="create" icon="building">Nouveau dépôt</x-ui.button>
+        @endif
     </div>
 
     <x-ui.table>
@@ -27,7 +29,7 @@
                         <x-ui.badge tone="warning">À localiser</x-ui.badge>
                     @endif
                 </td>
-                <td class="text-right"><x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $depot->id }})">Modifier</x-ui.button></td>
+                <td class="text-right">@if ($this->canManage())<x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $depot->id }})">Modifier</x-ui.button>@endif</td>
             </tr>
         @empty
             <tr><td colspan="5"><x-ui.empty-state icon="building" title="Aucun dépôt" description="Les dépôts servent de point d'attache aux bus et aux bus de réserve." /></td></tr>

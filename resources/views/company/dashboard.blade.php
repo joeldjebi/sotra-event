@@ -9,7 +9,7 @@
         <x-ui.card padding="p-0">
             <div class="flex items-center justify-between px-6 pt-5 pb-3.5">
                 <h2 class="text-headline">Événements proposés à valider</h2>
-                @can('proposed-events.respond')
+                @can('proposed-events.view')
                     <a href="{{ route('company.proposed-events') }}" class="inline-flex items-center gap-0.5 text-[14px] font-medium text-brand-text hover:opacity-70">Tout voir<x-ui.icon name="chevron-right" class="size-3.5" stroke-width="2.2" /></a>
                 @endcan
             </div>

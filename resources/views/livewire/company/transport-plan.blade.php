@@ -27,11 +27,11 @@
                                 <tr wire:key="offer-row-{{ $offer->id }}" class="[&>td]:!align-top">
                                     <td class="font-medium">{{ $offer->offer->label() }}</td>
                                     <td class="w-36">
-                                        <input type="number" min="1" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.bus_count" class="ui-field h-10 px-3" @error("capacity.{$offer->id}.bus_count") aria-invalid="true" @enderror>
+                                        <input type="number" min="1" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.bus_count" @disabled(! $this->canManage()) class="ui-field h-10 px-3" @error("capacity.{$offer->id}.bus_count") aria-invalid="true" @enderror>
                                         @error("capacity.{$offer->id}.bus_count") <p class="mt-1 text-[12px] text-danger">{{ $message }}</p> @enderror
                                     </td>
                                     <td class="w-36">
-                                        <input type="number" min="10" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.seats_per_bus" class="ui-field h-10 px-3" @error("capacity.{$offer->id}.seats_per_bus") aria-invalid="true" @enderror>
+                                        <input type="number" min="10" wire:model.live.debounce.400ms="capacity.{{ $offer->id }}.seats_per_bus" @disabled(! $this->canManage()) class="ui-field h-10 px-3" @error("capacity.{$offer->id}.seats_per_bus") aria-invalid="true" @enderror>
                                         @error("capacity.{$offer->id}.seats_per_bus") <p class="mt-1 text-[12px] text-danger">{{ $message }}</p> @enderror
                                     </td>
                                     <td class="text-right font-rounded text-[19px] font-semibold tabular-nums">{{ ($cap = $capacityOf($offer)) ? number_format($cap, 0, ',', ' ') : '—' }}</td>
@@ -42,7 +42,9 @@
                     </table>
                 </div>
                 @error('capacity') <p class="mt-2 text-[13px] text-danger">{{ $message }}</p> @enderror
-                <div class="mt-4 flex justify-end"><x-ui.button size="sm">Enregistrer la capacité</x-ui.button></div>
+                @if ($this->canManage())
+                    <div class="mt-4 flex justify-end"><x-ui.button size="sm">Enregistrer la capacité</x-ui.button></div>
+                @endif
             </form>
         </x-ui.card>
     @empty
@@ -64,10 +66,12 @@
                             <p class="text-[13px] text-ink-secondary">{{ $event->starts_at->translatedFormat('l j F Y, H\hi') }}</p>
                         </div>
                         <div class="flex gap-2">
-                            <x-ui.button variant="secondary" size="sm" :href="route('company.assignments', ['evenement' => $event->id])">Affecter les bus</x-ui.button>
+                            <x-ui.button variant="secondary" size="sm" :href="route('company.assignments', ['evenement' => $event->id])">{{ $this->canManage() ? 'Affecter les bus' : 'Voir les affectations' }}</x-ui.button>
+                            @if ($this->canManage())
                             <x-ui.button size="sm" type="button" wire:click="generate({{ $event->id }})" wire:loading.attr="disabled" wire:target="generate({{ $event->id }})">
                                 {{ collect($planRows[$event->id])->sum('outbound_missions') + collect($planRows[$event->id])->sum('return_missions') > 0 ? 'Actualiser les missions' : 'Générer les missions' }}
                             </x-ui.button>
+                            @endif
                         </div>
                     </div>
 

@@ -1,7 +1,9 @@
 <div>
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Nom ou numéro de série" />
-        <x-ui.button type="button" wire:click="create" icon="device">Nouveau terminal</x-ui.button>
+        @if ($this->canManage())
+            <x-ui.button type="button" wire:click="create" icon="device">Nouveau terminal</x-ui.button>
+        @endif
     </div>
 
     <x-ui.table>
@@ -30,12 +32,15 @@
                     @endif
                 </td>
                 <td class="text-right whitespace-nowrap">
-                    @if ($device->isBlocked())
+                    @if (! $this->canManage())
+                    @elseif ($device->isBlocked())
                         <x-ui.button variant="ghost" size="sm" type="button" wire:click="unblock({{ $device->id }})" wire:confirm="Débloquer ce terminal ?">Débloquer</x-ui.button>
                     @else
                         <x-ui.button variant="danger-tinted" size="sm" type="button" wire:click="confirmBlock({{ $device->id }})">Bloquer</x-ui.button>
                     @endif
-                    <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $device->id }})">Modifier</x-ui.button>
+                    @if ($this->canManage())
+                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $device->id }})">Modifier</x-ui.button>
+                    @endif
                 </td>
             </tr>
         @empty

@@ -40,11 +40,17 @@ class DevicesTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::DevicesView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::DevicesManage;
     }
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['serial_number', 'label', 'model', 'staff_id', 'editingId']);
         $this->resetValidation();
         $this->showForm = true;
@@ -52,6 +58,7 @@ class DevicesTable extends Component
 
     public function edit(int $deviceId): void
     {
+        $this->authorizeManage();
         $device = Device::query()->findOrFail($deviceId);
         $this->resetValidation();
         $this->editingId = $device->id;
@@ -64,6 +71,7 @@ class DevicesTable extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $this->validate([
             'serial_number' => ['required', 'string', 'max:60', Rule::unique('devices', 'serial_number')->ignore($this->editingId)],
             'label' => ['required', 'string', 'max:60'],
@@ -86,6 +94,7 @@ class DevicesTable extends Component
 
     public function confirmBlock(int $deviceId): void
     {
+        $this->authorizeManage();
         $this->blockingId = Device::query()->findOrFail($deviceId)->id;
         $this->blocked_reason = '';
         $this->resetValidation();
@@ -94,6 +103,7 @@ class DevicesTable extends Component
 
     public function block(): void
     {
+        $this->authorizeManage();
         $this->validate(['blocked_reason' => ['required', 'string', 'max:255']], attributes: ['blocked_reason' => 'motif']);
 
         $device = Device::query()->with('staff')->findOrFail($this->blockingId);
@@ -112,6 +122,7 @@ class DevicesTable extends Component
 
     public function unblock(int $deviceId): void
     {
+        $this->authorizeManage();
         $device = Device::query()->findOrFail($deviceId);
         $device->update(['status' => DeviceStatus::Active, 'blocked_at' => null, 'blocked_reason' => null]);
         AuditLog::record('device_unblocked', $device);

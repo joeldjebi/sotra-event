@@ -1,7 +1,9 @@
 <div>
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Code d'équipe" />
-        <x-ui.button type="button" wire:click="create" icon="wrench">Nouvelle équipe</x-ui.button>
+        @if ($this->canManage())
+            <x-ui.button type="button" wire:click="create" icon="wrench">Nouvelle équipe</x-ui.button>
+        @endif
     </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -26,7 +28,9 @@
                 </div>
                 <div class="mt-5 flex items-center justify-between border-t border-separator pt-4">
                     <p class="text-[13px] text-ink-secondary">{{ $team->depot?->name ?? 'Sans dépôt' }}</p>
-                    <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $team->id }})">Modifier</x-ui.button>
+                    @if ($this->canManage())
+                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $team->id }})">Modifier</x-ui.button>
+                    @endif
                 </div>
             </x-ui.card>
         @empty

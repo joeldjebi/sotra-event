@@ -12,6 +12,8 @@ enum Role: string
     case PlatformCommercial = 'direction_commerciale';
     case PlatformTechnical = 'direction_technique';
     case CallCenter = 'centre_appel';
+    case CompanyAdmin = 'admin_compagnie';
+    case GeneralManagement = 'direction_generale';
     case Commercial = 'commercial';
     case Quality = 'qualite';
     case Operations = 'exploitation';
@@ -26,9 +28,11 @@ enum Role: string
             self::PlatformCommercial => 'Direction commerciale ACCES TRANS',
             self::PlatformTechnical => 'Direction technique ACCES TRANS',
             self::CallCenter => 'Centre d\'appel',
-            self::Commercial => 'Direction commerciale',
+            self::CompanyAdmin => 'Administrateur SOTRA',
+            self::GeneralManagement => 'Direction générale SOTRA',
+            self::Commercial => 'Direction commerciale SOTRA',
             self::Quality => 'Direction qualité',
-            self::Operations => 'Exploitation',
+            self::Operations => 'Direction de l\'exploitation SOTRA',
             self::TransportLead => 'Chef de projet transport',
             self::PromoterAdmin => 'Administrateur promoteur',
         };
@@ -38,7 +42,7 @@ enum Role: string
     {
         return match ($this) {
             self::SuperAdmin, self::Operator, self::PlatformCommercial, self::PlatformTechnical, self::CallCenter => Space::Admin,
-            self::Commercial, self::Quality, self::Operations => Space::Company,
+            self::CompanyAdmin, self::GeneralManagement, self::Commercial, self::Quality, self::Operations => Space::Company,
             self::TransportLead, self::PromoterAdmin => Space::Promoter,
         };
     }
@@ -56,6 +60,27 @@ enum Role: string
             Permission::OperationsSupervise, Permission::CallCenterAccess,
         ];
 
+        $commercial = [
+            Permission::SalesView, Permission::ProposedEventsView, Permission::ProposedEventsRespond, Permission::PricingView,
+            Permission::DemandView, Permission::CompanyPayoutsView, Permission::ReportsView,
+        ];
+
+        // Direction de l'exploitation : les bus et le transport des passagers, qualité de service comprise.
+        $operations = [
+            Permission::OperationsView, Permission::OperationsManage, Permission::FleetView, Permission::FleetManage,
+            Permission::StaffView, Permission::StaffManage, Permission::BreakdownsView, Permission::BreakdownsManage,
+            Permission::TechTeamsView, Permission::TechTeamsManage, Permission::DevicesView, Permission::DevicesManage,
+            Permission::QualityView, Permission::ComplaintsManage,
+        ];
+
+        // Direction générale : tout l'espace compagnie, en consultation seule.
+        $generalManagement = [
+            Permission::SalesView, Permission::ProposedEventsView, Permission::PricingView, Permission::DemandView,
+            Permission::CompanyPayoutsView, Permission::ReportsView, Permission::QualityView, Permission::OperationsView,
+            Permission::FleetView, Permission::StaffView, Permission::BreakdownsView, Permission::TechTeamsView,
+            Permission::DevicesView,
+        ];
+
         return match ($this) {
             self::SuperAdmin => $admin,
             self::Operator => array_values(array_filter(
@@ -69,15 +94,12 @@ enum Role: string
             ],
             self::PlatformTechnical => [Permission::OperationsSupervise],
             self::CallCenter => [Permission::CallCenterAccess],
-            self::Commercial => [
-                Permission::SalesView, Permission::ProposedEventsRespond, Permission::PricingView,
-                Permission::DemandView, Permission::CompanyPayoutsView, Permission::ReportsView,
-            ],
+            // L'administrateur SOTRA : tout l'espace compagnie, plus les comptes de son équipe.
+            self::CompanyAdmin => [...$commercial, ...$operations, Permission::CompanyTeamManage],
+            self::GeneralManagement => $generalManagement,
+            self::Commercial => $commercial,
             self::Quality => [Permission::QualityView, Permission::ComplaintsManage],
-            self::Operations => [
-                Permission::OperationsManage, Permission::FleetManage, Permission::StaffManage,
-                Permission::BreakdownsManage, Permission::TechTeamsManage, Permission::DevicesManage,
-            ],
+            self::Operations => $operations,
             self::TransportLead => [Permission::EventTracking, Permission::PromoterMessagesSend, Permission::PromoKitView],
             // L'administrateur du promoteur : mêmes écrans, plus son équipe et ses demandes d'événement.
             self::PromoterAdmin => [
@@ -85,6 +107,16 @@ enum Role: string
                 Permission::PromoterTeamManage, Permission::EventRequestsSubmit,
             ],
         };
+    }
+
+    /**
+     * Rôles que l'administrateur SOTRA attribue à son équipe (la direction qualité est reprise par l'exploitation).
+     *
+     * @return list<self>
+     */
+    public static function companyTeam(): array
+    {
+        return [self::CompanyAdmin, self::GeneralManagement, self::Commercial, self::Operations];
     }
 
     /**

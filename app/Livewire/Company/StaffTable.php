@@ -44,6 +44,11 @@ class StaffTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::StaffView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::StaffManage;
     }
 
@@ -69,6 +74,7 @@ class StaffTable extends Component
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['role', 'first_name', 'last_name', 'phone', 'employee_number', 'tech_team_id', 'is_active', 'editingId']);
         $this->resetValidation();
         $this->showForm = true;
@@ -76,6 +82,7 @@ class StaffTable extends Component
 
     public function edit(int $staffId): void
     {
+        $this->authorizeManage();
         $staff = Staff::query()->findOrFail($staffId);
         $this->resetValidation();
         $this->editingId = $staff->id;
@@ -91,6 +98,7 @@ class StaffTable extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $companyId = CompanyScope::currentCompanyId();
 
         $this->validate([

@@ -35,6 +35,11 @@ class TransportPlan extends Component
 
     protected function permission(): Permission
     {
+        return Permission::OperationsView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::OperationsManage;
     }
 
@@ -52,6 +57,7 @@ class TransportPlan extends Component
 
     public function save(int $eventId): void
     {
+        $this->authorizeManage();
         $event = Event::query()
             ->whereIn('status', [EventStatus::Proposed, EventStatus::Negotiating, EventStatus::Accepted])
             ->with('offers')
@@ -90,6 +96,7 @@ class TransportPlan extends Component
      */
     public function generate(int $eventId, MissionPlanner $planner): void
     {
+        $this->authorizeManage();
         $event = Event::query()->whereIn('status', [EventStatus::Accepted, EventStatus::OnSale])->findOrFail($eventId);
 
         try {

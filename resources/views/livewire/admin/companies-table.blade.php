@@ -1,4 +1,6 @@
 <div>
+    @include('partials.issued-credentials')
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Rechercher une compagnie" />
         <x-ui.button wire:click="create" type="button" icon="sparkles">Nouvelle compagnie</x-ui.button>
@@ -9,6 +11,7 @@
             <th>Compagnie</th>
             <th>Commission</th>
             <th>Reversement</th>
+            <th>Administrateur</th>
             <th class="text-right">Utilisateurs</th>
             <th class="text-right">Bus</th>
             <th>Statut</th>
@@ -23,10 +26,18 @@
                 </td>
                 <td class="tabular-nums">{{ rtrim(rtrim($company->default_commission_rate, '0'), '.') }} %</td>
                 <td class="text-ink-secondary">{{ $company->payout_method?->label() ?? 'Non renseigné' }}</td>
+                <td>
+                    @forelse ($company->users as $admin)
+                        <span wire:key="company-admin-{{ $admin->id }}" class="mr-1 mb-1 inline-flex" title="{{ $admin->email }}"><x-ui.badge tone="brand">{{ $admin->name }}</x-ui.badge></span>
+                    @empty
+                        <span class="text-[13px] text-ink-tertiary">Aucun</span>
+                    @endforelse
+                </td>
                 <td class="text-right tabular-nums">{{ $company->users_count }}</td>
                 <td class="text-right tabular-nums">{{ $company->buses_count }}</td>
                 <td><x-ui.badge :tone="$company->is_active ? 'success' : 'neutral'">{{ $company->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                 <td class="text-right whitespace-nowrap">
+                    <x-ui.button variant="tinted" size="sm" type="button" wire:click="createAdmin({{ $company->id }})">Créer l'administrateur</x-ui.button>
                     <x-ui.button variant="ghost" size="sm" type="button" wire:click="toggleActive({{ $company->id }})"
                                  wire:confirm="{{ $company->is_active ? 'Désactiver cette compagnie ?' : 'Réactiver cette compagnie ?' }}">
                         {{ $company->is_active ? 'Désactiver' : 'Réactiver' }}
@@ -35,7 +46,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="7"><x-ui.empty-state icon="building" title="Aucune compagnie" description="Ajoutez la première compagnie partenaire, par exemple la SOTRA." /></td></tr>
+            <tr><td colspan="8"><x-ui.empty-state icon="building" title="Aucune compagnie" description="Ajoutez la première compagnie partenaire, par exemple la SOTRA." /></td></tr>
         @endforelse
 
         @if ($companies->hasPages())
@@ -87,6 +98,27 @@
         <x-slot:footer>
             <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
             <x-ui.button form="company-form">Enregistrer</x-ui.button>
+        </x-slot:footer>
+    </x-ui.sheet>
+
+    <x-ui.sheet model="showAdminForm" title="Administrateur de la compagnie" subtitle="Il crée ensuite les comptes de ses directions (générale, commerciale, exploitation).">
+        <form id="company-admin-form" wire:submit="saveAdmin" class="space-y-4">
+            <x-ui.input label="Nom" name="admin_name" wire:model="admin_name" placeholder="Prénom Nom" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.input label="E-mail de connexion" name="admin_email" type="email" wire:model="admin_email" />
+                <x-ui.input label="Téléphone" name="admin_phone" type="tel" wire:model="admin_phone" />
+            </div>
+            <div class="flex items-end gap-2">
+                <div class="min-w-0 flex-1">
+                    <x-ui.input label="Mot de passe initial" name="admin_password" wire:model="admin_password" autocomplete="off"
+                                hint="Au moins 12 caractères, avec des lettres et des chiffres. À changer à la première connexion." />
+                </div>
+                <x-ui.button variant="secondary" type="button" wire:click="generatePassword('admin_password')" class="mb-[1px]">Générer</x-ui.button>
+            </div>
+        </form>
+        <x-slot:footer>
+            <x-ui.button variant="secondary" type="button" x-on:click="open = false">Annuler</x-ui.button>
+            <x-ui.button form="company-admin-form">Créer le compte</x-ui.button>
         </x-slot:footer>
     </x-ui.sheet>
 </div>

@@ -15,8 +15,10 @@
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Numéro ou immatriculation" />
         <div class="flex gap-2">
-            <x-ui.button variant="secondary" type="button" wire:click="openImport" icon="document">Importer</x-ui.button>
-            <x-ui.button type="button" wire:click="create" icon="bus">Nouveau bus</x-ui.button>
+            @if ($this->canManage())
+                <x-ui.button variant="secondary" type="button" wire:click="openImport" icon="document">Importer</x-ui.button>
+                <x-ui.button type="button" wire:click="create" icon="bus">Nouveau bus</x-ui.button>
+            @endif
         </div>
     </div>
 
@@ -40,8 +42,10 @@
                 <td class="text-ink-secondary">{{ $bus->depot?->name ?? '—' }}</td>
                 <td><x-ui.badge :tone="$bus->status->tone()">{{ $bus->status->label() }}</x-ui.badge></td>
                 <td class="text-right whitespace-nowrap">
+                    @if ($this->canManage())
                     <x-ui.button variant="ghost" size="sm" type="button" wire:click="delete({{ $bus->id }})" wire:confirm="Supprimer le bus {{ $bus->number }} ? Préférez le statut « Hors service » s'il a déjà roulé.">Supprimer</x-ui.button>
                     <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $bus->id }})">Modifier</x-ui.button>
+                    @endif
                 </td>
             </tr>
         @empty

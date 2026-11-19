@@ -27,7 +27,7 @@ class BreakdownsTable extends Component
 
     protected function permission(): Permission
     {
-        return Permission::BreakdownsManage;
+        return Permission::BreakdownsView;
     }
 
     public function updatedStatus(): void

@@ -43,6 +43,11 @@ class BusesTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::FleetView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::FleetManage;
     }
 
@@ -68,6 +73,7 @@ class BusesTable extends Component
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['number', 'plate', 'capacity', 'category', 'status', 'depot_id', 'notes', 'editingId']);
         $this->resetValidation();
         $this->showForm = true;
@@ -75,6 +81,7 @@ class BusesTable extends Component
 
     public function edit(int $busId): void
     {
+        $this->authorizeManage();
         $bus = Bus::query()->findOrFail($busId);
         $this->resetValidation();
         $this->editingId = $bus->id;
@@ -90,6 +97,7 @@ class BusesTable extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $this->plate = Str::upper(trim((string) preg_replace('/\s+/', ' ', $this->plate)));
         $companyId = CompanyScope::currentCompanyId();
 
@@ -119,6 +127,7 @@ class BusesTable extends Component
 
     public function delete(int $busId): void
     {
+        $this->authorizeManage();
         $bus = Bus::query()->findOrFail($busId);
         $bus->delete();
         $this->notify("Bus {$bus->number} supprimé.");

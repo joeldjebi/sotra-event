@@ -33,6 +33,11 @@ class Complaints extends Component
 
     protected function permission(): Permission
     {
+        return Permission::QualityView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::ComplaintsManage;
     }
 
@@ -52,7 +57,12 @@ class Complaints extends Component
     public function handle(int $complaintId, ComplaintService $complaints): void
     {
         $complaint = Complaint::query()->findOrFail($complaintId);
-        $complaints->take($complaint, $this->user());
+
+        // La direction générale consulte la réclamation sans la prendre en charge.
+        if ($this->canManage()) {
+            $complaints->take($complaint, $this->user());
+        }
+
         $this->handlingId = $complaint->id;
         $this->resolution = (string) $complaint->resolution;
         $this->resetErrorBag();
@@ -61,6 +71,7 @@ class Complaints extends Component
 
     public function resolve(ComplaintService $complaints): void
     {
+        $this->authorizeManage();
         $this->validate(['resolution' => ['required', 'string', 'min:10', 'max:500']], attributes: ['resolution' => 'réponse']);
         $complaint = Complaint::query()->findOrFail($this->handlingId);
 

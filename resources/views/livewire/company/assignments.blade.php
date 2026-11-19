@@ -60,7 +60,7 @@
                             'device_id' => [$devices, fn ($device) => $device->label],
                         ] as $field => [$options, $label])
                             <td class="min-w-36">
-                                <select wire:change="assign({{ $mission->id }}, '{{ $field }}', $event.target.value)" aria-label="{{ $field }}"
+                                <select wire:change="assign({{ $mission->id }}, '{{ $field }}', $event.target.value)" aria-label="{{ $field }}" @disabled(! $this->canManage())
                                         class="ui-field h-9 w-full rounded-[9px] bg-field px-2.5 text-[13px] ring-1 ring-inset ring-hairline focus:ring-2 focus:ring-brand focus:outline-none">
                                     <option value="">—</option>
                                     @foreach ($options as $option)
@@ -88,17 +88,21 @@
                 @forelse ($reserves as $reserve)
                     <li wire:key="reserve-{{ $reserve->id }}" class="flex items-center justify-between py-2.5">
                         <span><span class="font-medium">Bus {{ $reserve->bus->number }}</span> <span class="text-ink-secondary">· {{ $reserve->waiting_place }}</span></span>
-                        <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeReserve({{ $reserve->id }})">Retirer</x-ui.button>
+                        @if ($this->canManage())
+                            <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeReserve({{ $reserve->id }})">Retirer</x-ui.button>
+                        @endif
                     </li>
                 @empty
                     <li class="py-3 text-[14px] text-ink-tertiary">Aucun bus de réserve.</li>
                 @endforelse
             </ul>
+            @if ($this->canManage())
             <form wire:submit="addReserve" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                 <x-ui.select label="Bus" name="reserveBusId" wire:model="reserveBusId" :options="$reserveOptions" placeholder="Choisir" />
                 <x-ui.input label="Position d'attente" name="waitingPlace" wire:model="waitingPlace" placeholder="Parking P5 Ebimpé" />
                 <x-ui.button variant="secondary">Ajouter</x-ui.button>
             </form>
+            @endif
         </x-ui.card>
     @endif
     @if ($event)
@@ -113,17 +117,21 @@
                             <span class="text-ink-secondary">· {{ $assignment->sector }} · {{ $assignment->techTeam->members->count() }} technicien(s)</span>
                             <x-ui.badge :tone="$assignment->techTeam->status->tone()" class="ml-1">{{ $assignment->techTeam->status->label() }}</x-ui.badge>
                         </span>
-                        <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeTechTeam({{ $assignment->id }})">Retirer</x-ui.button>
+                        @if ($this->canManage())
+                            <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeTechTeam({{ $assignment->id }})">Retirer</x-ui.button>
+                        @endif
                     </li>
                 @empty
                     <li class="py-3 text-[14px] text-ink-tertiary">Aucune équipe mobilisée.</li>
                 @endforelse
             </ul>
+            @if ($this->canManage())
             <form wire:submit="addTechTeam" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                 <x-ui.select label="Équipe" name="techTeamId" wire:model="techTeamId" :options="$teamOptions" placeholder="Choisir" />
                 <x-ui.input label="Secteur" name="sector" wire:model="sector" placeholder="Secteur Nord" />
                 <x-ui.button variant="secondary">Mobiliser</x-ui.button>
             </form>
+            @endif
         </x-ui.card>
     @endif
 </div>

@@ -16,8 +16,8 @@
                             </p>
                         </div>
                         <div class="flex gap-2">
-                            <x-ui.button variant="secondary" size="sm" type="button" wire:click="show({{ $event->id }})">Négocier</x-ui.button>
-                            @if ($event->status === \App\Enums\EventStatus::Proposed)
+                            <x-ui.button variant="secondary" size="sm" type="button" wire:click="show({{ $event->id }})">{{ $this->canManage() ? 'Négocier' : 'Détails' }}</x-ui.button>
+                            @if ($this->canManage() && $event->status === \App\Enums\EventStatus::Proposed)
                                 <x-ui.button variant="dark" size="sm" type="button" wire:click="accept({{ $event->id }})" wire:confirm="Accepter « {{ $event->name }} » aux conditions proposées ?">Accepter</x-ui.button>
                             @endif
                         </div>
@@ -94,7 +94,7 @@
                     <x-ui.section-title title="Échanges avec ACCES EVENT" />
                     <x-ui.negotiation-thread :messages="$viewing->negotiations" viewer-side="company" />
 
-                    @if (in_array($viewing->status, [\App\Enums\EventStatus::Proposed, \App\Enums\EventStatus::Negotiating], true))
+                    @if ($this->canManage() && in_array($viewing->status, [\App\Enums\EventStatus::Proposed, \App\Enums\EventStatus::Negotiating], true))
                         <form wire:submit="negotiate" class="mt-5 space-y-3 rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-hairline">
                             <x-ui.select label="Objet" name="subject" wire:model="subject" :options="$subjects" />
                             <x-ui.textarea label="Votre demande" name="message" wire:model="message" placeholder="Ex. : nous proposons 3 500 FCFA en zone 1 pour couvrir le carburant." />
@@ -105,7 +105,7 @@
                 </section>
             </div>
         @endif
-        @if ($viewing && $viewing->status === \App\Enums\EventStatus::Proposed)
+        @if ($viewing && $this->canManage() && $viewing->status === \App\Enums\EventStatus::Proposed)
             <x-slot:footer>
                 <x-ui.button variant="dark" type="button" wire:click="accept({{ $viewing->id }})" wire:confirm="Accepter « {{ $viewing->name }} » aux conditions proposées ?">Accepter l'événement</x-ui.button>
             </x-slot:footer>

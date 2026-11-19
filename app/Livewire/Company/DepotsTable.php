@@ -30,11 +30,17 @@ class DepotsTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::FleetView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::FleetManage;
     }
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['name', 'address', 'phone', 'latitude', 'longitude', 'editingId']);
         $this->resetValidation();
         $this->showForm = true;
@@ -42,6 +48,7 @@ class DepotsTable extends Component
 
     public function edit(int $depotId): void
     {
+        $this->authorizeManage();
         $depot = Depot::query()->findOrFail($depotId);
         $this->resetValidation();
         $this->editingId = $depot->id;
@@ -55,6 +62,7 @@ class DepotsTable extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $this->validate([
             'name' => ['required', 'string', 'max:120', Rule::unique('depots', 'name')->where('company_id', CompanyScope::currentCompanyId())->ignore($this->editingId)],
             'address' => ['nullable', 'string', 'max:255'],

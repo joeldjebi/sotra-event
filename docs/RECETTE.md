@@ -92,6 +92,15 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | E.3 | Centre d'appel : chercher un numéro, renvoyer le Pass, ouvrir une réclamation, noter l'appel | Fiche du spectateur, SMS renvoyé, réclamation créée, appels au journal | `Admin/AccesTransTeamsTest` | |
 | E.4 | Centre d'appel : annuler un Pass | Règles du spectateur (RG-19) : retenue de 8 %, refus à moins de 24 h | `Admin/AccesTransTeamsTest` | |
 
+## Évolution — Équipes SOTRA (19/11/2026)
+
+| # | Scénario | Résultat attendu | Test | Statut |
+|---|---|---|---|---|
+| S.1 | Super admin : Compagnies › « Créer l'administrateur » sur SOTRA | Compte « Administrateur SOTRA » créé, identifiants affichés une fois, mot de passe à changer | `Company/SotraTeamsTest` | |
+| S.2 | Administrateur SOTRA : Équipe SOTRA › créer DG, direction commerciale, direction de l'exploitation | Comptes rattachés à SOTRA ; aucun rôle de la console ; pas de compte d'une autre compagnie | `Company/SotraTeamsTest` | |
+| S.3 | Direction générale : parcourir tout l'espace compagnie | Tout est visible ; aucun bouton de création, d'affectation, de validation ni de réponse ; actions refusées | `Company/SotraTeamsTest` | |
+| S.4 | Direction commerciale / direction de l'exploitation | Chacune ne voit que ses menus ; l'exploitation traite aussi la qualité de service et les réclamations | `Company/SotraTeamsTest` | |
+
 ## Lot 5 — Finance et pilote (partie web et API)
 
 | # | Scénario | Résultat attendu | Test | Statut |

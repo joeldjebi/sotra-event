@@ -32,6 +32,7 @@ enum Permission: string
     case DemandView = 'demand.view';
     case CompanyPayoutsView = 'company-payouts.view';
     case ReportsView = 'reports.view';
+    case ProposedEventsView = 'proposed-events.view';
 
     // Espace compagnie : Direction qualité
     case QualityView = 'quality.view';
@@ -44,6 +45,15 @@ enum Permission: string
     case BreakdownsManage = 'breakdowns.manage';
     case TechTeamsManage = 'tech-teams.manage';
     case DevicesManage = 'devices.manage';
+
+    // Espace compagnie : consultation seule (Direction générale) et administration de l'équipe
+    case OperationsView = 'operations.view';
+    case FleetView = 'fleet.view';
+    case StaffView = 'staff.view';
+    case BreakdownsView = 'breakdowns.view';
+    case TechTeamsView = 'tech-teams.view';
+    case DevicesView = 'devices.view';
+    case CompanyTeamManage = 'company-team.manage';
 
     // Espace promoteur
     case EventTracking = 'event.tracking';

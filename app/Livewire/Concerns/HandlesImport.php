@@ -36,6 +36,7 @@ trait HandlesImport
 
     public function openImport(): void
     {
+        $this->authorizeManage();
         $this->reset(['importFile', 'importErrors']);
         $this->resetValidation('importFile');
         $this->showImport = true;
@@ -43,11 +44,14 @@ trait HandlesImport
 
     public function downloadTemplate(): BinaryFileResponse
     {
+        $this->authorizeManage();
+
         return Excel::download(new ImportTemplateExport($this->importClass()), $this->templateFileName());
     }
 
     public function import(): void
     {
+        $this->authorizeManage();
         $this->validate(['importFile' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:5120']], attributes: ['importFile' => 'fichier']);
 
         /** @var User $user */

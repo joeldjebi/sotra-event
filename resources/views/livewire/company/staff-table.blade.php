@@ -10,8 +10,10 @@
             </x-ui.segmented>
         </div>
         <div class="flex gap-2">
-            <x-ui.button variant="secondary" type="button" wire:click="openImport" icon="document">Importer</x-ui.button>
-            <x-ui.button type="button" wire:click="create" icon="id-card">Nouveau membre</x-ui.button>
+            @if ($this->canManage())
+                <x-ui.button variant="secondary" type="button" wire:click="openImport" icon="document">Importer</x-ui.button>
+                <x-ui.button type="button" wire:click="create" icon="id-card">Nouveau membre</x-ui.button>
+            @endif
         </div>
     </div>
 
@@ -41,7 +43,7 @@
                         <span class="text-[13px] text-ink-tertiary">Sans compte</span>
                     @endif
                 </td>
-                <td class="text-right"><x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $member->id }})">Modifier</x-ui.button></td>
+                <td class="text-right">@if ($this->canManage())<x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $member->id }})">Modifier</x-ui.button>@endif</td>
             </tr>
         @empty
             <tr><td colspan="7"><x-ui.empty-state icon="id-card" title="Aucun membre du personnel" description="Ajoutez vos chauffeurs, convoyeurs et techniciens, ou importez-les depuis Excel." /></td></tr>

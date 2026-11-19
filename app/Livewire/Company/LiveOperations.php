@@ -46,6 +46,11 @@ class LiveOperations extends Component
 
     protected function permission(): Permission
     {
+        return Permission::OperationsView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::OperationsManage;
     }
 
@@ -59,6 +64,7 @@ class LiveOperations extends Component
      */
     public function sendTeam(int $alertId, BreakdownService $breakdowns): void
     {
+        $this->authorizeManage();
         $alert = BreakdownAlert::query()->where('event_id', $this->eventId)->findOrFail($alertId);
         $team = TechTeam::query()->find((int) ($this->dispatchTeam[$alertId] ?? 0));
 
@@ -81,6 +87,7 @@ class LiveOperations extends Component
      */
     public function replaceBus(int $alertId, BusReplacement $replacement): void
     {
+        $this->authorizeManage();
         $alert = BreakdownAlert::query()->with('mission')->where('event_id', $this->eventId)->findOrFail($alertId);
         $bus = Bus::query()->find((int) ($this->replacementBus[$alertId] ?? 0));
 

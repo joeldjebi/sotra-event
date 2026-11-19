@@ -37,11 +37,17 @@ class TechTeamsTable extends Component
 
     protected function permission(): Permission
     {
+        return Permission::TechTeamsView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::TechTeamsManage;
     }
 
     public function create(): void
     {
+        $this->authorizeManage();
         $this->reset(['code', 'type', 'status', 'depot_id', 'members', 'editingId']);
         $this->resetValidation();
         $this->showForm = true;
@@ -49,6 +55,7 @@ class TechTeamsTable extends Component
 
     public function edit(int $teamId): void
     {
+        $this->authorizeManage();
         $team = TechTeam::query()->with('members')->findOrFail($teamId);
         $this->resetValidation();
         $this->editingId = $team->id;
@@ -62,6 +69,7 @@ class TechTeamsTable extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $this->code = mb_strtoupper(trim($this->code));
         $companyId = CompanyScope::currentCompanyId();
 

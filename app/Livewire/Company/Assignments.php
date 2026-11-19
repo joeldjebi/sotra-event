@@ -49,6 +49,11 @@ class Assignments extends Component
 
     protected function permission(): Permission
     {
+        return Permission::FleetView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::FleetManage;
     }
 
@@ -62,6 +67,7 @@ class Assignments extends Component
      */
     public function assign(int $missionId, string $field, ?string $value, MissionAssignment $assignment): void
     {
+        $this->authorizeManage();
         abort_unless(in_array($field, ['bus_id', 'driver_id', 'conveyor_id', 'device_id'], true), 400);
         $mission = Mission::query()->where('event_id', $this->eventId)->findOrFail($missionId);
 
@@ -76,6 +82,7 @@ class Assignments extends Component
 
     public function addReserve(): void
     {
+        $this->authorizeManage();
         $event = $this->events()->findOrFail($this->eventId);
 
         $this->validate([
@@ -96,6 +103,7 @@ class Assignments extends Component
 
     public function removeReserve(int $reserveId): void
     {
+        $this->authorizeManage();
         EventReserveBus::query()->where('event_id', $this->eventId)->findOrFail($reserveId)->delete();
         $this->notify('Bus retiré de la réserve.');
     }
@@ -105,6 +113,7 @@ class Assignments extends Component
      */
     public function addTechTeam(): void
     {
+        $this->authorizeManage();
         $event = $this->events()->findOrFail($this->eventId);
 
         $this->validate([
@@ -119,6 +128,7 @@ class Assignments extends Component
 
     public function removeTechTeam(int $assignmentId): void
     {
+        $this->authorizeManage();
         EventTechTeam::query()->where('event_id', $this->eventId)->findOrFail($assignmentId)->delete();
         $this->notify('Équipe retirée de l\'événement.');
     }

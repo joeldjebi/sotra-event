@@ -38,7 +38,7 @@
                                     <p class="font-medium">Équipe {{ $alert->techTeam->code }} · {{ $alert->techTeam->type->label() }}</p>
                                     <p class="text-ink-secondary">{{ $alert->intervention?->number }} · {{ $alert->intervention?->step->label() }}</p>
                                 </div>
-                            @else
+                            @elseif ($this->canManage())
                                 <div class="mt-4 flex gap-2">
                                     <select wire:model="dispatchTeam.{{ $alert->id }}" class="ui-field h-9 flex-1 rounded-[9px] bg-field px-2.5 text-[13px] ring-1 ring-inset ring-hairline">
                                         <option value="">Équipe disponible…</option>
@@ -50,7 +50,7 @@
 
                             @if ($alert->mission->replacedBy)
                                 <p class="mt-3 rounded-xl bg-success-soft px-3 py-2.5 text-[14px] text-success">Bus {{ $alert->mission->replacedBy->bus?->number }} en remplacement · passagers prévenus.</p>
-                            @else
+                            @elseif ($this->canManage())
                                 <div class="mt-2 flex gap-2">
                                     <select wire:model="replacementBus.{{ $alert->id }}" class="ui-field h-9 flex-1 rounded-[9px] bg-field px-2.5 text-[13px] ring-1 ring-inset ring-hairline">
                                         <option value="">Bus de réserve…</option>

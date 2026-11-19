@@ -33,6 +33,11 @@ class ProposedEvents extends Component
 
     protected function permission(): Permission
     {
+        return Permission::ProposedEventsView;
+    }
+
+    protected function managePermission(): Permission
+    {
         return Permission::ProposedEventsRespond;
     }
 
@@ -46,6 +51,7 @@ class ProposedEvents extends Component
 
     public function accept(int $eventId, EventWorkflow $workflow): void
     {
+        $this->authorizeManage();
         $event = $this->findEvent($eventId);
         $workflow->accept($event, $this->actor(), $this->message ?: null);
         $this->message = '';
@@ -54,6 +60,7 @@ class ProposedEvents extends Component
 
     public function negotiate(EventWorkflow $workflow): void
     {
+        $this->authorizeManage();
         $this->validate([
             'subject' => ['required', Rule::in(array_keys(NegotiationSubject::negotiable()))],
             'message' => ['required', 'string', 'max:2000'],
