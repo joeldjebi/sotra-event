@@ -12,7 +12,8 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * Espace promoteur · Détail d'un événement, en onglets : Résumé, Ventes, Points d'embarquement, Embarquement.
+ * Espace promoteur · Détail d'un événement, en onglets : Résumé, Ventes, Points d'embarquement, Embarquement,
+ * Transport, Incidents, Avis, Réclamations, Messages et Annulations.
  * Volumes seulement : ni montants, ni données nominatives des spectateurs.
  */
 class EventDetail extends Component
@@ -24,6 +25,12 @@ class EventDetail extends Component
         'ventes' => 'Ventes',
         'points' => 'Points d\'embarquement',
         'embarquement' => 'Embarquement',
+        'transport' => 'Transport',
+        'incidents' => 'Incidents',
+        'avis' => 'Avis',
+        'reclamations' => 'Réclamations',
+        'messages' => 'Messages',
+        'annulations' => 'Annulations',
     ];
 
     #[Locked]
@@ -70,6 +77,12 @@ class EventDetail extends Component
             'sales' => $tab === 'ventes' ? $insights->sales($event) : null,
             'points' => $tab === 'points' ? $insights->points($event) : null,
             'boarding' => $tab === 'embarquement' ? $insights->boarding($event) : null,
+            'transport' => $tab === 'transport' ? $insights->transport($event) : null,
+            'incidents' => $tab === 'incidents' ? $insights->incidents($event) : null,
+            'reviews' => $tab === 'avis' ? $insights->reviews($event) : null,
+            'complaints' => $tab === 'reclamations' ? $insights->complaints($event) : null,
+            'messages' => $tab === 'messages' ? $event->promoterMessages()->with('author')->latest()->get() : null,
+            'cancellations' => $tab === 'annulations' ? $insights->cancellations($event) : null,
         ]);
     }
 }

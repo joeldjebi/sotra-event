@@ -77,7 +77,7 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | P.4 | Créer un promoteur dans la console | Validé d'office ; son compte est administrateur du promoteur | `Promoters/PromoterOnboardingTest` | |
 | P.5 | Administrateur du promoteur : créer un chef de projet | Compte rattaché à son seul promoteur, mot de passe initial à changer | `Promoters/PromoterTeamAndRequestsTest` | |
 | P.6 | Proposer un événement, puis ACCES EVENT le crée | Formulaire de la console prérempli ; demande « Acceptée » liée à l'événement ; prix fixés par la console | `Promoters/PromoterTeamAndRequestsTest` | |
-| P.8 | « Mes événements » puis le détail d'un événement | Liste à partir de l'acceptation ; onglets Résumé, Ventes, Points, Embarquement ; volumes seulement, ni montant ni nom de spectateur ; événement d'un autre promoteur introuvable | `Promoters/PromoterEventsTest` | |
+| P.8 | « Mes événements » puis le détail d'un événement | Liste à partir de l'acceptation ; onglets Résumé, Ventes, Points, Embarquement, Transport, Incidents, Avis, Réclamations, Messages, Annulations ; volumes seulement, ni montant ni nom de spectateur ; événement d'un autre promoteur introuvable | `Promoters/PromoterEventsTest` | |
 | P.7 | Refuser une demande d'événement | Motif envoyé par SMS et visible par le promoteur | `Promoters/PromoterTeamAndRequestsTest` | |
 
 ## Lot 5 — Finance et pilote (partie web et API)

@@ -1,13 +1,24 @@
 <?php
 
+use App\Enums\AlertStatus;
+use App\Enums\BreakdownType;
+use App\Enums\BreakdownUrgency;
+use App\Enums\ComplaintCategory;
+use App\Enums\ComplaintStatus;
 use App\Enums\EventStatus;
 use App\Enums\PassType;
+use App\Enums\RefundReason;
 use App\Enums\Role;
 use App\Livewire\Promoter\EventDetail;
 use App\Livewire\Promoter\EventsIndex;
+use App\Models\BreakdownAlert;
+use App\Models\Complaint;
 use App\Models\Event;
 use App\Models\Promoter;
+use App\Models\Review;
 use App\Services\Reporting\PromoterEventInsights;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -100,4 +111,65 @@ it('affiche les étapes de l\'événement et le lien de vente', function () {
         ->assertSee('Accepté par la compagnie')
         ->assertSee('Vente ouverte')
         ->assertSee(route('site.events.show', $this->event->slug));
+});
+
+it('montre les départs, les pannes, les avis et les réclamations sans identité des spectateurs (lot B)', function () {
+    $missions = staffedMissions($this->event);
+    [$bus] = outboundMissions($this->event);
+    $pass = $this->order->passes->first();
+    boardMission($bus, [$pass]);
+    departAfter($bus, 12);
+
+    BreakdownAlert::query()->create([
+        'event_id' => $this->event->id, 'company_id' => $this->event->company_id, 'mission_id' => $bus->id, 'bus_id' => $bus->bus_id,
+        'reported_by' => $bus->conveyor_id, 'type' => BreakdownType::Tyre, 'passengers_on_board' => 1, 'urgency' => BreakdownUrgency::Urgent,
+        'status' => AlertStatus::Open, 'channel' => 'app', 'mission_status_before' => 'en_route', 'place_label' => 'Boulevard de la Paix',
+    ]);
+    Review::factory()->create([
+        'pass_id' => $pass->id, 'event_id' => $this->event->id, 'company_id' => $this->event->company_id, 'mission_id' => $bus->id,
+        'customer_id' => $pass->holder_id, 'punctuality' => 4, 'comfort' => 4, 'courtesy' => 4, 'driving' => 4, 'information' => 4, 'comment' => 'Bus propre et convoyeur aimable.',
+    ]);
+    Complaint::query()->create([
+        'number' => 'RC-0001', 'event_id' => $this->event->id, 'company_id' => $this->event->company_id, 'pass_id' => $pass->id, 'customer_id' => $pass->holder_id,
+        'mission_id' => $bus->id, 'category' => ComplaintCategory::Delay, 'title' => 'Départ en retard', 'details' => 'Je suis Jean, appelez-moi au 0700000000',
+        'status' => ComplaintStatus::Open, 'is_collective' => false,
+    ]);
+    $holder = $pass->holder->phone;
+
+    $this->actingAs($this->lead);
+    $insights = app(PromoterEventInsights::class);
+
+    expect($insights->transport($this->event))->toMatchArray(['departed' => 1, 'on_time_rate' => 0])
+        ->and($insights->transport($this->event)['rows'][0])->toMatchArray(['boarded' => 1, 'gap_label' => '+12 min', 'on_time' => false])
+        ->and($insights->incidents($this->event)[0])->toMatchArray(['type' => 'Pneu crevé', 'urgent' => true, 'passengers' => 1])
+        ->and($insights->reviews($this->event))->toMatchArray(['rating' => 4.0, 'reviews' => 1])
+        ->and($insights->complaints($this->event))->toMatchArray(['open' => 1, 'resolved' => 0]);
+
+    $detail = fn (string $tab) => Livewire::test(EventDetail::class, ['eventId' => $this->event->id])->set('tab', $tab);
+
+    $detail('transport')->assertSee('+12 min')->assertSee('Bus '.$bus->bus->number);
+    $detail('incidents')->assertSee('Pneu crevé')->assertSee('Urgent');
+    $detail('avis')->assertSee('Bus propre et convoyeur aimable.')->assertDontSee($holder);
+    $detail('reclamations')->assertSee('Départ en retard')->assertDontSee('appelez-moi')->assertDontSee($holder);
+    expect($missions)->not->toBeEmpty();
+});
+
+it('compte les annulations et les messages envoyés, sans montant (lot B)', function () {
+    $pass = $this->order->passes->first()->fresh();
+    Sanctum::actingAs($pass->holder, ['customer']);
+    $this->postJson("/api/v1/passes/{$pass->code}/cancel")->assertOk();
+
+    $this->event->promoterMessages()->create([
+        'user_id' => $this->lead->id, 'audience' => 'tous', 'audience_label' => 'Tous les détenteurs de Pass', 'body' => 'Portes ouvertes à 17h.',
+        'channels' => ['sms'], 'recipients_count' => 3, 'status' => 'envoye', 'sent_at' => now(),
+    ]);
+
+    expect(app(PromoterEventInsights::class)->cancellations($this->event))
+        ->toMatchArray(['cancelled' => 0, 'refunded' => 1, 'by_reason' => [['label' => RefundReason::Customer->label(), 'count' => 1]]]);
+
+    $this->actingAs($this->lead);
+    Livewire::test(EventDetail::class, ['eventId' => $this->event->id])->set('tab', 'annulations')
+        ->assertSee(RefundReason::Customer->label())->assertDontSee('FCFA')->assertDontSee('2 815');
+    Livewire::test(EventDetail::class, ['eventId' => $this->event->id])->set('tab', 'messages')
+        ->assertSee('Portes ouvertes à 17h.')->assertSee('Tous les détenteurs de Pass');
 });

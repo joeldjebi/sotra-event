@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <x-ui.segmented label="Onglets" class="mb-6">
+    <x-ui.segmented label="Onglets" class="mb-6 !flex max-w-full overflow-x-auto whitespace-nowrap sm:!inline-flex">
         @foreach ($tabs as $key => $label)
             <x-ui.segment wire:key="tab-{{ $key }}" :active="$tab === $key" wire:click="$set('tab', '{{ $key }}')">{{ $label }}</x-ui.segment>
         @endforeach
@@ -127,6 +127,147 @@
                     <x-slot:footer><span class="text-[13px] text-ink-secondary">{{ $fmt($boarding['scans']) }} scans au total, dont {{ $fmt($boarding['refused']) }} refusés.</span></x-slot:footer>
                 </x-ui.table>
             </div>
+            @break
+
+        @case('transport')
+            <div class="mb-6 grid gap-4 sm:grid-cols-3">
+                <x-ui.kpi label="Départs confirmés" :value="$fmt($transport['departed']).' / '.$fmt($transport['planned'])" icon="bus" />
+                <x-ui.kpi label="Départs à l'heure" :value="$transport['on_time_rate'] === null ? '—' : $transport['on_time_rate'].' %'" :hint="'Tolérance de '.\App\Services\Reporting\QualityMetrics::tolerance().' min'" icon="clock" />
+                <x-ui.kpi label="Bus arrivés" :value="$fmt($transport['arrived'])" icon="map-pin" />
+            </div>
+            <x-ui.table>
+                <x-slot:head>
+                    <th>Sens · point</th><th>Offre</th><th>Bus</th><th class="text-right">Passagers</th>
+                    <th>Départ prévu · réel</th><th>Écart</th><th>Arrivée</th><th>Statut</th>
+                </x-slot:head>
+                @forelse ($transport['rows'] as $row)
+                    <tr wire:key="mission-{{ $loop->index }}" @class(['opacity-55' => $row['replaced']])>
+                        <td><p class="font-medium">{{ $row['direction']->label() }}</p><p class="text-[12px] text-ink-secondary">{{ $row['point'] }}</p></td>
+                        <td>{{ $row['offer']->label() }}</td>
+                        <td>{{ $row['bus'] ? 'Bus '.$row['bus'] : 'À affecter' }}@if ($row['replaced'])<p class="text-[12px] text-ink-secondary">Remplacé après panne</p>@endif</td>
+                        <td class="text-right tabular-nums">{{ $fmt($row['boarded']) }} <span class="text-ink-tertiary">/ {{ $fmt($row['capacity']) }}</span></td>
+                        <td class="tabular-nums">{{ $row['planned_at']->format('H\hi') }} · {{ $row['actual_at']?->format('H\hi') ?? '—' }}</td>
+                        <td>
+                            @if ($row['on_time'] === null)
+                                <span class="text-ink-tertiary">{{ $row['gap_label'] }}</span>
+                            @else
+                                <x-ui.badge :tone="$row['on_time'] ? 'success' : 'warning'">{{ $row['gap_label'] }}</x-ui.badge>
+                            @endif
+                        </td>
+                        <td class="tabular-nums">{{ $row['arrived_at']?->format('H\hi') ?? '—' }}</td>
+                        <td><x-ui.badge :tone="$row['status']->tone()">{{ $row['status']->label() }}</x-ui.badge></td>
+                    </tr>
+                @empty
+                    <tr><td colspan="8"><x-ui.empty-state icon="bus" title="Plan de transport à venir" description="La compagnie répartit les bus selon les ventes, avant le jour J." /></td></tr>
+                @endforelse
+            </x-ui.table>
+            @break
+
+        @case('incidents')
+            <x-ui.table>
+                <x-slot:head><th>Signalée</th><th>Bus · point</th><th>Panne</th><th class="text-right">Passagers à bord</th><th>Issue</th><th>Statut</th></x-slot:head>
+                @forelse ($incidents as $row)
+                    <tr wire:key="incident-{{ $loop->index }}">
+                        <td class="whitespace-nowrap">{{ $row['at']->translatedFormat('j M · H\hi') }}</td>
+                        <td><p>{{ $row['bus'] ? 'Bus '.$row['bus'] : '—' }}</p><p class="text-[12px] text-ink-secondary">{{ $row['point'] ?? '' }}{{ $row['place'] ? ' · '.$row['place'] : '' }}</p></td>
+                        <td>{{ $row['type'] }} @if ($row['urgent'])<x-ui.badge tone="danger" class="ml-1">Urgent</x-ui.badge>@endif</td>
+                        <td class="text-right tabular-nums">{{ $fmt($row['passengers']) }}</td>
+                        <td>{{ $row['result'] ?? 'En cours' }}@if ($row['duration'] !== null)<p class="text-[12px] text-ink-secondary">Résolue en {{ $row['duration'] }} min</p>@endif</td>
+                        <td><x-ui.badge :tone="$row['status']->tone()">{{ $row['status']->label() }}</x-ui.badge></td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6"><x-ui.empty-state icon="wrench" title="Aucune panne" description="Les pannes signalées par les convoyeurs s'afficheront ici, avec leur prise en charge." /></td></tr>
+                @endforelse
+            </x-ui.table>
+            @break
+
+        @case('avis')
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+                <x-ui.card>
+                    <p class="text-[14px] text-ink-secondary">Note du service</p>
+                    <p class="mt-1 text-[34px] font-semibold tabular-nums">{{ \App\Services\Reporting\QualityMetrics::rating($reviews['rating']) }} <span class="text-[17px] font-normal text-ink-secondary">/ 5 · {{ $fmt($reviews['reviews']) }} avis</span></p>
+                    <ul class="mt-4 space-y-3">
+                        @foreach ($reviews['criteria'] as $key => $criterion)
+                            <li wire:key="criterion-{{ $key }}">
+                                <div class="flex justify-between text-[14px]"><span>{{ $criterion['label'] }}</span><span class="tabular-nums">{{ \App\Services\Reporting\QualityMetrics::rating($criterion['average']) }}</span></div>
+                                <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-fill"><div class="h-full rounded-full bg-brand" style="width: {{ ($criterion['average'] ?? 0) / 5 * 100 }}%"></div></div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-ui.card>
+                <x-ui.card>
+                    <h3 class="text-[17px] font-semibold tracking-tight">Commentaires des spectateurs</h3>
+                    <ul class="mt-3 divide-y divide-separator">
+                        @forelse ($reviews['comments'] as $comment)
+                            <li wire:key="comment-{{ $loop->index }}" class="py-3">
+                                <p class="text-[13px] text-ink-secondary">{{ \App\Services\Reporting\QualityMetrics::rating($comment['rating']) }} / 5 · {{ $comment['at']->translatedFormat('j M Y') }}{{ $comment['point'] ? ' · '.$comment['point'] : '' }}</p>
+                                <p class="mt-0.5 text-[15px]">« {{ $comment['comment'] }} »</p>
+                            </li>
+                        @empty
+                            <li class="py-3 text-[14px] text-ink-secondary">Aucun commentaire pour l'instant. Les spectateurs donnent leur avis après le trajet.</li>
+                        @endforelse
+                    </ul>
+                </x-ui.card>
+            </div>
+            @break
+
+        @case('reclamations')
+            <div class="mb-6 grid gap-4 sm:grid-cols-3">
+                <x-ui.kpi label="Ouvertes" :value="$fmt($complaints['open'])" :tone="$complaints['open'] > 0 ? 'warning' : 'default'" icon="lifebuoy" />
+                <x-ui.kpi label="En cours" :value="$fmt($complaints['in_progress'])" icon="clock" />
+                <x-ui.kpi label="Traitées" :value="$fmt($complaints['resolved'])" tone="success" icon="check" />
+            </div>
+            <x-ui.table>
+                <x-slot:head><th>N°</th><th>Date</th><th>Motif</th><th>Objet</th><th>Point</th><th>Statut</th></x-slot:head>
+                @forelse ($complaints['rows'] as $row)
+                    <tr wire:key="complaint-{{ $row['number'] }}">
+                        <td class="tabular-nums">{{ $row['number'] }}</td>
+                        <td class="whitespace-nowrap">{{ $row['at']->translatedFormat('j M · H\hi') }}</td>
+                        <td>{{ $row['category'] }}</td>
+                        <td>{{ $row['title'] }}@if ($row['collective'])<p class="text-[12px] text-ink-secondary">Réclamation collective · {{ $fmt($row['affected']) }} passagers</p>@endif</td>
+                        <td>{{ $row['point'] ?? '—' }}</td>
+                        <td><x-ui.badge :tone="$row['status']->tone()">{{ $row['status']->label() }}</x-ui.badge></td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6"><x-ui.empty-state icon="lifebuoy" title="Aucune réclamation" description="La compagnie traite les réclamations des spectateurs ; vous en suivez ici l'avancement." /></td></tr>
+                @endforelse
+            </x-ui.table>
+            @break
+
+        @case('messages')
+            <x-ui.table>
+                <x-slot:head><th>Envoyé</th><th>Destinataires</th><th>Message</th><th class="text-right">Spectateurs</th><th>Statut</th></x-slot:head>
+                @forelse ($messages as $message)
+                    <tr wire:key="message-{{ $message->id }}">
+                        <td class="whitespace-nowrap"><p>{{ $message->created_at->format('d/m H\hi') }}</p><p class="text-[12px] text-ink-secondary">{{ $message->author?->name }}</p></td>
+                        <td>{{ $message->audience_label }}</td>
+                        <td class="max-w-96 text-[13px]">{{ $message->body }}</td>
+                        <td class="text-right tabular-nums">{{ $fmt($message->recipients_count) }}</td>
+                        <td><x-ui.badge :tone="$message->status->tone()">{{ $message->status->label() }}</x-ui.badge></td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5"><x-ui.empty-state icon="chat" title="Aucun message" description="Envoyez un message aux détenteurs de Pass depuis « Messages aux spectateurs »." /></td></tr>
+                @endforelse
+            </x-ui.table>
+            @can('promoter-messages.send')
+                <x-ui.button variant="secondary" size="sm" class="mt-4" :href="route('promoter.messages', ['evenement' => $event->id])">Envoyer un message</x-ui.button>
+            @endcan
+            @break
+
+        @case('annulations')
+            <div class="mb-6 grid gap-4 sm:grid-cols-3">
+                <x-ui.kpi label="Pass annulés" :value="$fmt($cancellations['cancelled'])" hint="En attente de remboursement" icon="ticket" />
+                <x-ui.kpi label="Pass remboursés" :value="$fmt($cancellations['refunded'])" icon="lifebuoy" />
+                <x-ui.kpi label="Remboursements à traiter" :value="$fmt($cancellations['pending'])" icon="clock" />
+            </div>
+            <x-ui.table>
+                <x-slot:head><th>Motif du remboursement</th><th class="text-right">Pass</th></x-slot:head>
+                @forelse ($cancellations['by_reason'] as $row)
+                    <tr wire:key="reason-{{ $loop->index }}"><td>{{ $row['label'] }}</td><td class="text-right tabular-nums">{{ $fmt($row['count']) }}</td></tr>
+                @empty
+                    <tr><td colspan="2" class="text-[14px] text-ink-secondary">Aucune annulation.</td></tr>
+                @endforelse
+            </x-ui.table>
             @break
 
         @default

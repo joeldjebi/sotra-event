@@ -2,16 +2,27 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\AlertStatus;
+use App\Enums\BreakdownUrgency;
+use App\Enums\ComplaintStatus;
+use App\Enums\Direction;
 use App\Enums\EventStatus;
+use App\Enums\MissionStatus;
 use App\Enums\Offer;
 use App\Enums\PassStatus;
 use App\Enums\PassType;
+use App\Enums\RefundStatus;
 use App\Enums\ScanReason;
 use App\Enums\ScanResult;
 use App\Enums\Segment;
 use App\Models\BoardingPoint;
+use App\Models\BreakdownAlert;
+use App\Models\Complaint;
 use App\Models\Event;
+use App\Models\Mission;
 use App\Models\Pass;
+use App\Models\Refund;
+use App\Models\Review;
 use App\Models\Scan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -193,6 +204,161 @@ class PromoterEventInsights
                 'reason' => ScanReason::tryFrom((string) $reason)?->label() ?? 'Autre',
                 'count' => (int) $count,
             ])->values()->all(),
+        ];
+    }
+
+    /**
+     * Transport : chaque départ (bus, point, offre), passagers montés, horaires prévu et réel, écart, arrivée.
+     *
+     * @return array{
+     *     departed: int, on_time_rate: int|null, arrived: int, planned: int,
+     *     rows: list<array{direction: Direction, point: string, offer: Offer, bus: string|null, capacity: int, boarded: int, planned_at: Carbon, actual_at: Carbon|null, gap_label: string, on_time: bool|null, arrived_at: Carbon|null, status: MissionStatus, replaced: bool}>
+     * }
+     */
+    public function transport(Event $event): array
+    {
+        $quality = new QualityMetrics($event);
+        $summary = $quality->summary();
+        $missions = $quality->missions();
+
+        $boarded = Scan::query()
+            ->whereIn('mission_id', $missions->pluck('id'))
+            ->whereIn('result', [ScanResult::Green->value, ScanResult::Orange->value])
+            ->where('conflict', false)
+            ->selectRaw('mission_id, count(*) as passengers')
+            ->groupBy('mission_id')
+            ->toBase()
+            ->pluck('passengers', 'mission_id');
+
+        return [
+            'planned' => $missions->whereNull('replaced_by_mission_id')->count(),
+            'departed' => $summary['departed'],
+            'on_time_rate' => $summary['on_time_rate'],
+            'arrived' => $missions->whereNotNull('arrived_at')->count(),
+            'rows' => $missions->map(function (Mission $mission) use ($boarded): array {
+                $gap = QualityMetrics::gap($mission);
+
+                return [
+                    'direction' => $mission->direction,
+                    'point' => $mission->boardingPoint->commune,
+                    'offer' => $mission->offer,
+                    'bus' => $mission->bus?->number,
+                    'capacity' => $mission->capacity(),
+                    'boarded' => (int) ($boarded[$mission->id] ?? 0),
+                    'planned_at' => $mission->planned_departure_at,
+                    'actual_at' => $mission->actual_departure_at,
+                    'gap_label' => QualityMetrics::gapLabel($gap),
+                    'on_time' => $gap === null ? null : $gap <= QualityMetrics::tolerance(),
+                    'arrived_at' => $mission->arrived_at,
+                    'status' => $mission->status,
+                    'replaced' => $mission->replaced_by_mission_id !== null,
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    /**
+     * Incidents : pannes signalées, passagers à bord, prise en charge et issue de l'intervention.
+     *
+     * @return list<array{at: Carbon, bus: string|null, point: string|null, type: string, urgent: bool, passengers: int, place: string|null, status: AlertStatus, result: string|null, duration: int|null}>
+     */
+    public function incidents(Event $event): array
+    {
+        return (new QualityMetrics($event))->breakdowns()->map(fn (BreakdownAlert $alert): array => [
+            'at' => $alert->created_at,
+            'bus' => $alert->bus?->number,
+            'point' => $alert->mission->boardingPoint->commune,
+            'type' => $alert->type->label(),
+            'urgent' => $alert->urgency === BreakdownUrgency::Urgent,
+            'passengers' => (int) $alert->passengers_on_board,
+            'place' => $alert->place_label,
+            'status' => $alert->status,
+            'result' => $alert->intervention?->result?->label(),
+            'duration' => $alert->closed_at === null ? null : (int) $alert->created_at->diffInMinutes($alert->closed_at),
+        ])->values()->all();
+    }
+
+    /**
+     * Avis : note moyenne, notes par critère et commentaires, sans l'identité des spectateurs.
+     *
+     * @return array{rating: float|null, reviews: int, criteria: array<string, array{label: string, average: float|null}>, comments: list<array{at: Carbon, rating: float, comment: string, point: string|null}>}
+     */
+    public function reviews(Event $event): array
+    {
+        $quality = new QualityMetrics($event);
+        $summary = $quality->summary();
+
+        return [
+            'rating' => $summary['rating'],
+            'reviews' => $summary['reviews'],
+            'criteria' => $quality->criteria(),
+            'comments' => Review::query()
+                ->with('mission.boardingPoint')
+                ->where('event_id', $event->id)
+                ->whereNotNull('comment')
+                ->where('comment', '<>', '')
+                ->latest()
+                ->limit(50)
+                ->get()
+                ->map(fn (Review $review): array => [
+                    'at' => $review->created_at,
+                    'rating' => round($review->average(), 1),
+                    'comment' => (string) $review->comment,
+                    'point' => $review->mission?->boardingPoint?->commune,
+                ])->all(),
+        ];
+    }
+
+    /**
+     * Réclamations : volumes par statut et par motif, et liste sans l'identité ni le détail rédigé par le spectateur.
+     *
+     * @return array{open: int, in_progress: int, resolved: int, by_category: list<array{label: string, count: int}>, rows: list<array{number: string, at: Carbon, category: string, title: string, point: string|null, collective: bool, affected: int, status: ComplaintStatus}>}
+     */
+    public function complaints(Event $event): array
+    {
+        $complaints = Complaint::query()->with('mission.boardingPoint')->where('event_id', $event->id)->latest()->get();
+
+        return [
+            'open' => $complaints->where('status', ComplaintStatus::Open)->count(),
+            'in_progress' => $complaints->where('status', ComplaintStatus::InProgress)->count(),
+            'resolved' => $complaints->where('status', ComplaintStatus::Resolved)->count(),
+            'by_category' => $complaints->groupBy(fn (Complaint $complaint): string => $complaint->category->label())
+                ->map(fn ($group, $label): array => ['label' => (string) $label, 'count' => $group->count()])
+                ->sortByDesc('count')->values()->all(),
+            'rows' => $complaints->map(fn (Complaint $complaint): array => [
+                'number' => $complaint->number,
+                'at' => $complaint->created_at,
+                'category' => $complaint->category->label(),
+                'title' => $complaint->title,
+                'point' => $complaint->mission?->boardingPoint?->commune,
+                'collective' => $complaint->is_collective,
+                'affected' => (int) $complaint->affected_count,
+                'status' => $complaint->status,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * Annulations et remboursements, en nombre de Pass (jamais en montant).
+     *
+     * @return array{cancelled: int, refunded: int, by_reason: list<array{label: string, count: int}>, pending: int}
+     */
+    public function cancellations(Event $event): array
+    {
+        $statuses = Pass::query()->where('event_id', $event->id)
+            ->whereIn('status', [PassStatus::Cancelled, PassStatus::Refunded])
+            ->selectRaw('status, count(*) as passes')->groupBy('status')
+            ->toBase()->pluck('passes', 'status');
+
+        $refunds = Refund::query()->where('event_id', $event->id)->get(['reason', 'status']);
+
+        return [
+            'cancelled' => (int) ($statuses[PassStatus::Cancelled->value] ?? 0),
+            'refunded' => (int) ($statuses[PassStatus::Refunded->value] ?? 0),
+            'pending' => $refunds->where('status', RefundStatus::Pending)->count(),
+            'by_reason' => $refunds->groupBy(fn (Refund $refund): string => $refund->reason->label())
+                ->map(fn ($group, $label): array => ['label' => (string) $label, 'count' => $group->count()])
+                ->sortByDesc('count')->values()->all(),
         ];
     }
 

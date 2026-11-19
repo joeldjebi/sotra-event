@@ -87,15 +87,15 @@ Elles sont lues au démarrage et ne sont jamais incluses dans l'image. Ne jamais
 
 ### 4 bis. E-mails (expéditeur no-reply)
 
-Les e-mails partent par le serveur SMTP d'amen, qui héberge la messagerie du domaine
-(MX `mail-fr.securemail.pro`, SPF `include:spf.webapps.net`) : ils sont ainsi authentifiés et ne tombent pas en indésirables.
+Les e-mails partent par le serveur SMTP authentifié d'amen (`authsmtp.securemail.pro`), qui héberge la messagerie du domaine
+(MX `mail-fr.securemail.pro`, réservé à la réception ; SPF `include:spf.webapps.net`) : ils sont ainsi authentifiés et ne tombent pas en indésirables.
 
 1. Dans l'espace client amen, créer la boîte `no-reply@accestrans.com` avec un mot de passe fort.
 2. Renseigner le `.env` du serveur :
    ```
    MAIL_MAILER=smtp
    MAIL_SCHEME=smtps
-   MAIL_HOST=mail-fr.securemail.pro
+   MAIL_HOST=authsmtp.securemail.pro
    MAIL_PORT=465
    MAIL_USERNAME=no-reply@accestrans.com
    MAIL_PASSWORD=<mot de passe de la boîte>
