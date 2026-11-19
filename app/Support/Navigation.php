@@ -68,6 +68,7 @@ final class Navigation
             Space::Promoter => [
                 [null, [
                     ['Suivi de l\'événement', 'home', 'promoter.dashboard', Permission::EventTracking],
+                    ['Mes événements', 'ticket', 'promoter.events', Permission::EventTracking],
                     ['Fiche événement', 'calendar', 'promoter.event', Permission::EventTracking],
                     ['Zones de dépose', 'map-pin', 'promoter.drop-zones', Permission::EventTracking],
                     ['Messages aux spectateurs', 'chat', 'promoter.messages', Permission::EventTracking],

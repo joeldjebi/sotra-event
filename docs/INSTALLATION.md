@@ -76,6 +76,7 @@ Elles sont lues au démarrage et ne sont jamais incluses dans l'image. Ne jamais
 | `DB_*`, `REDIS_*` | — | Base et Redis |
 | `QUEUE_CONNECTION` | `redis` | Files traitées par Horizon |
 | `REVERB_*` | — | Temps réel ; `REVERB_HOST` est autorisé dans la CSP |
+| `MAIL_*` | SMTP amen | Expéditeur `no-reply@accestrans.com` (« ACCES TRANS ») ; voir § 4 bis |
 | `SMS_DRIVER` | `mtarget` | Puis `MTARGET_URL`, `MTARGET_USERNAME`, `MTARGET_PASSWORD`, `MTARGET_SENDER`, `MTARGET_TIMEOUT`, `MTARGET_VERIFY_SSL` |
 | `PAYMENT_DRIVER` | `fake` | En attendant l'agrégateur ; `PAYMENT_WEBHOOK_SECRET` |
 | `SMS_INBOUND_SECRET` | aléatoire | SMS entrants « PANNE » (CV-19) |
@@ -83,6 +84,29 @@ Elles sont lues au démarrage et ne sont jamais incluses dans l'image. Ne jamais
 | `PASS_SIGNING_SECRET_KEY` | générée | Clé Ed25519 des QR (`passes:generate-signing-key`) ; à défaut, dérivée de `APP_KEY` |
 | `API_DOCS_PUBLIC` | `false` | `true` en recette pour ouvrir `/docs/api` et `/docs/swagger` à l'équipe mobile sans compte ; sinon réservées au super administrateur |
 | `SECURITY_CSP` | (auto) | Forcer ou désactiver la CSP ; active par défaut en production |
+
+### 4 bis. E-mails (expéditeur no-reply)
+
+Les e-mails partent par le serveur SMTP d'amen, qui héberge la messagerie du domaine
+(MX `mail-fr.securemail.pro`, SPF `include:spf.webapps.net`) : ils sont ainsi authentifiés et ne tombent pas en indésirables.
+
+1. Dans l'espace client amen, créer la boîte `no-reply@accestrans.com` avec un mot de passe fort.
+2. Renseigner le `.env` du serveur :
+   ```
+   MAIL_MAILER=smtp
+   MAIL_SCHEME=smtps
+   MAIL_HOST=mail-fr.securemail.pro
+   MAIL_PORT=465
+   MAIL_USERNAME=no-reply@accestrans.com
+   MAIL_PASSWORD=<mot de passe de la boîte>
+   MAIL_FROM_ADDRESS=no-reply@accestrans.com
+   MAIL_FROM_NAME="ACCES TRANS"
+   ```
+3. Redémarrer (`docker compose -f docker-compose.prod.yml up -d`) puis tester :
+   `docker compose -f docker-compose.prod.yml exec web php artisan mail:test <votre adresse>`.
+
+E-mails envoyés : invitation et mot de passe oublié des comptes web, alerte « nouvelle demande de promoteur » aux administrateurs.
+Les messages aux spectateurs restent envoyés par SMS.
 
 ---
 

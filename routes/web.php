@@ -135,6 +135,12 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::prefix('promoteur')->name('promoter.')->middleware('space:promoter')->group(function () {
             LivewirePage::route('/', 'dashboard', 'promoter.tracking', 'Suivi de l\'événement', Permission::EventTracking);
+            LivewirePage::route('evenements', 'events', 'promoter.events-index', 'Mes événements', Permission::EventTracking);
+            Route::get('evenements/{eventId}', fn (int $eventId) => view('pages.livewire', [
+                'livewireComponent' => 'promoter.event-detail',
+                'parameters' => ['eventId' => $eventId],
+                'title' => 'Mes événements',
+            ]))->whereNumber('eventId')->middleware('can:'.Permission::EventTracking->value)->name('events.show');
             LivewirePage::route('evenement', 'event', 'promoter.event-sheet', 'Fiche événement', Permission::EventTracking);
             LivewirePage::route('zones-de-depose', 'drop-zones', 'promoter.drop-zones', 'Zones de dépose', Permission::EventTracking);
             LivewirePage::route('messages', 'messages', 'promoter.messages', 'Messages aux spectateurs', Permission::EventTracking);

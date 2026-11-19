@@ -77,6 +77,7 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | P.4 | Créer un promoteur dans la console | Validé d'office ; son compte est administrateur du promoteur | `Promoters/PromoterOnboardingTest` | |
 | P.5 | Administrateur du promoteur : créer un chef de projet | Compte rattaché à son seul promoteur, mot de passe initial à changer | `Promoters/PromoterTeamAndRequestsTest` | |
 | P.6 | Proposer un événement, puis ACCES EVENT le crée | Formulaire de la console prérempli ; demande « Acceptée » liée à l'événement ; prix fixés par la console | `Promoters/PromoterTeamAndRequestsTest` | |
+| P.8 | « Mes événements » puis le détail d'un événement | Liste à partir de l'acceptation ; onglets Résumé, Ventes, Points, Embarquement ; volumes seulement, ni montant ni nom de spectateur ; événement d'un autre promoteur introuvable | `Promoters/PromoterEventsTest` | |
 | P.7 | Refuser une demande d'événement | Motif envoyé par SMS et visible par le promoteur | `Promoters/PromoterTeamAndRequestsTest` | |
 
 ## Lot 5 — Finance et pilote (partie web et API)
@@ -91,6 +92,7 @@ Spectateur : n'importe quel numéro. Le code SMS s'affiche sur `/dev/sms` en loc
 | 5.6 | Relevé de reversement : 4 Pass vendus, 1 remboursé | (12 000 − 3 000) × 90 % = 8 100 FCFA ; échéance J + 5 jours ouvrés (RG-14) | `Finance/PayoutsTest` | |
 | 5.7 | Valider puis payer le reversement avec justificatif | La compagnie voit le relevé et le justificatif ; une autre compagnie, non (AD-11, CO-05) | `Finance/PayoutsTest` | |
 | 5.8 | SMS réel par MTarget (`php artisan sms:test`) | SMS reçu ; ticket enregistré | `Integrations/MtargetSmsTest` | |
+| 5.9 | E-mail réel (`php artisan mail:test`) | Reçu de `no-reply@accestrans.com`, en français, hors indésirables | `Integrations/MailTest` | |
 
 ## Exigences transverses
 
