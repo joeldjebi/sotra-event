@@ -77,6 +77,10 @@ use RuntimeException;
  *   du lancement : relancez le seeder juste avant une présentation.
  *
  * php artisan db:seed --class=DemoOperationsSeeder (après DemoSeeder et DemoEventsSeeder ; relançable).
+ *
+ * Mode test (commande demo:promoter-test), seul autorisé en production : événements préfixés « [TEST] » pour un
+ * promoteur et une compagnie existants, numéros fictifs non attribuables (+22500…), bus et personnel de test dédiés,
+ * aucune équipe technique réelle mobilisée, aucun reversement, événements retirés du catalogue public.
  */
 class DemoOperationsSeeder extends Seeder
 {
@@ -84,7 +88,16 @@ class DemoOperationsSeeder extends Seeder
 
     private const string LIVE = 'Match de gala · Stade Félix Houphouët-Boigny';
 
+    public const string TEST_PREFIX = '[TEST] ';
+
+    /** Préfixe des numéros fictifs du mode test (+225 00… : jamais attribué en Côte d'Ivoire). */
+    public const string TEST_PHONE_PREFIX = '+22500';
+
     private int $phone = 0;
+
+    private bool $testMode = false;
+
+    private ?Promoter $promoter = null;
 
     private Company $sotra;
 
@@ -122,10 +135,36 @@ class DemoOperationsSeeder extends Seeder
 
     private ZoneResolver $zones;
 
+    /**
+     * Jeu de test pour un promoteur et une compagnie existants (utilisable en production).
+     */
+    public static function forTesting(Company $company, Promoter $promoter): self
+    {
+        $seeder = new self;
+        $seeder->testMode = true;
+        $seeder->sotra = $company;
+        $seeder->promoter = $promoter;
+
+        return $seeder;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function testEventNames(): array
+    {
+        return [self::TEST_PREFIX.self::PAST, self::TEST_PREFIX.self::LIVE];
+    }
+
+    private function name(string $name): string
+    {
+        return $this->testMode ? self::TEST_PREFIX.$name : $name;
+    }
+
     public function run(): void
     {
-        if (app()->isProduction()) {
-            throw new RuntimeException('Jeu de démonstration interdit en production.');
+        if (app()->isProduction() && ! $this->testMode) {
+            throw new RuntimeException('Jeu de démonstration interdit en production : utilisez php artisan demo:promoter-test.');
         }
 
         // Jamais de vrai SMS ni de file en attente pendant la démo : pilotes simulés et traitement immédiat.
@@ -147,10 +186,16 @@ class DemoOperationsSeeder extends Seeder
         $this->zones = app(ZoneResolver::class);
 
         mt_srand(20261113);
-        $this->sotra = Company::query()->where('slug', 'sotra')->firstOrFail();
-        $this->admin = User::query()->where('email', 'admin@eventtrans.test')->first();
-        $this->lead = User::query()->where('email', 'chef.projet@promoteur.test')->first();
-        $this->phone = 2_000_000 + (int) Customer::query()->count();
+        if ($this->testMode) {
+            $this->admin = User::query()->role('super_admin')->orderBy('id')->first();
+            $this->lead = User::query()->where('promoter_id', $this->promoter?->id)->orderBy('id')->first();
+            $this->phone = 0;
+        } else {
+            $this->sotra = Company::query()->where('slug', 'sotra')->firstOrFail();
+            $this->admin = User::query()->where('email', 'admin@eventtrans.test')->first();
+            $this->lead = User::query()->where('email', 'chef.projet@promoteur.test')->first();
+            $this->phone = 2_000_000 + (int) Customer::query()->count();
+        }
 
         $this->removePrevious();
         $realNow = Carbon::now();
@@ -160,6 +205,11 @@ class DemoOperationsSeeder extends Seeder
             $live = $this->liveEvent($realNow);
         } finally {
             Carbon::setTestNow();
+        }
+
+        // Mode test : les événements restent hors du catalogue public (web, application, WhatsApp).
+        if ($this->testMode) {
+            Event::query()->withoutGlobalScopes()->whereIn('id', [$past->id, $live->id])->update(['channels' => '[]']);
         }
 
         $this->command?->info("« {$past->name} » : bilan, qualité, remboursements et reversement payé.");
@@ -172,8 +222,8 @@ class DemoOperationsSeeder extends Seeder
     private function pastEvent(Carbon $realNow): Event
     {
         $day = $realNow->copy()->subDays(12)->startOfDay();
-        $venue = Venue::query()->updateOrCreate(['name' => 'Palais de la Culture de Treichville'], ['address' => 'Treichville', 'city' => 'Abidjan', 'location' => Point::makeGeodetic(5.2990, -4.0080)]);
-        $event = $this->event(self::PAST, $venue, $day->copy()->setTime(18, 0), $realNow->copy()->subDays(40));
+        $venue = Venue::query()->{$this->testMode ? 'firstOrCreate' : 'updateOrCreate'}(['name' => 'Palais de la Culture de Treichville'], ['address' => 'Treichville', 'city' => 'Abidjan', 'location' => Point::makeGeodetic(5.2990, -4.0080)]);
+        $event = $this->event($this->name(self::PAST), $venue, $day->copy()->setTime(18, 0), $realNow->copy()->subDays(40));
         $this->points($event, [['YOP', 'Gare Siporex', 5.3446, -4.0802, '15:45'], ['ABO', 'Gare d\'Abobo', 5.4180, -4.0200, '15:30'], ['COC', 'Carrefour Riviera 2', 5.3600, -3.9620, '16:00']], '23:30');
         $this->offers($event, [[Offer::Standard, 4, 40], [Offer::Premium, 1, 40]]);
         $this->dropZones($event, 5.2995, -4.0075);
@@ -244,6 +294,12 @@ class DemoOperationsSeeder extends Seeder
 
         Carbon::setTestNow($day->copy()->addDay()->setTime(3, 0));
         $event->update(['status' => EventStatus::Finished]);
+
+        // Mode test : aucun reversement vers la compagnie réelle.
+        if ($this->testMode) {
+            return $event;
+        }
+
         $payout = $this->payouts->generate($event->fresh() ?? $event);
 
         Carbon::setTestNow(PayoutCalculator::dueOn($event->ends_at)->setTime(9, 30));
@@ -268,7 +324,7 @@ class DemoOperationsSeeder extends Seeder
         $start = $realNow->copy()->addMinutes(90)->startOfHour()->addMinutes(30);
         $venue = Venue::query()->where('name', 'Stade Félix Houphouët-Boigny')->first()
             ?? Venue::query()->create(['name' => 'Stade Félix Houphouët-Boigny', 'address' => 'Plateau', 'city' => 'Abidjan', 'location' => Point::makeGeodetic(5.3266, -4.0189)]);
-        $event = $this->event(self::LIVE, $venue, $start, $realNow->copy()->subDays(20));
+        $event = $this->event($this->name(self::LIVE), $venue, $start, $realNow->copy()->subDays(20));
         $minutesAgo = fn (int $minutes): string => $realNow->copy()->subMinutes($minutes)->format('H:i');
         $this->points($event, [
             ['YOP', 'Gare Siporex', 5.3446, -4.0802, $minutesAgo(55)],
@@ -345,7 +401,7 @@ class DemoOperationsSeeder extends Seeder
         Carbon::setTestNow($realNow->copy()->subMinutes(11));
         $alert = $this->breakdowns->report($mission->fresh() ?? $mission, $mission->conveyor, BreakdownType::Engine, 'Moteur en surchauffe, fumée sous le capot', $this->along($mission, 0.4), 12);
 
-        $team = TechTeam::query()->withoutGlobalScopes()->where('company_id', $event->company_id)->where('code', 'T3')->first();
+        $team = $this->testMode ? null : TechTeam::query()->withoutGlobalScopes()->where('company_id', $event->company_id)->where('code', 'T3')->first();
 
         if ($team !== null) {
             Carbon::setTestNow($realNow->copy()->subMinutes(9));
@@ -363,7 +419,7 @@ class DemoOperationsSeeder extends Seeder
         Carbon::setTestNow($mission->actual_departure_at?->copy()->addMinutes(11) ?? now());
         $alert = $this->breakdowns->report($mission->fresh() ?? $mission, $mission->conveyor ?? Staff::query()->firstOrFail(), BreakdownType::Tyre, 'Crevaison pneu avant droit', $this->along($mission, 0.3), 10);
 
-        $team = TechTeam::query()->withoutGlobalScopes()->where('company_id', $event->company_id)->where('code', 'T1')->first();
+        $team = $this->testMode ? null : TechTeam::query()->withoutGlobalScopes()->where('company_id', $event->company_id)->where('code', 'T1')->first();
 
         if ($team === null) {
             return;
@@ -613,8 +669,8 @@ class DemoOperationsSeeder extends Seeder
         foreach (Mission::query()->where('event_id', $event->id)->orderBy('direction')->orderBy('id')->get() as $index => $mission) {
             $slot = $index % 12;
             $bus = Bus::query()->withoutGlobalScopes()->firstOrCreate(
-                ['company_id' => $this->sotra->id, 'number' => (string) (101 + $slot)],
-                ['plate' => sprintf('%04d AB 01', 3100 + $slot), 'capacity' => 50, 'category' => $mission->offer === Offer::Premium ? BusCategory::Premium : BusCategory::Standard, 'status' => BusStatus::InService],
+                ['company_id' => $this->sotra->id, 'number' => $this->busNumber((string) (101 + $slot))],
+                ['plate' => ($this->testMode ? 'TEST ' : '').sprintf('%04d AB 01', 3100 + $slot), 'capacity' => 50, 'category' => $mission->offer === Offer::Premium ? BusCategory::Premium : BusCategory::Standard, 'status' => BusStatus::InService],
             );
             $mission->update([
                 'bus_id' => $bus->id,
@@ -626,20 +682,32 @@ class DemoOperationsSeeder extends Seeder
 
     private function member(StaffRole $role, int $slot): Staff
     {
-        $prefix = $role === StaffRole::Driver ? '+225050100' : '+225050200';
+        $prefix = match (true) {
+            $this->testMode => self::TEST_PHONE_PREFIX.($role === StaffRole::Driver ? '010' : '020').'0',
+            $role === StaffRole::Driver => '+225050100',
+            default => '+225050200',
+        };
 
         return Staff::query()->withoutGlobalScopes()->firstOrCreate(
             ['phone' => $prefix.str_pad((string) $slot, 4, '0', STR_PAD_LEFT)],
             ['company_id' => $this->sotra->id, 'role' => $role, 'first_name' => fake('fr_FR')->firstName('male'), 'last_name' => fake('fr_FR')->lastName(),
-                'employee_number' => ($role === StaffRole::Driver ? 'CH-' : 'CV-').(500 + $slot), 'is_active' => true],
+                'employee_number' => ($this->testMode ? 'TEST-' : '').($role === StaffRole::Driver ? 'CH-' : 'CV-').(500 + $slot), 'is_active' => true],
         );
+    }
+
+    /**
+     * Numéro de bus ; en mode test, préfixé « T » pour ne jamais réutiliser un bus réel de la compagnie.
+     */
+    private function busNumber(string $number): string
+    {
+        return $this->testMode ? 'T'.$number : $number;
     }
 
     private function reserveBus(Event $event, string $number): Bus
     {
         $bus = Bus::query()->withoutGlobalScopes()->firstOrCreate(
-            ['company_id' => $this->sotra->id, 'number' => $number],
-            ['plate' => '9'.$number.' RS 01', 'capacity' => 50, 'category' => BusCategory::Standard, 'status' => BusStatus::Reserve],
+            ['company_id' => $this->sotra->id, 'number' => $this->busNumber($number)],
+            ['plate' => ($this->testMode ? 'TEST ' : '').'9'.$number.' RS 01', 'capacity' => 50, 'category' => BusCategory::Standard, 'status' => BusStatus::Reserve],
         );
         $bus->update(['status' => BusStatus::Reserve]);
         $event->reserveBuses()->updateOrCreate(['bus_id' => $bus->id], ['waiting_place' => 'Dépôt de Yopougon']);
@@ -649,6 +717,10 @@ class DemoOperationsSeeder extends Seeder
 
     private function techTeams(Event $event): void
     {
+        if ($this->testMode) {
+            return;
+        }
+
         foreach (['T1' => 'Secteur Nord', 'T3' => 'Secteur Sud'] as $code => $sector) {
             $team = TechTeam::query()->withoutGlobalScopes()->where('company_id', $this->sotra->id)->where('code', $code)->first();
 
@@ -661,12 +733,12 @@ class DemoOperationsSeeder extends Seeder
 
     private function event(string $name, Venue $venue, Carbon $startsAt, Carbon $createdAt): Event
     {
-        $promoter = Promoter::query()->where('name', 'Promoteur Démo')->firstOrFail();
+        $promoter = $this->promoter ?? Promoter::query()->where('name', 'Promoteur Démo')->firstOrFail();
 
         return Event::query()->withoutGlobalScopes()->create([
             'name' => $name,
             'slug' => Str::slug($name).'-'.$startsAt->format('Y-m-d'),
-            'description' => 'Événement de démonstration ACCES TRANS.',
+            'description' => $this->testMode ? 'Données de test ACCES TRANS, à supprimer avec php artisan demo:promoter-test --purge.' : 'Événement de démonstration ACCES TRANS.',
             'venue_id' => $venue->id,
             'promoter_id' => $promoter->id,
             'transport_lead_id' => $this->lead?->id,
@@ -750,6 +822,12 @@ class DemoOperationsSeeder extends Seeder
      */
     private function removePrevious(): void
     {
+        if ($this->testMode) {
+            self::purgeTestData($this->sotra);
+
+            return;
+        }
+
         foreach (Event::query()->withoutGlobalScopes()->whereIn('name', [self::PAST, self::LIVE])->get() as $event) {
             Refund::query()->withoutGlobalScopes()->where('event_id', $event->id)->delete();
             Payout::query()->withoutGlobalScopes()->where('event_id', $event->id)->delete();
@@ -762,9 +840,39 @@ class DemoOperationsSeeder extends Seeder
         Customer::query()->where('phone', 'like', '+225071%')->whereDoesntHave('orders')->delete();
     }
 
+    /**
+     * Supprime toutes les données du mode test : événements « [TEST] » et leurs ventes, spectateurs fictifs,
+     * bus et personnel de test de la compagnie.
+     *
+     * @return array{events: int, customers: int, buses: int, staff: int}
+     */
+    public static function purgeTestData(Company $company): array
+    {
+        $events = Event::query()->withoutGlobalScopes()->whereIn('name', self::testEventNames())->get();
+
+        foreach ($events as $event) {
+            Refund::query()->withoutGlobalScopes()->where('event_id', $event->id)->delete();
+            Payout::query()->withoutGlobalScopes()->where('event_id', $event->id)->delete();
+            Pass::query()->where('event_id', $event->id)->delete();
+            Order::query()->where('event_id', $event->id)->delete();
+            $event->delete();
+        }
+
+        $customers = Customer::query()->where('phone', 'like', self::TEST_PHONE_PREFIX.'%')->whereDoesntHave('orders')->delete();
+        $buses = Bus::query()->withoutGlobalScopes()->where('company_id', $company->id)->where('plate', 'like', 'TEST %')->delete();
+        $staff = Staff::query()->withoutGlobalScopes()->where('company_id', $company->id)->where('employee_number', 'like', 'TEST-%')
+            ->where('phone', 'like', self::TEST_PHONE_PREFIX.'%')->delete();
+
+        return ['events' => $events->count(), 'customers' => (int) $customers, 'buses' => (int) $buses, 'staff' => (int) $staff];
+    }
+
     private function msisdn(): string
     {
         $this->phone++;
+
+        if ($this->testMode) {
+            return self::TEST_PHONE_PREFIX.str_pad((string) $this->phone, 8, '0', STR_PAD_LEFT);
+        }
 
         return '+225071'.str_pad((string) $this->phone, 7, '0', STR_PAD_LEFT);
     }
