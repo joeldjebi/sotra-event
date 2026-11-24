@@ -22,7 +22,9 @@ class CustomerResource extends JsonResource
             'phone' => $this->phone,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'email' => $this->email,
             'locale' => $this->locale,
+            'profile_completed' => $this->hasCompletedProfile(),
         ];
     }
 }

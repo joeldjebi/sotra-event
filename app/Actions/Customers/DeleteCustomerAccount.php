@@ -49,6 +49,7 @@ class DeleteCustomerAccount
                 'password' => null,
                 'first_name' => null,
                 'last_name' => null,
+                'email' => null,
                 'remember_token' => null,
                 'anonymized_at' => now(),
             ])->save();

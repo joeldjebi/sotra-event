@@ -26,7 +26,15 @@ trait IssuesAccessTokens
         $customer->forceFill(['last_login_at' => now()])->save();
         $abilities = [TokenAbility::Customer->value];
 
-        return $this->tokenResponse($customer->createToken($deviceName, $abilities)->plainTextToken, $abilities, new CustomerResource($customer), false, $isNewAccount);
+        return $this->tokenResponse(
+            $customer->createToken($deviceName, $abilities)->plainTextToken,
+            $abilities,
+            new CustomerResource($customer),
+            mustChangePassword: false,
+            isNewAccount: $isNewAccount,
+            profileCompleted: $customer->hasCompletedProfile(),
+            nextStep: $customer->hasCompletedProfile() ? 'home' : 'complete_profile',
+        );
     }
 
     protected function staffToken(?Staff $staff, string $deviceName): JsonResponse
@@ -43,22 +51,33 @@ trait IssuesAccessTokens
             $staff->createToken($deviceName, [$ability->value])->plainTextToken,
             [$ability->value],
             new StaffResource($staff->load('company')),
-            $staff->must_change_password,
-            false,
+            mustChangePassword: $staff->must_change_password,
+            isNewAccount: false,
+            profileCompleted: true,
+            nextStep: $staff->must_change_password ? 'change_password' : 'home',
         );
     }
 
     /**
      * @param  list<string>  $abilities
      */
-    private function tokenResponse(string $token, array $abilities, CustomerResource|StaffResource $user, bool $mustChangePassword, bool $isNewAccount): JsonResponse
-    {
+    private function tokenResponse(
+        string $token,
+        array $abilities,
+        CustomerResource|StaffResource $user,
+        bool $mustChangePassword,
+        bool $isNewAccount,
+        bool $profileCompleted,
+        string $nextStep,
+    ): JsonResponse {
         return response()->json([
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'abilities' => $abilities,
+                'next_step' => $nextStep,
                 'is_new_account' => $isNewAccount,
+                'profile_completed' => $profileCompleted,
                 'must_change_password' => $mustChangePassword,
                 'user' => $user,
             ],

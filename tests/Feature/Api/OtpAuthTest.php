@@ -117,30 +117,58 @@ it('réserve la connexion par code au spectateur : le personnel passe par son mo
     expect(OtpCode::query()->whereNull('consumed_at')->count())->toBe(1);
 });
 
-it('signale un nouveau compte et enregistre le nom facultatif, sans écraser un nom existant', function () {
+it('envoie un nouveau compte vers « Mes informations » puis le profil complété vers l\'accueil', function () {
     requestOtp('0707080839');
 
-    $this->postJson('/api/v1/auth/verify', [
-        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
-        'device_name' => 'Pixel 8', 'first_name' => 'Awa', 'last_name' => 'Koné',
-    ])
+    $token = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
         ->assertOk()
+        ->assertJsonPath('data.next_step', 'complete_profile')
         ->assertJsonPath('data.is_new_account', true)
-        ->assertJsonPath('data.user.first_name', 'Awa')
-        ->assertJsonPath('data.user.last_name', 'Koné');
+        ->assertJsonPath('data.profile_completed', false)
+        ->json('data.token');
 
+    $this->withToken($token)->putJson('/api/v1/me/profile', ['first_name' => ' Awa ', 'last_name' => 'Koné', 'email' => 'Awa.Kone@Exemple.ci'])
+        ->assertOk()
+        ->assertJsonPath('data.first_name', 'Awa')
+        ->assertJsonPath('data.email', 'awa.kone@exemple.ci')
+        ->assertJsonPath('data.profile_completed', true);
+
+    $this->app['auth']->forgetGuards();
     $this->travel(61)->seconds();
     requestOtp('0707080839');
 
-    $this->postJson('/api/v1/auth/verify', [
-        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
-        'device_name' => 'Pixel 8', 'first_name' => 'Autre',
-    ])
+    verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
         ->assertOk()
+        ->assertJsonPath('data.next_step', 'home')
         ->assertJsonPath('data.is_new_account', false)
-        ->assertJsonPath('data.user.first_name', 'Awa');
+        ->assertJsonPath('data.user.last_name', 'Koné');
 
     expect(Customer::query()->count())->toBe(1);
+});
+
+it('renvoie vers « Mes informations » un compte existant sans nom', function () {
+    Customer::factory()->create(['phone' => '+2250707080839', 'first_name' => null, 'last_name' => null]);
+    requestOtp('0707080839');
+
+    verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
+        ->assertJsonPath('data.is_new_account', false)
+        ->assertJsonPath('data.next_step', 'complete_profile');
+});
+
+it('valide les informations personnelles', function () {
+    $customer = Customer::factory()->create();
+
+    $this->withToken($customer->createToken('Pixel 8', ['customer'])->plainTextToken)
+        ->putJson('/api/v1/me/profile', ['first_name' => '', 'email' => 'pas-un-email'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['first_name', 'last_name', 'email']);
+});
+
+it('réserve les informations personnelles au spectateur', function () {
+    $staff = Staff::factory()->create();
+    $this->withToken($staff->createToken('PDA', ['conveyor'])->plainTextToken)
+        ->putJson('/api/v1/me/profile', ['first_name' => 'A', 'last_name' => 'B'])
+        ->assertForbidden();
 });
 
 it('n\'envoie pas de code au personnel inconnu, inactif ou chauffeur, sans le révéler', function (?Closure $makeStaff) {

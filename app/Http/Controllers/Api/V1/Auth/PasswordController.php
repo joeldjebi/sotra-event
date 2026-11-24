@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Connexion des applications mobiles par téléphone + mot de passe ; inscription et mot de passe oublié par code SMS.
  */
-#[Group(OtpController::DOCS_GROUP, OtpController::DOCS_GROUP_DESCRIPTION, weight: 1)]
+#[Group(AuthDocs::PASSWORD, AuthDocs::PASSWORD_DESCRIPTION, weight: 1)]
 class PasswordController extends Controller
 {
     use IssuesAccessTokens;

@@ -19,23 +19,9 @@ use Illuminate\Http\Request;
  * Codes SMS (inscription, mot de passe oublié) et déconnexion des trois applications mobiles.
  * La connexion habituelle se fait par téléphone + mot de passe (PasswordController).
  */
-#[Group(self::DOCS_GROUP, self::DOCS_GROUP_DESCRIPTION, weight: 1)]
 class OtpController extends Controller
 {
     use IssuesAccessTokens;
-
-    /** Groupe de la documentation de l'API, partagé avec le profil et la suppression du compte. */
-    public const DOCS_GROUP = 'Connexion (login)';
-
-    public const DOCS_GROUP_DESCRIPTION = <<<'MD'
-Connexion des trois applications (spectateur, convoyeur, service technique).
-
-- **Spectateur, par code SMS (inscription ou connexion, sans mot de passe)** : `POST /auth/otp` avec `phone` et `audience: customer`, puis `POST /auth/verify` avec `phone`, `audience`, `code` et `device_name`. Le compte est créé s'il n'existe pas (`is_new_account: true`), sinon le spectateur est connecté.
-- **Spectateur ou personnel, par mot de passe** : `POST /auth/login` avec `phone`, `audience` (`customer` ou `staff`), `password` et `device_name`. Inscription avec mot de passe : `POST /auth/otp` puis `POST /auth/register`. Mot de passe oublié : `POST /auth/otp` puis `POST /auth/password/reset`.
-- **Personnel** : le mot de passe initial est remis par l'exploitation. Tant que `must_change_password` vaut `true`, ouvrir l'écran de changement (`POST /auth/password`) : les autres appels répondent 403 `PASSWORD_CHANGE_REQUIRED`.
-
-La réponse contient le jeton (`data.token`) et l'utilisateur connecté. Envoyer ensuite le jeton dans l'en-tête `Authorization: Bearer <token>` de chaque appel. `POST /auth/logout` révoque le jeton de l'appareil.
-MD;
 
     public function __construct(private readonly OtpService $otp) {}
 
@@ -48,6 +34,7 @@ MD;
      *
      * @unauthenticated
      */
+    #[Group(AuthDocs::OTP, AuthDocs::OTP_DESCRIPTION, weight: 1)]
     public function send(RequestOtpRequest $request): JsonResponse
     {
         $phone = $request->phone();
@@ -76,6 +63,7 @@ MD;
      *
      * @unauthenticated
      */
+    #[Group(AuthDocs::OTP, AuthDocs::OTP_DESCRIPTION, weight: 1)]
     public function verify(VerifyOtpRequest $request): JsonResponse
     {
         $phone = $request->phone();
@@ -101,6 +89,7 @@ MD;
     /**
      * Logout (révoque le jeton de l'appareil).
      */
+    #[Group(AuthDocs::ACCOUNT, AuthDocs::ACCOUNT_DESCRIPTION, weight: 1)]
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user('sanctum');

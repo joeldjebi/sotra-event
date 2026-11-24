@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Customer\EventController;
 use App\Http\Controllers\Api\V1\Customer\FeedbackController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
 use App\Http\Controllers\Api\V1\Customer\PassController;
+use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\Staff\BreakdownController;
@@ -59,6 +60,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('passes/{pass}/review', [FeedbackController::class, 'review'])->middleware('throttle:10,1')->name('passes.review');
         Route::post('passes/{pass}/complaints', [FeedbackController::class, 'complain'])->middleware('throttle:10,1')->name('passes.complaints');
         Route::get('me/complaints', [FeedbackController::class, 'complaints'])->name('complaints.index');
+        Route::put('me/profile', [ProfileController::class, 'update'])->middleware('throttle:20,1')->name('me.profile');
         Route::delete('me', AccountDeletionController::class)->middleware('throttle:5,1')->name('me.destroy');
     });
 

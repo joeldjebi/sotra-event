@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Actions\Customers\DeleteCustomerAccount;
-use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\Auth\AuthDocs;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-#[Group(OtpController::DOCS_GROUP, OtpController::DOCS_GROUP_DESCRIPTION, weight: 1)]
+#[Group(AuthDocs::ACCOUNT, AuthDocs::ACCOUNT_DESCRIPTION, weight: 1)]
 class AccountDeletionController extends Controller
 {
     /**

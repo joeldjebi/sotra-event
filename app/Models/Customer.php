@@ -19,10 +19,11 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $password
  * @property string|null $first_name
  * @property string|null $last_name
+ * @property string|null $email
  * @property string $locale
  * @property Carbon|null $anonymized_at
  */
-#[Fillable(['phone', 'first_name', 'last_name', 'locale', 'last_login_at'])]
+#[Fillable(['phone', 'first_name', 'last_name', 'email', 'locale', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class Customer extends Authenticatable
 {
@@ -36,6 +37,14 @@ class Customer extends Authenticatable
             'last_login_at' => 'datetime',
             'anonymized_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Profil rempli après la première connexion (écran « Mes informations » de l'app) : prénom et nom.
+     */
+    public function hasCompletedProfile(): bool
+    {
+        return filled($this->first_name) && filled($this->last_name);
     }
 
     public function fullName(): string

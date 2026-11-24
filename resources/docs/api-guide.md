@@ -13,11 +13,14 @@ API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVE
 
 ## Connexion (login)
 
-Le spectateur a deux façons de s'inscrire et de se connecter ; le personnel se connecte toujours avec son mot de passe.
+La documentation regroupe ces appels en trois sections : **Connexion par code SMS (spectateur)**, **Connexion par mot de passe** et **Mon compte**.
 
-**Spectateur, par code SMS (inscription ou connexion, sans mot de passe)**, en deux écrans :
-1. `POST /auth/otp` avec `phone` et `audience: customer` : un code à 6 chiffres part par SMS (fournisseur MTarget). Il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
-2. `POST /auth/verify` avec `phone`, `audience: customer`, `code`, `device_name` et, facultatifs, `first_name` et `last_name`. Numéro inconnu : le compte est créé et `is_new_account` vaut `true` (afficher l'écran de profil). Numéro connu : le spectateur est connecté (`is_new_account: false`). La réponse contient le **jeton**, à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore).
+**Spectateur : inscription et connexion par code SMS** (parcours principal, sans mot de passe), en trois écrans :
+1. **Numéro** : `POST /auth/otp` avec `phone` et `audience: customer`. Un code à 6 chiffres part par SMS (fournisseur MTarget). Il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
+2. **Code** : `POST /auth/verify` avec `phone`, `audience: customer`, `code` et `device_name`. La réponse contient le **jeton** (à conserver dans le stockage sécurisé du téléphone : Keychain, Keystore) et `next_step` :
+   - `complete_profile` : nouveau compte (`is_new_account: true`) ou compte existant sans nom (`profile_completed: false`). Ouvrir l'écran « Mes informations ».
+   - `home` : compte existant au profil complet. Ouvrir l'accueil.
+3. **Mes informations** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, jeton envoyé. Le même appel sert à modifier ces informations depuis le profil.
 
 **Par mot de passe** (spectateur et personnel) : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas. Le spectateur choisit son mot de passe avec `POST /auth/otp` puis `POST /auth/register` (`phone`, `code`, `password`, `password_confirmation`, `device_name` ; **409** `ACCOUNT_EXISTS` si le numéro a déjà un mot de passe).
 
