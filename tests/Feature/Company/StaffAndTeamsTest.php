@@ -11,6 +11,7 @@ use App\Models\Device;
 use App\Models\Staff;
 use App\Models\TechTeam;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -113,4 +114,57 @@ it('bloque un terminal et déconnecte la personne qui l\'utilise', function () {
 
     Livewire::test(DevicesTable::class)->call('unblock', $device->id);
     expect($device->fresh()->status)->toBe(DeviceStatus::Active);
+});
+
+it('génère le mot de passe initial d\'un convoyeur, affiché une seule fois et à changer', function () {
+    $component = Livewire::test(StaffTable::class)
+        ->call('create')
+        ->set('role', 'convoyeur')
+        ->set('first_name', 'Moussa')
+        ->set('last_name', 'Bamba')
+        ->set('phone', '0700000001')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $staff = Staff::query()->sole();
+    $password = $component->get('issuedCredentials.password');
+
+    expect($password)->toBeString()->toHaveLength(12)
+        ->and(Hash::check($password, $staff->password))->toBeTrue()
+        ->and($staff->must_change_password)->toBeTrue();
+
+    $component->call('dismissCredentials')->assertSet('issuedCredentials', null);
+});
+
+it('ne donne pas de mot de passe à un chauffeur', function () {
+    Livewire::test(StaffTable::class)
+        ->call('create')
+        ->set('role', 'chauffeur')
+        ->set('first_name', 'Koffi')
+        ->set('last_name', 'Yao')
+        ->set('phone', '0700000002')
+        ->call('save')
+        ->assertSet('issuedCredentials', null);
+
+    expect(Staff::query()->sole()->password)->toBeNull();
+});
+
+it('génère un nouveau mot de passe et déconnecte les appareils du membre', function () {
+    $staff = Staff::factory()->for($this->company)->role(StaffRole::Technician)->create(['password' => 'Ancien2026']);
+    $staff->createToken('PDA', ['tech']);
+
+    $password = Livewire::test(StaffTable::class)
+        ->call('resetPassword', $staff->id)
+        ->get('issuedCredentials.password');
+
+    expect(Hash::check($password, $staff->refresh()->password))->toBeTrue()
+        ->and($staff->must_change_password)->toBeTrue()
+        ->and($staff->tokens()->count())->toBe(0);
+});
+
+it('interdit à la direction générale de générer un mot de passe', function () {
+    $staff = Staff::factory()->for($this->company)->create();
+    $this->actingAs(userWithRole(Role::GeneralManagement, ['company_id' => $this->company->id]));
+
+    Livewire::test(StaffTable::class)->call('resetPassword', $staff->id)->assertForbidden();
 });

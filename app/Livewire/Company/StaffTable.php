@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Company;
 
+use App\Actions\Users\SetInitialPassword;
 use App\Enums\Permission;
 use App\Enums\StaffRole;
 use App\Imports\StaffImport;
 use App\Livewire\Concerns\HandlesImport;
 use App\Livewire\Concerns\ManagesRecords;
+use App\Models\AuditLog;
 use App\Models\Scopes\CompanyScope;
 use App\Models\Staff;
 use App\Models\TechTeam;
@@ -19,7 +21,8 @@ use Livewire\Component;
 
 /**
  * Espace compagnie · Exploitation · Chauffeurs & convoyeurs (et techniciens).
- * Convoyeurs et techniciens se connectent aux apps mobiles avec leur téléphone (OTP).
+ * Convoyeurs et techniciens se connectent aux apps mobiles avec leur téléphone et un mot de passe : l'initial est
+ * généré ici, affiché une seule fois, et devra être changé à la première connexion.
  */
 class StaffTable extends Component
 {
@@ -41,6 +44,9 @@ class StaffTable extends Component
     public ?int $tech_team_id = null;
 
     public bool $is_active = true;
+
+    /** @var array{name: string, phone: string, password: string}|null identifiants à transmettre, affichés une seule fois */
+    public ?array $issuedCredentials = null;
 
     protected function permission(): Permission
     {
@@ -138,8 +144,40 @@ class StaffTable extends Component
             $staff->tokens()->delete();
         }
 
+        if ($staff->canSignIn() && $staff->password === null) {
+            $this->issuePassword($staff);
+        }
+
         $this->showForm = false;
         $this->notify($this->editingId ? "{$staff->fullName()} mis à jour." : "{$staff->fullName()} ajouté.");
+    }
+
+    /**
+     * Nouveau mot de passe initial (oubli, import Excel, compte créé avant les mots de passe) : les appareils
+     * connectés sont déconnectés.
+     */
+    public function resetPassword(int $staffId): void
+    {
+        $this->authorizeManage();
+        $staff = Staff::query()->findOrFail($staffId);
+        abort_unless($staff->canSignIn(), 400);
+
+        $staff->tokens()->delete();
+        $this->issuePassword($staff);
+        $this->notify("Nouveau mot de passe pour {$staff->fullName()}.");
+    }
+
+    public function dismissCredentials(): void
+    {
+        $this->issuedCredentials = null;
+    }
+
+    private function issuePassword(Staff $staff): void
+    {
+        $password = SetInitialPassword::generate();
+        $staff->forceFill(['password' => $password, 'must_change_password' => true])->save();
+        AuditLog::record('staff_password_issued', $staff);
+        $this->issuedCredentials = ['name' => $staff->fullName(), 'phone' => $staff->phone, 'password' => $password];
     }
 
     public function render(): View

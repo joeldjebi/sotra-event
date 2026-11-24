@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\StaffResource;
@@ -10,7 +11,7 @@ use App\Models\Staff;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\Request;
 
-#[Group('Authentification', 'Connexion par code SMS, jeton par appareil, déconnexion. Commun aux trois applications.', weight: 1)]
+#[Group(OtpController::DOCS_GROUP, OtpController::DOCS_GROUP_DESCRIPTION, weight: 1)]
 class MeController extends Controller
 {
     /**

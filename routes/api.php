@@ -2,6 +2,7 @@
 
 use App\Enums\TokenAbility;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Customer\AccountDeletionController;
 use App\Http\Controllers\Api\V1\Customer\EventController;
 use App\Http\Controllers\Api\V1\Customer\FeedbackController;
@@ -25,7 +26,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('health', HealthController::class)->middleware('throttle:60,1')->name('health');
 
     Route::prefix('auth')->name('auth.')->group(function () {
+        Route::post('login', [PasswordController::class, 'login'])->middleware('throttle:login')->name('login');
         Route::post('otp', [OtpController::class, 'send'])->middleware('throttle:otp-send')->name('otp');
+        Route::post('register', [PasswordController::class, 'register'])->middleware('throttle:otp-verify')->name('register');
+        Route::post('password/reset', [PasswordController::class, 'reset'])->middleware('throttle:otp-verify')->name('password.reset');
+        Route::post('password', [PasswordController::class, 'change'])->middleware(['auth:sanctum', 'throttle:10,1'])->name('password.change');
         Route::post('verify', [OtpController::class, 'verify'])->middleware('throttle:otp-verify')->name('verify');
         Route::post('logout', [OtpController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
     });
@@ -57,7 +62,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     });
 
     // App convoyeur (CV-01 à CV-19) : missions, manifeste hors ligne, scans, positions.
-    Route::middleware(['auth:sanctum', 'abilities:'.TokenAbility::Conveyor->value, 'staff.device'])->group(function () {
+    Route::middleware(['auth:sanctum', 'abilities:'.TokenAbility::Conveyor->value, 'staff.password', 'staff.device'])->group(function () {
         Route::get('me/missions', [MissionController::class, 'index'])->name('missions.index');
         Route::get('missions/{mission}/manifest', [MissionController::class, 'manifest'])->name('missions.manifest');
         Route::get('missions/{mission}/boarding', [MissionController::class, 'boarding'])->name('missions.boarding');
@@ -71,7 +76,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     });
 
     // App service technique (ST-01 à ST-16)
-    Route::prefix('tech')->name('tech.')->middleware(['auth:sanctum', 'abilities:'.TokenAbility::Tech->value, 'staff.device'])->group(function () {
+    Route::prefix('tech')->name('tech.')->middleware(['auth:sanctum', 'abilities:'.TokenAbility::Tech->value, 'staff.password', 'staff.device'])->group(function () {
         Route::get('team', [TechController::class, 'team'])->name('team');
         Route::patch('team', [TechController::class, 'updateTeam'])->name('team.update');
         Route::post('position', [TechController::class, 'position'])->middleware('throttle:120,1')->name('position');

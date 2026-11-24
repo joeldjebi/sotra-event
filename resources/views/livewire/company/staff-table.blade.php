@@ -1,4 +1,21 @@
 <div>
+    @if ($issuedCredentials)
+        <div class="mb-5 rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-hairline sm:p-5" role="status">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[15px] font-semibold">Accès mobile de {{ $issuedCredentials['name'] }}</p>
+                    <p class="text-[13px] text-ink-secondary">À transmettre en main propre ou par téléphone. Le mot de passe ne sera plus affiché et devra être changé à la première connexion.</p>
+                </div>
+                <x-ui.button variant="secondary" size="sm" type="button" wire:click="dismissCredentials">J’ai transmis les identifiants</x-ui.button>
+            </div>
+            <dl class="mt-3 grid gap-2 text-[14px] sm:grid-cols-3">
+                <div><dt class="text-ink-tertiary">Application</dt><dd class="font-medium">ACCES TRANS · personnel</dd></div>
+                <div><dt class="text-ink-tertiary">Téléphone</dt><dd class="font-mono font-medium">{{ $issuedCredentials['phone'] }}</dd></div>
+                <div><dt class="text-ink-tertiary">Mot de passe initial</dt><dd><code class="rounded-md bg-fill px-2 py-0.5 font-mono text-[15px] font-semibold select-all">{{ $issuedCredentials['password'] }}</code></dd></div>
+            </dl>
+        </div>
+    @endif
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
             <x-ui.search wire:model.live.debounce.300ms="search" placeholder="Nom, téléphone ou matricule" />
@@ -37,13 +54,26 @@
                 <td>
                     @if (! $member->is_active)
                         <x-ui.badge>Désactivé</x-ui.badge>
-                    @elseif ($member->role->canSignIn())
-                        <x-ui.badge tone="success">Par code SMS</x-ui.badge>
-                    @else
+                    @elseif (! $member->role->canSignIn())
                         <span class="text-[13px] text-ink-tertiary">Sans compte</span>
+                    @elseif ($member->password === null)
+                        <x-ui.badge tone="warning">Sans mot de passe</x-ui.badge>
+                    @elseif ($member->must_change_password)
+                        <x-ui.badge>Mot de passe à changer</x-ui.badge>
+                    @else
+                        <x-ui.badge tone="success">Actif</x-ui.badge>
                     @endif
                 </td>
-                <td class="text-right">@if ($this->canManage())<x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $member->id }})">Modifier</x-ui.button>@endif</td>
+                <td class="text-right">
+                    @if ($this->canManage())
+                        <div class="flex justify-end gap-2">
+                            @if ($member->is_active && $member->role->canSignIn())
+                                <x-ui.button variant="secondary" size="sm" type="button" wire:click="resetPassword({{ $member->id }})" wire:confirm="Générer un nouveau mot de passe pour {{ $member->fullName() }} ? Ses appareils seront déconnectés.">Mot de passe</x-ui.button>
+                            @endif
+                            <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $member->id }})">Modifier</x-ui.button>
+                        </div>
+                    @endif
+                </td>
             </tr>
         @empty
             <tr><td colspan="7"><x-ui.empty-state icon="id-card" title="Aucun membre du personnel" :description="$this->canManage() ? 'Ajoutez vos chauffeurs, convoyeurs et techniciens, ou importez-les depuis Excel.' : 'La direction de l\'exploitation n\'a pas encore enregistré de personnel.'" /></td></tr>
@@ -53,7 +83,7 @@
         @endif
     </x-ui.table>
 
-    <x-ui.sheet model="showForm" :title="$editingId ? 'Modifier le membre' : 'Nouveau membre'" subtitle="Convoyeurs et techniciens se connectent avec ce téléphone (code SMS).">
+    <x-ui.sheet model="showForm" :title="$editingId ? 'Modifier le membre' : 'Nouveau membre'" subtitle="Convoyeurs et techniciens se connectent avec ce téléphone et un mot de passe, généré à l’enregistrement.">
         <form id="staff-form" wire:submit="save" class="space-y-4">
             <x-ui.select label="Fonction" name="role" wire:model.live="role" :options="$roles" />
             <div class="grid gap-4 sm:grid-cols-2">

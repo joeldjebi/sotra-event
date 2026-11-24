@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,16 +12,18 @@ use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * Spectateur, identifié par son téléphone (connexion OTP, app et site web).
+ * Spectateur, identifié par son téléphone : mot de passe dans l'app (choisi après un code SMS), code SMS sur le site web.
  *
  * @property int $id
  * @property string $phone
+ * @property string|null $password
  * @property string|null $first_name
  * @property string|null $last_name
  * @property string $locale
  * @property Carbon|null $anonymized_at
  */
 #[Fillable(['phone', 'first_name', 'last_name', 'locale', 'last_login_at'])]
+#[Hidden(['password', 'remember_token'])]
 class Customer extends Authenticatable
 {
     /** @use HasFactory<CustomerFactory> */
@@ -29,6 +32,7 @@ class Customer extends Authenticatable
     protected function casts(): array
     {
         return [
+            'password' => 'hashed',
             'last_login_at' => 'datetime',
             'anonymized_at' => 'datetime',
         ];

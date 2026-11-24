@@ -98,6 +98,18 @@ class AppServiceProvider extends ServiceProvider
             ? Limit::perMinute(300)->by('api-user:'.$request->user('sanctum')->getMorphClass().':'.$request->user('sanctum')->getAuthIdentifier())
             : Limit::perMinute(600)->by('api-ip:'.$request->ip()));
 
+        // Connexion par mot de passe : 5 essais par minute pour un numéro, 30 par adresse IP.
+        RateLimiter::for('login', function (Request $request): array {
+            $phone = PhoneNumber::isValid((string) $request->input('phone'))
+                ? PhoneNumber::parse((string) $request->input('phone'))->e164
+                : (string) $request->input('phone');
+
+            return [
+                Limit::perMinute(5)->by('login-phone:'.$phone),
+                Limit::perMinute(30)->by('login-ip:'.$request->ip()),
+            ];
+        });
+
         RateLimiter::for('otp-verify', fn (Request $request): Limit => Limit::perMinute(10)->by('otp-verify-ip:'.$request->ip()));
     }
 }

@@ -5,7 +5,7 @@ namespace App\Enums;
 use App\Enums\Concerns\HasOptions;
 
 /**
- * Personnel terrain d'une compagnie. Seuls convoyeurs et techniciens se connectent (OTP).
+ * Personnel terrain d'une compagnie. Seuls convoyeurs et techniciens se connectent (téléphone + mot de passe).
  */
 enum StaffRole: string
 {

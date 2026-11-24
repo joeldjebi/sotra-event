@@ -46,6 +46,7 @@ class DeleteCustomerAccount
 
             $customer->forceFill([
                 'phone' => 'supprime-'.$customer->id,
+                'password' => null,
                 'first_name' => null,
                 'last_name' => null,
                 'remember_token' => null,

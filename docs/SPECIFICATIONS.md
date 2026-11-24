@@ -37,9 +37,9 @@ Les identifiants du CDC (ex. `RG-08`, `CV-08`) sont repris dans le code (tests, 
 
 | Profil | Application | Authentification | Portée des données |
 |---|---|---|---|
-| Spectateur | Site web, app (API), WhatsApp | Téléphone + OTP | Ses commandes et ses Pass |
-| Convoyeur | App convoyeur (API) | Téléphone + OTP, appareil enregistré | Ses missions du jour |
-| Technicien | App technique (API) | Téléphone + OTP | Alertes de son équipe et de son secteur |
+| Spectateur | Site web, app (API), WhatsApp | App : téléphone + mot de passe (inscription et oubli par OTP) ; site web : téléphone + OTP | Ses commandes et ses Pass |
+| Convoyeur | App convoyeur (API) | Téléphone + mot de passe remis par l'exploitation (à changer), appareil enregistré | Ses missions du jour |
+| Technicien | App technique (API) | Téléphone + mot de passe remis par l'exploitation (à changer) | Alertes de son équipe et de son secteur |
 | Super Admin / opérateur ACCES EVENT | Console | Identifiant + mot de passe + **2FA** | Tout |
 | Direction commerciale | Espace compagnie | Mot de passe + 2FA | Sa compagnie |
 | Direction qualité | Espace compagnie | Mot de passe + 2FA | Sa compagnie |
@@ -204,7 +204,7 @@ Les chemins reprennent ceux du CDC (§ 13), complétés.
 **Spectateur** (site web et app)
 | Méthode | Chemin | Exigences |
 |---|---|---|
-| POST | `/auth/otp`, `/auth/verify`, `/auth/logout` | Connexion OTP (avec limitation des tentatives) |
+| POST | `/auth/login`, `/auth/otp`, `/auth/register`, `/auth/password/reset`, `/auth/password`, `/auth/logout` | Connexion téléphone + mot de passe ; code SMS pour l'inscription et le mot de passe oublié (avec limitation des tentatives). `/auth/verify` (connexion par code seul) est conservé pour les versions installées. |
 | GET / PATCH | `/me` | SP-01, SP-24 |
 | GET | `/events?featured=&q=` | SP-01 à SP-03 |
 | GET | `/events/{id}`, `/events/{id}/offers` | SP-04 à SP-05 : points, horaires, types, offres, prix par zone, disponibilité |
@@ -338,3 +338,4 @@ Un seeder reproduit l'exemple du CDC : Concert au stade d'Ebimpé, 15/11/2026, 5
 | 2026-11-13 | Événement verrouillé (informations, points, grille, taux) dès sa proposition à la compagnie ; à nouveau modifiable pendant une négociation. La publication (canaux, zones de dépose, visuel) reste modifiable. |
 | 2026-11-13 | Zones de dépose et de reprise : cercle centre + rayon (150 m par défaut) ; au moins une zone de dépose et une de reprise avant l'ouverture des ventes. |
 | 2026-11-13 | La compagnie peut fixer bus × places par offre dès la proposition, et jusqu'à l'ouverture des ventes. |
+| 2026-11-24 | **Applications mobiles : connexion par téléphone + mot de passe** (remplace la connexion par code SMS seul). Spectateur : inscription et mot de passe oublié par code SMS. Convoyeur et technicien : mot de passe initial généré par l'exploitation, à changer à la première connexion. Le site web spectateur garde la connexion par code SMS. |

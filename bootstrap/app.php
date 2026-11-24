@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsurePromoterApproved;
 use App\Http\Middleware\EnsureSpace;
+use App\Http\Middleware\EnsureStaffPasswordChanged;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\ResolveStaffDevice;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'promoter.approved' => EnsurePromoterApproved::class,
             'active' => EnsureUserIsActive::class,
             'staff.device' => ResolveStaffDevice::class,
+            'staff.password' => EnsureStaffPasswordChanged::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);

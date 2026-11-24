@@ -7,6 +7,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,12 +22,15 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $first_name
  * @property string $last_name
  * @property string $phone
+ * @property string|null $password
+ * @property bool $must_change_password
  * @property string|null $employee_number
  * @property bool $is_active
  * @property int|null $tech_team_id
  * @property-read TechTeam|null $techTeam
  */
 #[Fillable(['company_id', 'tech_team_id', 'role', 'first_name', 'last_name', 'phone', 'employee_number', 'is_active', 'last_login_at'])]
+#[Hidden(['password', 'remember_token'])]
 class Staff extends Authenticatable
 {
     /** @use HasFactory<StaffFactory> */
@@ -41,6 +45,8 @@ class Staff extends Authenticatable
     {
         return [
             'role' => StaffRole::class,
+            'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];

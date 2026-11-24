@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Actions\Customers\DeleteCustomerAccount;
+use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-#[Group('Authentification', 'Connexion par code SMS, jeton par appareil, déconnexion. Commun aux trois applications.', weight: 1)]
+#[Group(OtpController::DOCS_GROUP, OtpController::DOCS_GROUP_DESCRIPTION, weight: 1)]
 class AccountDeletionController extends Controller
 {
     /**

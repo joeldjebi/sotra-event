@@ -3,32 +3,46 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Enums\OtpAudience;
-use App\Enums\TokenAbility;
-use App\Exceptions\ApiException;
+use App\Http\Controllers\Api\V1\Auth\Concerns\IssuesAccessTokens;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\RequestOtpRequest;
 use App\Http\Requests\Api\V1\VerifyOtpRequest;
-use App\Http\Resources\Api\V1\CustomerResource;
-use App\Http\Resources\Api\V1\StaffResource;
 use App\Models\Customer;
 use App\Models\Staff;
 use App\Services\OtpService;
-use App\Support\PhoneNumber;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Connexion par téléphone + code OTP : spectateurs (app), convoyeurs et techniciens (§ 2 du CDC).
+ * Codes SMS (inscription, mot de passe oublié) et déconnexion des trois applications mobiles.
+ * La connexion habituelle se fait par téléphone + mot de passe (PasswordController).
  */
-#[Group('Authentification', 'Connexion par code SMS, jeton par appareil, déconnexion. Commun aux trois applications.', weight: 1)]
+#[Group(self::DOCS_GROUP, self::DOCS_GROUP_DESCRIPTION, weight: 1)]
 class OtpController extends Controller
 {
+    use IssuesAccessTokens;
+
+    /** Groupe de la documentation de l'API, partagé avec le profil et la suppression du compte. */
+    public const DOCS_GROUP = 'Connexion (login)';
+
+    public const DOCS_GROUP_DESCRIPTION = <<<'MD'
+Connexion des trois applications (spectateur, convoyeur, service technique) : **numéro de téléphone + mot de passe**.
+
+- **Login** : `POST /auth/login` avec `phone`, `audience` (`customer` pour l'app spectateur, `staff` pour les convoyeurs et techniciens), `password` et `device_name`. La réponse contient le jeton (`data.token`) et l'utilisateur connecté.
+- **Inscription du spectateur** : `POST /auth/otp` (code par SMS) puis `POST /auth/register` avec le code et le mot de passe choisi.
+- **Mot de passe oublié** : `POST /auth/otp` puis `POST /auth/password/reset` avec le code et le nouveau mot de passe.
+- **Personnel** : le mot de passe initial est remis par l'exploitation. Tant que `must_change_password` vaut `true`, ouvrir l'écran de changement (`POST /auth/password`) : les autres appels répondent 403 `PASSWORD_CHANGE_REQUIRED`.
+
+Envoyer ensuite le jeton dans l'en-tête `Authorization: Bearer <token>` de chaque appel. `POST /auth/logout` révoque le jeton de l'appareil.
+MD;
+
     public function __construct(private readonly OtpService $otp) {}
 
     /**
-     * Demander un code de connexion par SMS.
+     * Recevoir un code par SMS (inscription, mot de passe oublié).
      *
+     * Première étape de l'inscription (`POST /auth/register`) et du mot de passe oublié (`POST /auth/password/reset`).
      * Réponse identique que le numéro soit connu ou non, pour ne pas révéler les comptes du personnel.
      *
      * @unauthenticated
@@ -52,9 +66,12 @@ class OtpController extends Controller
     }
 
     /**
-     * Vérifier le code et obtenir un jeton d'accès.
+     * Connexion par code SMS, sans mot de passe (ancienne méthode).
      *
+     * Conservée pour les versions de l'application déjà installées : utiliser `POST /auth/login`.
      * Le compte spectateur est créé à la première connexion.
+     *
+     * @deprecated
      *
      * @unauthenticated
      */
@@ -66,34 +83,14 @@ class OtpController extends Controller
         $this->otp->verify($phone, $audience, $request->string('code')->toString());
 
         if ($audience === OtpAudience::Customer) {
-            $customer = Customer::query()->firstOrCreate(['phone' => $phone->e164]);
-            $customer->forceFill(['last_login_at' => now()])->save();
-
-            return $this->tokenResponse(
-                $customer->createToken($request->string('device_name')->toString(), [TokenAbility::Customer->value])->plainTextToken,
-                [TokenAbility::Customer->value],
-                new CustomerResource($customer),
-            );
+            return $this->customerToken(Customer::query()->firstOrCreate(['phone' => $phone->e164]), $request->string('device_name')->toString());
         }
 
-        $staff = $this->findStaff($phone);
-        $ability = $staff?->role->tokenAbility();
-
-        if ($staff === null || ! $staff->canSignIn() || $ability === null) {
-            throw new ApiException('Ce compte n\'est pas autorisé à se connecter.', 'ACCOUNT_NOT_ALLOWED', 403);
-        }
-
-        $staff->forceFill(['last_login_at' => now()])->saveQuietly();
-
-        return $this->tokenResponse(
-            $staff->createToken($request->string('device_name')->toString(), [$ability->value])->plainTextToken,
-            [$ability->value],
-            new StaffResource($staff->load('company')),
-        );
+        return $this->staffToken($this->findStaff($phone), $request->string('device_name')->toString());
     }
 
     /**
-     * Se déconnecter (révoque le jeton utilisé).
+     * Logout : se déconnecter (révoque le jeton utilisé).
      */
     public function logout(Request $request): JsonResponse
     {
@@ -104,25 +101,5 @@ class OtpController extends Controller
         }
 
         return response()->json(['message' => 'Déconnecté.']);
-    }
-
-    private function findStaff(PhoneNumber $phone): ?Staff
-    {
-        return Staff::query()->withoutGlobalScopes()->where('phone', $phone->e164)->first();
-    }
-
-    /**
-     * @param  list<string>  $abilities
-     */
-    private function tokenResponse(string $token, array $abilities, CustomerResource|StaffResource $user): JsonResponse
-    {
-        return response()->json([
-            'data' => [
-                'token' => $token,
-                'token_type' => 'Bearer',
-                'abilities' => $abilities,
-                'user' => $user,
-            ],
-        ]);
     }
 }

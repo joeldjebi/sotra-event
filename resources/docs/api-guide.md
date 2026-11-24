@@ -11,15 +11,25 @@ API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVE
 | Enveloppe | Les données sont dans `data`. |
 | Identifiants | Un Pass s'identifie par son **code** (`ET-2611-0315-COC`), une commande par sa **référence** (`CMD-57MR68NR`), le reste par un entier. |
 
-## Authentification
+## Connexion (login)
 
-Pas de mot de passe : chacun se connecte avec son **numéro de téléphone** et un **code à 6 chiffres** reçu par SMS (fournisseur MTarget). Le code est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
+Chacun se connecte avec son **numéro de téléphone** et son **mot de passe** (8 caractères au moins, avec des lettres et des chiffres).
 
-1. `POST /auth/otp` avec `phone` et `audience` : `customer` (spectateur) ou `staff` (convoyeur, technicien).
-2. `POST /auth/verify` avec le même `phone`, l'`audience`, le `code` et `device_name` : la réponse contient le **jeton**, à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore).
-3. Envoyer `Authorization: Bearer <jeton>` sur chaque requête protégée (bouton **Authorize** pour essayer ici).
+**Login** : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. La réponse contient le **jeton**, à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore), et l'utilisateur connecté. Envoyer ensuite `Authorization: Bearer <jeton>` sur chaque requête protégée (bouton **Authorize** pour essayer ici). Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas.
 
-Le compte spectateur est créé à la première connexion. **Suppression du compte** (exigée par les stores) : bouton « Supprimer mon compte » dans le profil, qui appelle `DELETE /me` après confirmation ; page web équivalente à déclarer dans les stores : `/suppression-compte`. Politique de confidentialité : `/confidentialite`. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.
+**Inscription du spectateur**, en deux écrans :
+1. `POST /auth/otp` avec `phone` et `audience: customer` : un code à 6 chiffres part par SMS (fournisseur MTarget). Il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
+2. `POST /auth/register` avec `phone`, `code`, `password`, `password_confirmation`, `device_name` et, facultatifs, `first_name` et `last_name` : le compte est créé et connecté. Un numéro qui a déjà un mot de passe reçoit **409** `ACCOUNT_EXISTS`.
+
+**Mot de passe oublié** (les trois applications) : `POST /auth/otp` puis `POST /auth/password/reset` avec `phone`, `audience`, `code`, `password`, `password_confirmation` et `device_name`. Les autres appareils sont déconnectés, celui-ci est connecté. Un spectateur qui s'est inscrit avant les mots de passe (site web, ancienne version de l'app) passe aussi par là pour choisir le sien.
+
+**Personnel** : le convoyeur et le technicien reçoivent de leur exploitation un **mot de passe initial**. Tant que `must_change_password` vaut `true` dans la réponse du login, ouvrir l'écran « Nouveau mot de passe » : `POST /auth/password` avec `current_password`, `password` et `password_confirmation`. Avant ce changement, les appels de mission et de panne répondent **403** `PASSWORD_CHANGE_REQUIRED`.
+
+**Changer son mot de passe** (profil, tous) : `POST /auth/password`, connecté. Les autres appareils sont déconnectés.
+
+`POST /auth/verify` (connexion par code SMS sans mot de passe) reste ouvert pour les versions déjà installées ; ne pas l'utiliser dans une nouvelle version.
+
+**Suppression du compte** (exigée par les stores) : bouton « Supprimer mon compte » dans le profil, qui appelle `DELETE /me` après confirmation ; page web équivalente à déclarer dans les stores : `/suppression-compte`. Politique de confidentialité : `/confidentialite`. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Hors login, une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.
 
 Le jeton porte une **capacité** selon le profil : `customer`, `conveyor` ou `tech`. Il ne donne accès qu'aux appels de son application. Pour le personnel, la demande de code répond toujours la même chose, que le numéro existe ou non ; les chauffeurs n'ont pas d'accès mobile.
 
@@ -91,6 +101,10 @@ Une erreur a toujours un `message` lisible, à afficher tel quel.
 | `OTP_TOO_MANY_ATTEMPTS` | 429 | 5 essais ratés : en redemander un. |
 | `SMS_NOT_SENT` | 503 | L'opérateur SMS a refusé le message : réessayer. |
 | `ACCOUNT_NOT_ALLOWED` | 403 | Compte de personnel inactif ou sans accès mobile. |
+| `INVALID_CREDENTIALS` | 401 | Login : numéro ou mot de passe incorrect. Proposer « Mot de passe oublié ». |
+| `ACCOUNT_EXISTS` | 409 | Inscription : ce numéro a déjà un mot de passe. Proposer la connexion ou « Mot de passe oublié ». |
+| `INVALID_CURRENT_PASSWORD` | 422 | Changement : le mot de passe actuel est faux. |
+| `PASSWORD_CHANGE_REQUIRED` | 403 | Personnel : remplacer d'abord le mot de passe remis par l'exploitation (`POST /auth/password`). |
 | `EVENT_NOT_ON_SALE` | 422 | L'événement n'est plus en vente. |
 | `CHANNEL_CLOSED` | 422 | Vente par l'application fermée pour cet événement. |
 | `BOARDING_POINT_NOT_FOUND` | 404 | Point d'embarquement inconnu pour cet événement. |
