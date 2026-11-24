@@ -120,6 +120,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             });
             LivewirePage::route('lieux', 'venues', 'admin.venues-table', 'Lieux', Permission::EventsManage);
             LivewirePage::route('utilisateurs', 'users', 'admin.users-table', 'Utilisateurs & rôles', Permission::UsersManage);
+            LivewirePage::route('utilisateurs-mobiles', 'mobile-users', 'admin.mobile-users-table', 'Utilisateurs mobiles', Permission::MobileUsersView);
             LivewirePage::route('journal', 'audit', 'admin.audit-log-table', 'Journal d\'audit', Permission::AuditView);
         });
 

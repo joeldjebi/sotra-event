@@ -57,7 +57,7 @@ enum Role: string
             Permission::PromotersManage, Permission::PassesManage, Permission::PayoutsManage,
             Permission::UsersManage, Permission::AuditView,
             Permission::EventsView, Permission::PromotersView, Permission::PayoutsView, Permission::PlatformSalesView,
-            Permission::OperationsSupervise, Permission::CallCenterAccess,
+            Permission::OperationsSupervise, Permission::CallCenterAccess, Permission::MobileUsersView,
         ];
 
         $commercial = [

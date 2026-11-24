@@ -24,6 +24,7 @@ enum Permission: string
     case PlatformSalesView = 'platform-sales.view';
     case OperationsSupervise = 'operations.supervise';
     case CallCenterAccess = 'call-center.access';
+    case MobileUsersView = 'mobile-users.view';
 
     // Espace compagnie : Direction commerciale
     case SalesView = 'sales.view';

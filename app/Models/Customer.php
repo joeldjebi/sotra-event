@@ -44,6 +44,16 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Pass dont le spectateur est détenteur (achetés ou reçus).
+     *
+     * @return HasMany<Pass, $this>
+     */
+    public function passes(): HasMany
+    {
+        return $this->hasMany(Pass::class, 'holder_id');
+    }
+
+    /**
      * @return HasMany<Order, $this>
      */
     public function orders(): HasMany

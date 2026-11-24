@@ -33,6 +33,7 @@ final class Navigation
                     ['Remboursements', 'lifebuoy', 'admin.refunds', Permission::PassesManage],
                     ['Reversements', 'banknotes', 'admin.payouts', Permission::PayoutsView],
                     ['Utilisateurs & rôles', 'users', 'admin.users', Permission::UsersManage],
+                    ['Utilisateurs mobiles', 'device', 'admin.mobile-users', Permission::MobileUsersView],
                     ['Journal d\'audit', 'shield', 'admin.audit', Permission::AuditView],
                 ]],
                 ['Direction commerciale', [
