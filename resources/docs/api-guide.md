@@ -22,6 +22,39 @@ La documentation regroupe ces appels en trois sections : **Connexion par code SM
    - `home` : compte existant au profil complet. Ouvrir l'accueil.
 3. **Mes informations** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, jeton envoyé. Le même appel sert à modifier ces informations depuis le profil.
 
+**Exemple complet** (nouveau spectateur) :
+
+```http
+POST /auth/otp
+{"phone": "0707070707", "audience": "customer"}
+
+→ 202
+{"message": "Si ce numéro est autorisé, un code vient d'être envoyé par SMS.", "data": {"expires_in": 300, "resend_in": 60}}
+```
+
+```http
+POST /auth/verify
+{"phone": "0707070707", "audience": "customer", "code": "482913", "device_name": "Tecno Spark 10"}
+
+→ 200
+{"data": {
+  "token": "253|Xy7…", "token_type": "Bearer", "abilities": ["customer"],
+  "next_step": "complete_profile", "is_new_account": true, "profile_completed": false, "must_change_password": false,
+  "user": {"type": "customer", "id": 143, "phone": "+2250707070707", "first_name": null, "last_name": null, "email": null, "locale": "fr", "profile_completed": false}
+}}
+```
+
+```http
+PUT /me/profile
+Authorization: Bearer 253|Xy7…
+{"first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci"}
+
+→ 200
+{"data": {"type": "customer", "id": 143, "phone": "+2250707070707", "first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci", "locale": "fr", "profile_completed": true}}
+```
+
+Spectateur déjà inscrit avec son nom : même `POST /auth/otp` puis `POST /auth/verify`, avec `"next_step": "home"` et `"is_new_account": false` ; ouvrir directement l'accueil.
+
 **Par mot de passe** (spectateur et personnel) : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas. Le spectateur choisit son mot de passe avec `POST /auth/otp` puis `POST /auth/register` (`phone`, `code`, `password`, `password_confirmation`, `device_name` ; **409** `ACCOUNT_EXISTS` si le numéro a déjà un mot de passe).
 
 **Mot de passe oublié** : `POST /auth/otp` puis `POST /auth/password/reset` avec `phone`, `audience`, `code`, `password`, `password_confirmation` et `device_name`. Les autres appareils sont déconnectés, celui-ci est connecté.

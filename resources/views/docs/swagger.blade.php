@@ -10,7 +10,7 @@
 </head>
 <body>
     <header class="et-bar">
-        <div class="et-brand"><span>EVENT</span> TRANS · API mobile v1</div>
+        <div class="et-brand"><span>ACCES</span> TRANS · API mobile v1</div>
         <nav class="et-links">
             <a href="{{ url('docs/api') }}">Vue détaillée</a>
             <a href="{{ $specUrl }}" download="accestrans-openapi.json">Télécharger le fichier OpenAPI</a>

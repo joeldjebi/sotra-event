@@ -9,7 +9,7 @@
 </head>
 <body>
     <header class="et-bar">
-        <div class="et-brand"><span>EVENT</span> TRANS · API mobile v1</div>
+        <div class="et-brand"><span>ACCES</span> TRANS · API mobile v1</div>
         <div class="et-note">Généré le {{ now()->timezone('Africa/Abidjan')->format('d/m/Y à H:i') }} · fichier autonome, à ouvrir dans un navigateur</div>
     </header>
     <div id="swagger-ui"></div>

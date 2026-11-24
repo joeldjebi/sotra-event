@@ -143,7 +143,7 @@ Chaque étape se termine par une démo et la validation de sa condition de sorti
 ### Étape 1 — Socle : authentification, rôles, cloisonnement, audit
 - Modèles `User`, `Customer`, `Staff` ; rôles et permissions (spatie) ; seeder des rôles.
 - **Web** : Fortify (connexion, mot de passe oublié, 2FA obligatoire pour les rôles backoffice).
-- **API** : `POST /auth/otp`, `POST /auth/verify` (OTP à 6 chiffres, valable 5 min, 5 essais, limitation par numéro et par IP), jeton Sanctum avec ses abilities.
+- **API** : spectateur par code SMS (`POST /auth/otp`, `POST /auth/verify`, puis `PUT /me/profile` si `next_step` vaut `complete_profile`) ou par mot de passe (`POST /auth/login`, `/auth/register`, `/auth/password/reset`, `/auth/password`) ; personnel par mot de passe uniquement. OTP à 6 chiffres, valable 5 min, 5 essais, limitation par numéro et par IP ; jeton Sanctum avec ses abilities. Détail : `resources/docs/api-guide.md`.
 - Middleware de scope compagnie et promoteur ; Policies de base.
 - `AuditLog` en ajout seul, via un trait `Auditable` (NF-04).
 - Layouts Blade des 4 espaces, menu selon le rôle, sélecteur d'événement (espace compagnie).
