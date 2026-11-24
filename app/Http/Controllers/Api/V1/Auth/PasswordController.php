@@ -29,7 +29,7 @@ class PasswordController extends Controller
     public function __construct(private readonly OtpService $otp) {}
 
     /**
-     * Login : se connecter avec son téléphone et son mot de passe.
+     * Login avec mot de passe.
      *
      * Même réponse que le numéro soit inconnu ou le mot de passe faux (401 `INVALID_CREDENTIALS`).
      * Un compte créé avant les mots de passe n'en a pas encore : passer par « Mot de passe oublié ».
@@ -57,7 +57,7 @@ class PasswordController extends Controller
     }
 
     /**
-     * Inscription du spectateur : valider le code SMS et choisir son mot de passe.
+     * Register avec mot de passe (spectateur).
      *
      * Après `POST /auth/otp` (audience `customer`). Le spectateur est connecté dans la foulée.
      * Un numéro qui a déjà un mot de passe reçoit 409 `ACCOUNT_EXISTS` : proposer la connexion ou « Mot de passe oublié ».
@@ -85,7 +85,7 @@ class PasswordController extends Controller
     }
 
     /**
-     * Mot de passe oublié : valider le code SMS et choisir un nouveau mot de passe.
+     * Mot de passe oublié.
      *
      * Après `POST /auth/otp` avec la même `audience`. Les autres appareils sont déconnectés et l'utilisateur
      * est connecté sur celui-ci. Sert aussi au premier mot de passe d'un compte créé avant les mots de passe.
@@ -123,7 +123,7 @@ class PasswordController extends Controller
     }
 
     /**
-     * Changer son mot de passe (connecté).
+     * Changer son mot de passe.
      *
      * Obligatoire pour le personnel à la première connexion (`must_change_password`). Les autres appareils sont
      * déconnectés ; celui-ci garde son jeton.

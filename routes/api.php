@@ -26,12 +26,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('health', HealthController::class)->middleware('throttle:60,1')->name('health');
 
     Route::prefix('auth')->name('auth.')->group(function () {
-        Route::post('login', [PasswordController::class, 'login'])->middleware('throttle:login')->name('login');
+        // Ordre repris dans la documentation : inscription ou connexion par code SMS d'abord.
         Route::post('otp', [OtpController::class, 'send'])->middleware('throttle:otp-send')->name('otp');
+        Route::post('verify', [OtpController::class, 'verify'])->middleware('throttle:otp-verify')->name('verify');
+        Route::post('login', [PasswordController::class, 'login'])->middleware('throttle:login')->name('login');
         Route::post('register', [PasswordController::class, 'register'])->middleware('throttle:otp-verify')->name('register');
         Route::post('password/reset', [PasswordController::class, 'reset'])->middleware('throttle:otp-verify')->name('password.reset');
         Route::post('password', [PasswordController::class, 'change'])->middleware(['auth:sanctum', 'throttle:10,1'])->name('password.change');
-        Route::post('verify', [OtpController::class, 'verify'])->middleware('throttle:otp-verify')->name('verify');
         Route::post('logout', [OtpController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
     });
 

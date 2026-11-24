@@ -59,11 +59,252 @@
         }
     ],
     "paths": {
+        "/auth/otp": {
+            "post": {
+                "operationId": "v1.auth.otp",
+                "description": "**Public — sans jeton.**\n\nPremière étape de l'inscription ou connexion par code (`POST /auth/verify`), de l'inscription avec mot de passe\n(`POST /auth/register`) et du mot de passe oublié (`POST /auth/password/reset`).\nRéponse identique que le numéro soit connu ou non, pour ne pas révéler les comptes du personnel.",
+                "summary": "Register / login OTP — 1. Envoyer le code SMS",
+                "tags": [
+                    "Connexion (login)"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequestOtpRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Demande acceptée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Message prêt à afficher.",
+                                            "const": "Si ce numéro est autorisé, un code vient d'être envoyé par SMS."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "description": "Contenu de la réponse.",
+                                            "properties": {
+                                                "expires_in": {
+                                                    "type": "integer",
+                                                    "description": "Validité du code en secondes.",
+                                                    "examples": [
+                                                        300
+                                                    ]
+                                                },
+                                                "resend_in": {
+                                                    "type": "integer",
+                                                    "description": "Délai en secondes avant de pouvoir redemander un code : à afficher en compte à rebours.",
+                                                    "examples": [
+                                                        60
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "expires_in",
+                                                "resend_in"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Trop de requêtes. 3 demandes de code par numéro et par 10 minutes, 20 par heure et par adresse IP. Limite générale : 300 appels par minute et par compte (600 par adresse IP sans connexion). Attendre la durée indiquée par l’en-tête `Retry-After` avant de réessayer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Message prêt à afficher.",
+                                            "examples": [
+                                                "Trop de tentatives. Veuillez réessayer dans 60 secondes."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Nombre de secondes à attendre avant de réessayer.",
+                                "schema": {
+                                    "type": "integer",
+                                    "examples": [
+                                        60
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/verify": {
+            "post": {
+                "operationId": "v1.auth.verify",
+                "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` (audience `customer`). Numéro inconnu : le compte est créé (`is_new_account: true`,\nafficher l'écran de profil) ; numéro connu : le spectateur est connecté. `first_name` et `last_name` sont\nfacultatifs et ne remplacent pas un nom déjà enregistré. Réservé aux spectateurs : le personnel se connecte\navec son mot de passe (`POST /auth/login`), 403 `PASSWORD_LOGIN_REQUIRED` sinon.",
+                "summary": "Register / login OTP — 2. Valider le code (spectateur)",
+                "tags": [
+                    "Connexion (login)"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyOtpRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "description": "Contenu de la réponse.",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
+                                                    "examples": [
+                                                        "253|Xy7…"
+                                                    ]
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "description": "Toujours `Bearer`.",
+                                                    "const": "Bearer",
+                                                    "examples": [
+                                                        "Bearer"
+                                                    ]
+                                                },
+                                                "abilities": {
+                                                    "type": "array",
+                                                    "description": "Capacité du jeton : `customer`, `conveyor` ou `tech`.",
+                                                    "examples": [
+                                                        [
+                                                            "customer"
+                                                        ]
+                                                    ],
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "customer"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1
+                                                },
+                                                "is_new_account": {
+                                                    "type": "string",
+                                                    "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                    "examples": [
+                                                        false
+                                                    ]
+                                                },
+                                                "must_change_password": {
+                                                    "type": "boolean",
+                                                    "description": "`true` pour un membre du personnel qui doit remplacer le mot de passe remis par l’exploitation : ouvrir l’écran de changement (`POST /auth/password`).",
+                                                    "examples": [
+                                                        false
+                                                    ]
+                                                },
+                                                "user": {
+                                                    "$ref": "#/components/schemas/CustomerResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "token",
+                                                "token_type",
+                                                "abilities",
+                                                "is_new_account",
+                                                "must_change_password",
+                                                "user"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Trop de requêtes. 10 vérifications par minute et par adresse IP. Chaque code accepte 5 essais. Limite générale : 300 appels par minute et par compte (600 par adresse IP sans connexion). Attendre la durée indiquée par l’en-tête `Retry-After` avant de réessayer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Message prêt à afficher.",
+                                            "examples": [
+                                                "Trop de tentatives. Veuillez réessayer dans 60 secondes."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Nombre de secondes à attendre avant de réessayer.",
+                                "schema": {
+                                    "type": "integer",
+                                    "examples": [
+                                        60
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "v1.auth.login",
                 "description": "**Public — sans jeton.**\n\nMême réponse que le numéro soit inconnu ou le mot de passe faux (401 `INVALID_CREDENTIALS`).\nUn compte créé avant les mots de passe n'en a pas encore : passer par « Mot de passe oublié ».",
-                "summary": "Login : se connecter avec son téléphone et son mot de passe",
+                "summary": "Login avec mot de passe",
                 "tags": [
                     "Connexion (login)"
                 ],
@@ -278,115 +519,11 @@
                 "security": []
             }
         },
-        "/auth/otp": {
-            "post": {
-                "operationId": "v1.auth.otp",
-                "description": "**Public — sans jeton.**\n\nPremière étape de l'inscription ou connexion par code (`POST /auth/verify`), de l'inscription avec mot de passe\n(`POST /auth/register`) et du mot de passe oublié (`POST /auth/password/reset`).\nRéponse identique que le numéro soit connu ou non, pour ne pas révéler les comptes du personnel.",
-                "summary": "Recevoir un code par SMS",
-                "tags": [
-                    "Connexion (login)"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RequestOtpRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "202": {
-                        "description": "Demande acceptée.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Message prêt à afficher.",
-                                            "const": "Si ce numéro est autorisé, un code vient d'être envoyé par SMS."
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "description": "Contenu de la réponse.",
-                                            "properties": {
-                                                "expires_in": {
-                                                    "type": "integer",
-                                                    "description": "Validité du code en secondes.",
-                                                    "examples": [
-                                                        300
-                                                    ]
-                                                },
-                                                "resend_in": {
-                                                    "type": "integer",
-                                                    "description": "Délai en secondes avant de pouvoir redemander un code : à afficher en compte à rebours.",
-                                                    "examples": [
-                                                        60
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "expires_in",
-                                                "resend_in"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
-                    "429": {
-                        "description": "Trop de requêtes. 3 demandes de code par numéro et par 10 minutes, 20 par heure et par adresse IP. Limite générale : 300 appels par minute et par compte (600 par adresse IP sans connexion). Attendre la durée indiquée par l’en-tête `Retry-After` avant de réessayer.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Message prêt à afficher.",
-                                            "examples": [
-                                                "Trop de tentatives. Veuillez réessayer dans 60 secondes."
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        },
-                        "headers": {
-                            "Retry-After": {
-                                "description": "Nombre de secondes à attendre avant de réessayer.",
-                                "schema": {
-                                    "type": "integer",
-                                    "examples": [
-                                        60
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": []
-            }
-        },
         "/auth/register": {
             "post": {
                 "operationId": "v1.auth.register",
                 "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` (audience `customer`). Le spectateur est connecté dans la foulée.\nUn numéro qui a déjà un mot de passe reçoit 409 `ACCOUNT_EXISTS` : proposer la connexion ou « Mot de passe oublié ».",
-                "summary": "Inscription du spectateur : valider le code SMS et choisir son mot de passe",
+                "summary": "Register avec mot de passe (spectateur)",
                 "tags": [
                     "Connexion (login)"
                 ],
@@ -523,7 +660,7 @@
             "post": {
                 "operationId": "v1.auth.password.reset",
                 "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` avec la même `audience`. Les autres appareils sont déconnectés et l'utilisateur\nest connecté sur celui-ci. Sert aussi au premier mot de passe d'un compte créé avant les mots de passe.",
-                "summary": "Mot de passe oublié : valider le code SMS et choisir un nouveau mot de passe",
+                "summary": "Mot de passe oublié",
                 "tags": [
                     "Connexion (login)"
                 ],
@@ -742,7 +879,7 @@
             "post": {
                 "operationId": "v1.auth.password.change",
                 "description": "**Toutes les applications — tout jeton.**\n\nObligatoire pour le personnel à la première connexion (`must_change_password`). Les autres appareils sont\ndéconnectés ; celui-ci garde son jeton.",
-                "summary": "Changer son mot de passe (connecté)",
+                "summary": "Changer son mot de passe",
                 "tags": [
                     "Connexion (login)"
                 ],
@@ -841,148 +978,11 @@
                 }
             }
         },
-        "/auth/verify": {
-            "post": {
-                "operationId": "v1.auth.verify",
-                "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` (audience `customer`). Numéro inconnu : le compte est créé (`is_new_account: true`,\nafficher l'écran de profil) ; numéro connu : le spectateur est connecté. `first_name` et `last_name` sont\nfacultatifs et ne remplacent pas un nom déjà enregistré. Réservé aux spectateurs : le personnel se connecte\navec son mot de passe (`POST /auth/login`), 403 `PASSWORD_LOGIN_REQUIRED` sinon.",
-                "summary": "Spectateur : inscription ou connexion par code SMS (sans mot de passe)",
-                "tags": [
-                    "Connexion (login)"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerifyOtpRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Succès.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object",
-                                            "description": "Contenu de la réponse.",
-                                            "properties": {
-                                                "token": {
-                                                    "type": "string",
-                                                    "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
-                                                    "examples": [
-                                                        "253|Xy7…"
-                                                    ]
-                                                },
-                                                "token_type": {
-                                                    "type": "string",
-                                                    "description": "Toujours `Bearer`.",
-                                                    "const": "Bearer",
-                                                    "examples": [
-                                                        "Bearer"
-                                                    ]
-                                                },
-                                                "abilities": {
-                                                    "type": "array",
-                                                    "description": "Capacité du jeton : `customer`, `conveyor` ou `tech`.",
-                                                    "examples": [
-                                                        [
-                                                            "customer"
-                                                        ]
-                                                    ],
-                                                    "prefixItems": [
-                                                        {
-                                                            "type": "string",
-                                                            "const": "customer"
-                                                        }
-                                                    ],
-                                                    "minItems": 1,
-                                                    "maxItems": 1
-                                                },
-                                                "is_new_account": {
-                                                    "type": "string",
-                                                    "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
-                                                    "examples": [
-                                                        false
-                                                    ]
-                                                },
-                                                "must_change_password": {
-                                                    "type": "boolean",
-                                                    "description": "`true` pour un membre du personnel qui doit remplacer le mot de passe remis par l’exploitation : ouvrir l’écran de changement (`POST /auth/password`).",
-                                                    "examples": [
-                                                        false
-                                                    ]
-                                                },
-                                                "user": {
-                                                    "$ref": "#/components/schemas/CustomerResource"
-                                                }
-                                            },
-                                            "required": [
-                                                "token",
-                                                "token_type",
-                                                "abilities",
-                                                "is_new_account",
-                                                "must_change_password",
-                                                "user"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
-                    "429": {
-                        "description": "Trop de requêtes. 10 vérifications par minute et par adresse IP. Chaque code accepte 5 essais. Limite générale : 300 appels par minute et par compte (600 par adresse IP sans connexion). Attendre la durée indiquée par l’en-tête `Retry-After` avant de réessayer.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Message prêt à afficher.",
-                                            "examples": [
-                                                "Trop de tentatives. Veuillez réessayer dans 60 secondes."
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        },
-                        "headers": {
-                            "Retry-After": {
-                                "description": "Nombre de secondes à attendre avant de réessayer.",
-                                "schema": {
-                                    "type": "integer",
-                                    "examples": [
-                                        60
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": []
-            }
-        },
         "/auth/logout": {
             "post": {
                 "operationId": "v1.auth.logout",
                 "description": "**Toutes les applications — tout jeton.**",
-                "summary": "Logout : se déconnecter (révoque le jeton utilisé)",
+                "summary": "Logout (révoque le jeton de l'appareil)",
                 "tags": [
                     "Connexion (login)"
                 ],
@@ -7567,7 +7567,7 @@
         "securitySchemes": {
             "sanctum": {
                 "type": "http",
-                "description": "Jeton obtenu par `POST /auth/verify` (code SMS), à envoyer dans l’en-tête `Authorization: Bearer <jeton>`. Un jeton par appareil, sans expiration, révoqué par `POST /auth/logout`.",
+                "description": "Jeton obtenu par `POST /auth/verify` (code SMS), `POST /auth/login` (mot de passe) ou `POST /auth/register`, à envoyer dans l’en-tête `Authorization: Bearer <jeton>`. Un jeton par appareil, sans expiration, révoqué par `POST /auth/logout`.",
                 "scheme": "bearer",
                 "bearerFormat": "Sanctum"
             }

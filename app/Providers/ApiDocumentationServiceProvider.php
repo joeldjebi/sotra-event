@@ -105,7 +105,7 @@ class ApiDocumentationServiceProvider extends ServiceProvider
                 $openApi->secure(
                     SecurityScheme::http('bearer', 'Sanctum')
                         ->as('sanctum')
-                        ->setDescription('Jeton obtenu par `POST /auth/verify` (code SMS), à envoyer dans l’en-tête `Authorization: Bearer <jeton>`. Un jeton par appareil, sans expiration, révoqué par `POST /auth/logout`.')
+                        ->setDescription('Jeton obtenu par `POST /auth/verify` (code SMS), `POST /auth/login` (mot de passe) ou `POST /auth/register`, à envoyer dans l’en-tête `Authorization: Bearer <jeton>`. Un jeton par appareil, sans expiration, révoqué par `POST /auth/logout`.')
                 );
 
                 $guide = resource_path('docs/api-guide.md');

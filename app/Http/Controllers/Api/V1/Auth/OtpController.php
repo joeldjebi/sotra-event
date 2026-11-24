@@ -40,7 +40,7 @@ MD;
     public function __construct(private readonly OtpService $otp) {}
 
     /**
-     * Recevoir un code par SMS.
+     * Register / login OTP — 1. Envoyer le code SMS.
      *
      * Première étape de l'inscription ou connexion par code (`POST /auth/verify`), de l'inscription avec mot de passe
      * (`POST /auth/register`) et du mot de passe oublié (`POST /auth/password/reset`).
@@ -67,7 +67,7 @@ MD;
     }
 
     /**
-     * Spectateur : inscription ou connexion par code SMS (sans mot de passe).
+     * Register / login OTP — 2. Valider le code (spectateur).
      *
      * Après `POST /auth/otp` (audience `customer`). Numéro inconnu : le compte est créé (`is_new_account: true`,
      * afficher l'écran de profil) ; numéro connu : le spectateur est connecté. `first_name` et `last_name` sont
@@ -99,7 +99,7 @@ MD;
     }
 
     /**
-     * Logout : se déconnecter (révoque le jeton utilisé).
+     * Logout (révoque le jeton de l'appareil).
      */
     public function logout(Request $request): JsonResponse
     {
