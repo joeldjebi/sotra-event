@@ -14,7 +14,10 @@ class RegisterRequest extends SetPasswordRequest
      */
     public function rules(): array
     {
-        return array_diff_key(parent::rules(), ['audience' => true]);
+        return array_merge(array_diff_key(parent::rules(), ['audience' => true]), [
+            'first_name' => ['nullable', 'string', 'max:80'],
+            'last_name' => ['nullable', 'string', 'max:80'],
+        ]);
     }
 
     public function audience(): OtpAudience

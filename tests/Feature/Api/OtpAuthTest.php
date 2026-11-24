@@ -197,3 +197,15 @@ it('limite le nombre de demandes de code par numéro', function () {
 
     requestOtp('0707080839')->assertStatus(429);
 });
+
+it('ne fait que vérifier le code : les informations personnelles passent par PUT /me/profile', function () {
+    requestOtp('0707080839');
+
+    $this->postJson('/api/v1/auth/verify', [
+        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
+        'device_name' => 'Pixel 8', 'first_name' => 'Awa', 'last_name' => 'Koné',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.user.first_name', null)
+        ->assertJsonPath('data.next_step', 'complete_profile');
+});

@@ -56,10 +56,11 @@ class OtpController extends Controller
     /**
      * Register / login OTP — 2. Valider le code (spectateur).
      *
-     * Après `POST /auth/otp` (audience `customer`). Numéro inconnu : le compte est créé (`is_new_account: true`,
-     * afficher l'écran de profil) ; numéro connu : le spectateur est connecté. `first_name` et `last_name` sont
-     * facultatifs et ne remplacent pas un nom déjà enregistré. Réservé aux spectateurs : le personnel se connecte
-     * avec son mot de passe (`POST /auth/login`), 403 `PASSWORD_LOGIN_REQUIRED` sinon.
+     * Vérifie seulement le code reçu par SMS après `POST /auth/otp` (audience `customer`) et remet le jeton.
+     * Numéro inconnu : le compte est créé, vide. Numéro connu : le spectateur est connecté. `next_step` indique
+     * l'écran suivant : `complete_profile` (enregistrer les informations avec `PUT /me/profile`) ou `home`.
+     * Réservé aux spectateurs : le personnel se connecte avec son mot de passe (`POST /auth/login`),
+     * 403 `PASSWORD_LOGIN_REQUIRED` sinon.
      *
      * @unauthenticated
      */
@@ -76,12 +77,6 @@ class OtpController extends Controller
         $this->otp->verify($phone, OtpAudience::Customer, $request->string('code')->toString());
 
         $customer = Customer::query()->firstOrCreate(['phone' => $phone->e164]);
-
-        foreach (['first_name', 'last_name'] as $field) {
-            if ($customer->{$field} === null && $request->filled($field)) {
-                $customer->{$field} = $request->string($field)->trim()->toString();
-            }
-        }
 
         return $this->customerToken($customer, $request->string('device_name')->toString(), $customer->wasRecentlyCreated);
     }

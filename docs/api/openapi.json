@@ -174,7 +174,7 @@
         "/auth/verify": {
             "post": {
                 "operationId": "v1.auth.verify",
-                "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` (audience `customer`). Numéro inconnu : le compte est créé (`is_new_account: true`,\nafficher l'écran de profil) ; numéro connu : le spectateur est connecté. `first_name` et `last_name` sont\nfacultatifs et ne remplacent pas un nom déjà enregistré. Réservé aux spectateurs : le personnel se connecte\navec son mot de passe (`POST /auth/login`), 403 `PASSWORD_LOGIN_REQUIRED` sinon.",
+                "description": "**Public — sans jeton.**\n\nVérifie seulement le code reçu par SMS après `POST /auth/otp` (audience `customer`) et remet le jeton.\nNuméro inconnu : le compte est créé, vide. Numéro connu : le spectateur est connecté. `next_step` indique\nl'écran suivant : `complete_profile` (enregistrer les informations avec `PUT /me/profile`) ou `home`.\nRéservé aux spectateurs : le personnel se connecte avec son mot de passe (`POST /auth/login`),\n403 `PASSWORD_LOGIN_REQUIRED` sinon.",
                 "summary": "Register / login OTP — 2. Valider le code (spectateur)",
                 "tags": [
                     "Connexion par code SMS (spectateur)"
@@ -9481,6 +9481,13 @@
                         ],
                         "maxLength": 100
                     },
+                    "password": {
+                        "type": "string",
+                        "description": "Mot de passe choisi : 8 caractères au moins, avec des lettres et des chiffres.",
+                        "examples": [
+                            "Abidjan2026"
+                        ]
+                    },
                     "first_name": {
                         "type": [
                             "string",
@@ -9502,13 +9509,6 @@
                             "Traoré"
                         ],
                         "maxLength": 80
-                    },
-                    "password": {
-                        "type": "string",
-                        "description": "Mot de passe choisi : 8 caractères au moins, avec des lettres et des chiffres.",
-                        "examples": [
-                            "Abidjan2026"
-                        ]
                     },
                     "password_confirmation": {
                         "type": "string",
@@ -9591,28 +9591,6 @@
                             "Tecno Spark 10"
                         ],
                         "maxLength": 100
-                    },
-                    "first_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Prénom.",
-                        "examples": [
-                            "Awa"
-                        ],
-                        "maxLength": 80
-                    },
-                    "last_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Nom.",
-                        "examples": [
-                            "Traoré"
-                        ],
-                        "maxLength": 80
                     },
                     "password": {
                         "type": "string",
@@ -9804,28 +9782,6 @@
                             "Tecno Spark 10"
                         ],
                         "maxLength": 100
-                    },
-                    "first_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Prénom.",
-                        "examples": [
-                            "Awa"
-                        ],
-                        "maxLength": 80
-                    },
-                    "last_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Nom.",
-                        "examples": [
-                            "Traoré"
-                        ],
-                        "maxLength": 80
                     }
                 },
                 "required": [
