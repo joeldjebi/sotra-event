@@ -72,6 +72,8 @@ trait IssuesAccessTokens
     ): JsonResponse {
         return response()->json([
             'data' => [
+                /** `logged_in` : l'utilisateur est connecté, garder `token`. */
+                'status' => 'logged_in',
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'abilities' => $abilities,

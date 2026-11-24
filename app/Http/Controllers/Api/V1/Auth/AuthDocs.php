@@ -4,24 +4,28 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 /**
  * Sections de la documentation de l'API consacrées à la connexion et au compte (attributs #[Group] de Scramble).
- * Même poids : elles s'affichent dans l'ordre alphabétique, avant « Événements ».
+ * Register / login par OTP d'abord, puis les autres par ordre alphabétique, avant « Événements ».
  */
 final class AuthDocs
 {
-    public const OTP = 'Connexion par code SMS (spectateur)';
+    public const OTP = 'Register / login par OTP (spectateur)';
+
+    /** Section affichée en premier (les autres sections de connexion ont le poids 1). */
+    public const OTP_WEIGHT = 0;
 
     public const OTP_DESCRIPTION = <<<'MD'
-**Parcours principal de l'app spectateur : inscription et connexion en un seul parcours, sans mot de passe.**
+**Parcours principal de l'app spectateur : inscription et connexion par code SMS, sans mot de passe.**
 
-1. **Écran « Numéro »** : `POST /auth/otp` avec `phone` et `audience: customer`. Un code à 6 chiffres part par SMS (valable 5 min, 5 essais, renvoi possible après `resend_in` secondes).
-2. **Écran « Code »** : `POST /auth/verify` avec `phone`, `audience: customer`, `code` et `device_name`. La réponse contient le jeton et indique l'écran suivant :
+**Spectateur déjà inscrit**
+1. `POST /auth/otp` : envoyer le code.
+2. `POST /auth/verify` : vérifier le code → `status: logged_in`, `token` → **connecté**, ouvrir l'accueil.
 
-| `next_step` | Cas | Écran à ouvrir |
-|---|---|---|
-| `complete_profile` | Nouveau compte (`is_new_account: true`), ou compte existant sans nom (`profile_completed: false`) | « Mes informations » |
-| `home` | Compte existant au profil complet | Accueil |
+**Nouveau spectateur**
+1. `POST /auth/otp` : envoyer le code.
+2. `POST /auth/verify` : vérifier le code → `status: registration_required`, `registration_token` (aucun compte créé, pas encore connecté) → ouvrir l'écran « Mes informations ».
+3. `POST /auth/register/complete` avec `registration_token`, `first_name`, `last_name`, `email` (facultatif) et `device_name` → compte créé, `status: logged_in`, `token` → **connecté automatiquement**, ouvrir l'accueil.
 
-3. **Écran « Mes informations »** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, en envoyant le jeton. La réponse renvoie `profile_completed: true` : ouvrir l'accueil.
+Après `POST /auth/verify`, l'application n'a qu'un champ à tester : `data.status`. Plus tard, les informations se modifient depuis le profil avec `PUT /me/profile` (section « Mon compte »).
 MD;
 
     public const PASSWORD = 'Connexion par mot de passe';

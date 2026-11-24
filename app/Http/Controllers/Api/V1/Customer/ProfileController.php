@@ -13,10 +13,10 @@ use Dedoc\Scramble\Attributes\Group;
 class ProfileController extends Controller
 {
     /**
-     * Enregistrer ou modifier mes informations (spectateur).
+     * Modifier mes informations (spectateur).
      *
-     * Écran « Mes informations », ouvert après `POST /auth/verify` quand `next_step` vaut `complete_profile`, puis
-     * depuis le profil. Le prénom et le nom sont obligatoires, l'e-mail facultatif (envoyer `null` pour l'effacer).
+     * Depuis le profil, une fois connecté. À l'inscription, les informations s'envoient avec
+     * `POST /auth/register/complete`. Le prénom et le nom sont obligatoires, l'e-mail facultatif (envoyer `null` pour l'effacer).
      * Le numéro de téléphone ne se modifie pas : c'est l'identifiant du compte. Réponse : le profil à jour, avec
      * `profile_completed: true`.
      */

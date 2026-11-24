@@ -30,6 +30,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // Ordre repris dans la documentation : inscription ou connexion par code SMS d'abord.
         Route::post('otp', [OtpController::class, 'send'])->middleware('throttle:otp-send')->name('otp');
         Route::post('verify', [OtpController::class, 'verify'])->middleware('throttle:otp-verify')->name('verify');
+        Route::post('register/complete', [OtpController::class, 'completeRegistration'])->middleware('throttle:otp-verify')->name('register.complete');
         Route::post('login', [PasswordController::class, 'login'])->middleware('throttle:login')->name('login');
         Route::post('register', [PasswordController::class, 'register'])->middleware('throttle:otp-verify')->name('register');
         Route::post('password/reset', [PasswordController::class, 'reset'])->middleware('throttle:otp-verify')->name('password.reset');

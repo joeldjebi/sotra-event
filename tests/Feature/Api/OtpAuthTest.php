@@ -43,23 +43,28 @@ it('envoie un code par SMS et le stocke haché', function () {
         ->and($otp->phone)->toBe('+2250707080839');
 });
 
-it('connecte un spectateur et crée son compte à la première connexion', function () {
+it('connecte directement un spectateur déjà inscrit', function () {
+    Customer::factory()->create(['phone' => '+2250707080839', 'first_name' => 'Awa', 'last_name' => 'Koné']);
     requestOtp('0707080839');
 
     verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
         ->assertOk()
+        ->assertJsonPath('data.status', 'logged_in')
         ->assertJsonPath('data.token_type', 'Bearer')
         ->assertJsonPath('data.abilities', ['customer'])
-        ->assertJsonPath('data.user.type', 'customer')
+        ->assertJsonPath('data.is_new_account', false)
+        ->assertJsonPath('data.user.first_name', 'Awa')
         ->assertJsonPath('data.user.phone', '+2250707080839');
 
-    expect(Customer::query()->where('phone', '+2250707080839')->exists())->toBeTrue();
+    expect(Customer::query()->count())->toBe(1);
 });
 
 it('donne accès à /me avec le jeton puis le révoque à la déconnexion', function () {
+    Customer::factory()->create(['phone' => '+2250707080839', 'first_name' => 'Awa', 'last_name' => 'Koné']);
     requestOtp('0707080839');
     $token = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))->json('data.token');
 
+    expect($token)->toBeString();
     $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.type', 'customer');
     $this->withToken($token)->postJson('/api/v1/auth/logout')->assertOk();
 
@@ -117,42 +122,86 @@ it('réserve la connexion par code au spectateur : le personnel passe par son mo
     expect(OtpCode::query()->whereNull('consumed_at')->count())->toBe(1);
 });
 
-it('envoie un nouveau compte vers « Mes informations » puis le profil complété vers l\'accueil', function () {
+it('inscrit un nouveau spectateur : code vérifié sans compte, puis informations et connexion automatique', function () {
     requestOtp('0707080839');
 
-    $token = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
+    $registration = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
         ->assertOk()
-        ->assertJsonPath('data.next_step', 'complete_profile')
+        ->assertJsonPath('data.status', 'registration_required')
+        ->assertJsonPath('data.phone', '+2250707080839')
+        ->assertJsonPath('data.registration_expires_in', 900)
+        ->assertJsonMissingPath('data.token')
+        ->json('data.registration_token');
+
+    expect(Customer::query()->exists())->toBeFalse();
+
+    $token = $this->postJson('/api/v1/auth/register/complete', [
+        'registration_token' => $registration, 'first_name' => ' Awa ', 'last_name' => 'Koné',
+        'email' => 'Awa.Kone@Exemple.ci', 'device_name' => 'Pixel 8',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'logged_in')
         ->assertJsonPath('data.is_new_account', true)
-        ->assertJsonPath('data.profile_completed', false)
+        ->assertJsonPath('data.next_step', 'home')
+        ->assertJsonPath('data.user.first_name', 'Awa')
+        ->assertJsonPath('data.user.email', 'awa.kone@exemple.ci')
+        ->assertJsonPath('data.user.profile_completed', true)
         ->json('data.token');
 
-    $this->withToken($token)->putJson('/api/v1/me/profile', ['first_name' => ' Awa ', 'last_name' => 'Koné', 'email' => 'Awa.Kone@Exemple.ci'])
-        ->assertOk()
-        ->assertJsonPath('data.first_name', 'Awa')
-        ->assertJsonPath('data.email', 'awa.kone@exemple.ci')
-        ->assertJsonPath('data.profile_completed', true);
+    $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.phone', '+2250707080839');
+});
 
-    $this->app['auth']->forgetGuards();
-    $this->travel(61)->seconds();
+it('n\'accepte le jeton d\'inscription qu\'une fois et pendant 15 minutes', function () {
     requestOtp('0707080839');
+    $registration = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))->json('data.registration_token');
+    $payload = ['registration_token' => $registration, 'first_name' => 'Awa', 'last_name' => 'Koné', 'device_name' => 'Pixel 8'];
 
-    verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
-        ->assertOk()
-        ->assertJsonPath('data.next_step', 'home')
-        ->assertJsonPath('data.is_new_account', false)
-        ->assertJsonPath('data.user.last_name', 'Koné');
+    $this->postJson('/api/v1/auth/register/complete', $payload)->assertOk();
+    $this->postJson('/api/v1/auth/register/complete', $payload)->assertStatus(422)->assertJsonPath('code', 'REGISTRATION_EXPIRED');
+
+    $this->travel(61)->seconds();
+    requestOtp('0707080840');
+    $expired = verifyOtp('0707080840', lastOtpSentTo('+2250707080840'))->json('data.registration_token');
+    $this->travel(16)->minutes();
+
+    $this->postJson('/api/v1/auth/register/complete', [...$payload, 'registration_token' => $expired])
+        ->assertStatus(422)
+        ->assertJsonPath('code', 'REGISTRATION_EXPIRED');
 
     expect(Customer::query()->count())->toBe(1);
 });
 
-it('renvoie vers « Mes informations » un compte existant sans nom', function () {
-    Customer::factory()->create(['phone' => '+2250707080839', 'first_name' => null, 'last_name' => null]);
+it('complète un compte existant sans nom au lieu d\'en créer un autre', function () {
+    $customer = Customer::factory()->create(['phone' => '+2250707080839', 'first_name' => null, 'last_name' => null]);
     requestOtp('0707080839');
 
-    verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
+    $registration = verifyOtp('0707080839', lastOtpSentTo('+2250707080839'))
+        ->assertJsonPath('data.status', 'registration_required')
+        ->json('data.registration_token');
+
+    $this->postJson('/api/v1/auth/register/complete', [
+        'registration_token' => $registration, 'first_name' => 'Awa', 'last_name' => 'Koné', 'device_name' => 'Pixel 8',
+    ])
+        ->assertOk()
         ->assertJsonPath('data.is_new_account', false)
-        ->assertJsonPath('data.next_step', 'complete_profile');
+        ->assertJsonPath('data.user.id', $customer->id);
+
+    expect(Customer::query()->count())->toBe(1);
+});
+
+it('valide les informations de l\'inscription', function () {
+    $this->postJson('/api/v1/auth/register/complete', ['registration_token' => 'court', 'email' => 'pas-un-email'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['registration_token', 'first_name', 'last_name', 'email', 'device_name']);
+});
+
+it('modifie les informations du spectateur connecté', function () {
+    $customer = Customer::factory()->create(['first_name' => 'Awa', 'last_name' => 'Koné']);
+
+    $this->withToken($customer->createToken('Pixel 8', ['customer'])->plainTextToken)
+        ->putJson('/api/v1/me/profile', ['first_name' => 'Awa', 'last_name' => 'Kouassi', 'email' => null])
+        ->assertOk()
+        ->assertJsonPath('data.last_name', 'Kouassi');
 });
 
 it('valide les informations personnelles', function () {
@@ -196,16 +245,4 @@ it('limite le nombre de demandes de code par numéro', function () {
     }
 
     requestOtp('0707080839')->assertStatus(429);
-});
-
-it('ne fait que vérifier le code : les informations personnelles passent par PUT /me/profile', function () {
-    requestOtp('0707080839');
-
-    $this->postJson('/api/v1/auth/verify', [
-        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
-        'device_name' => 'Pixel 8', 'first_name' => 'Awa', 'last_name' => 'Koné',
-    ])
-        ->assertOk()
-        ->assertJsonPath('data.user.first_name', null)
-        ->assertJsonPath('data.next_step', 'complete_profile');
 });

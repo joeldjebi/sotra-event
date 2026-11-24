@@ -13,16 +13,19 @@ API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVE
 
 ## Connexion (login)
 
-La documentation regroupe ces appels en trois sections : **Connexion par code SMS (spectateur)**, **Connexion par mot de passe** et **Mon compte**.
+La documentation regroupe ces appels en trois sections : **Register / login par OTP (spectateur)**, **Connexion par mot de passe** et **Mon compte**.
 
-**Spectateur : inscription et connexion par code SMS** (parcours principal, sans mot de passe), en trois écrans :
-1. **Numéro** : `POST /auth/otp` avec `phone` et `audience: customer`. Un code à 6 chiffres part par SMS (fournisseur MTarget). Il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
-2. **Code** : `POST /auth/verify` avec `phone`, `audience: customer`, `code` et `device_name`. La réponse contient le **jeton** (à conserver dans le stockage sécurisé du téléphone : Keychain, Keystore) et `next_step` :
-   - `complete_profile` : nouveau compte (`is_new_account: true`) ou compte existant sans nom (`profile_completed: false`). Ouvrir l'écran « Mes informations ».
-   - `home` : compte existant au profil complet. Ouvrir l'accueil.
-3. **Mes informations** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, jeton envoyé. Le même appel sert à modifier ces informations depuis le profil.
+**Spectateur : register / login par OTP** (parcours principal, sans mot de passe). Le code SMS (fournisseur MTarget) a 6 chiffres, il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.
 
-**Exemple complet** (nouveau spectateur) :
+| Étape | Spectateur déjà inscrit | Nouveau spectateur |
+|---|---|---|
+| 1. Écran « Numéro » | `POST /auth/otp` | `POST /auth/otp` |
+| 2. Écran « Code » | `POST /auth/verify` → `status: logged_in` + `token` : **connecté**, ouvrir l'accueil | `POST /auth/verify` → `status: registration_required` + `registration_token` : ouvrir « Mes informations » |
+| 3. Écran « Mes informations » | — | `POST /auth/register/complete` → `status: logged_in` + `token` : **connecté automatiquement**, ouvrir l'accueil |
+
+Après `POST /auth/verify`, tester seulement `data.status`. Le `registration_token` n'est **pas** un jeton de connexion : il prouve que le numéro a été vérifié, vaut 15 minutes et ne sert qu'une fois. Expiré ou déjà utilisé : **422** `REGISTRATION_EXPIRED`, recommencer à l'étape 1. Le jeton de connexion (`token`) est à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore).
+
+**Exemple : nouveau spectateur**
 
 ```http
 POST /auth/otp
@@ -37,23 +40,32 @@ POST /auth/verify
 {"phone": "0707070707", "audience": "customer", "code": "482913", "device_name": "Tecno Spark 10"}
 
 → 200
-{"data": {
-  "token": "253|Xy7…", "token_type": "Bearer", "abilities": ["customer"],
-  "next_step": "complete_profile", "is_new_account": true, "profile_completed": false, "must_change_password": false,
-  "user": {"type": "customer", "id": 143, "phone": "+2250707070707", "first_name": null, "last_name": null, "email": null, "locale": "fr", "profile_completed": false}
-}}
+{"data": {"status": "registration_required", "registration_token": "q8Vn…(64 caractères)", "registration_expires_in": 900, "phone": "+2250707070707"}}
 ```
 
 ```http
-PUT /me/profile
-Authorization: Bearer 253|Xy7…
-{"first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci"}
+POST /auth/register/complete
+{"registration_token": "q8Vn…", "first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci", "device_name": "Tecno Spark 10"}
 
 → 200
-{"data": {"type": "customer", "id": 143, "phone": "+2250707070707", "first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci", "locale": "fr", "profile_completed": true}}
+{"data": {
+  "status": "logged_in", "token": "253|Xy7…", "token_type": "Bearer", "abilities": ["customer"],
+  "next_step": "home", "is_new_account": true, "profile_completed": true, "must_change_password": false,
+  "user": {"type": "customer", "id": 143, "phone": "+2250707070707", "first_name": "Awa", "last_name": "Koné", "email": "awa.kone@exemple.ci", "locale": "fr", "profile_completed": true}
+}}
 ```
 
-Spectateur déjà inscrit avec son nom : même `POST /auth/otp` puis `POST /auth/verify`, avec `"next_step": "home"` et `"is_new_account": false` ; ouvrir directement l'accueil.
+**Exemple : spectateur déjà inscrit** : même `POST /auth/otp`, puis
+
+```http
+POST /auth/verify
+{"phone": "0707070707", "audience": "customer", "code": "193847", "device_name": "Tecno Spark 10"}
+
+→ 200
+{"data": {"status": "logged_in", "token": "254|Ab3…", "token_type": "Bearer", "abilities": ["customer"], "next_step": "home", "is_new_account": false, "profile_completed": true, "must_change_password": false, "user": {"type": "customer", "id": 143, "first_name": "Awa", "…": "…"}}}
+```
+
+Un compte créé sans nom (sur le site web, par exemple) suit le parcours « nouveau spectateur » : `POST /auth/register/complete` complète ce compte. Plus tard, le spectateur modifie ses informations depuis le profil avec `PUT /me/profile`.
 
 **Par mot de passe** (spectateur et personnel) : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas. Le spectateur choisit son mot de passe avec `POST /auth/otp` puis `POST /auth/register` (`phone`, `code`, `password`, `password_confirmation`, `device_name` ; **409** `ACCOUNT_EXISTS` si le numéro a déjà un mot de passe).
 
@@ -140,6 +152,7 @@ Une erreur a toujours un `message` lisible, à afficher tel quel.
 | `INVALID_CREDENTIALS` | 401 | Login : numéro ou mot de passe incorrect. Proposer « Mot de passe oublié ». |
 | `ACCOUNT_EXISTS` | 409 | Inscription : ce numéro a déjà un mot de passe. Proposer la connexion ou « Mot de passe oublié ». |
 | `INVALID_CURRENT_PASSWORD` | 422 | Changement : le mot de passe actuel est faux. |
+| `REGISTRATION_EXPIRED` | 422 | Inscription : jeton d'inscription expiré (15 min) ou déjà utilisé. Recommencer à `POST /auth/otp`. |
 | `PASSWORD_LOGIN_REQUIRED` | 403 | `POST /auth/verify` est réservé aux spectateurs : le personnel utilise `POST /auth/login`. |
 | `PASSWORD_CHANGE_REQUIRED` | 403 | Personnel : remplacer d'abord le mot de passe remis par l'exploitation (`POST /auth/password`). |
 | `EVENT_NOT_ON_SALE` | 422 | L'événement n'est plus en vente. |

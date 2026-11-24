@@ -3,7 +3,7 @@
     "info": {
         "title": "ACCES TRANS — API mobile v1",
         "version": "1.0.0",
-        "description": "API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVENT × SOTRA). Elle est consommée par trois applications mobiles : **spectateur** (acheter, montrer et suivre son Pass), **convoyeur** (contrôler les Pass à la montée, même sans réseau, et conduire la mission) et **service technique** (prendre en charge les pannes). Toutes les règles métier vivent côté serveur : l'application affiche et envoie, le serveur contrôle.\n\n## Conventions\n\n| Sujet | Règle |\n|---|---|\n| Adresse | `https://<domaine>/api/v1` (recette et production : adresses communiquées par ACCES EVENT ; en local `http://localhost:8000/api/v1`). Un changement incompatible donnera `/api/v2`. |\n| Format | JSON, champs en `snake_case`, dates ISO 8601 avec fuseau (`2026-11-15T18:00:00+00:00`), montants en **FCFA entiers**. |\n| En-têtes | `Accept: application/json` sur **toutes** les requêtes (sinon les erreurs reviennent en HTML). `Content-Type: application/json`, sauf l'envoi de photos (`multipart/form-data`). |\n| Langue | Messages d'erreur et champs `*_label` en français, prêts à afficher. |\n| Enveloppe | Les données sont dans `data`. |\n| Identifiants | Un Pass s'identifie par son **code** (`ET-2611-0315-COC`), une commande par sa **référence** (`CMD-57MR68NR`), le reste par un entier. |\n\n## Connexion (login)\n\nLa documentation regroupe ces appels en trois sections : **Connexion par code SMS (spectateur)**, **Connexion par mot de passe** et **Mon compte**.\n\n**Spectateur : inscription et connexion par code SMS** (parcours principal, sans mot de passe), en trois écrans :\n1. **Numéro** : `POST /auth/otp` avec `phone` et `audience: customer`. Un code à 6 chiffres part par SMS (fournisseur MTarget). Il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.\n2. **Code** : `POST /auth/verify` avec `phone`, `audience: customer`, `code` et `device_name`. La réponse contient le **jeton** (à conserver dans le stockage sécurisé du téléphone : Keychain, Keystore) et `next_step` :\n   - `complete_profile` : nouveau compte (`is_new_account: true`) ou compte existant sans nom (`profile_completed: false`). Ouvrir l'écran « Mes informations ».\n   - `home` : compte existant au profil complet. Ouvrir l'accueil.\n3. **Mes informations** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, jeton envoyé. Le même appel sert à modifier ces informations depuis le profil.\n\n**Exemple complet** (nouveau spectateur) :\n\n```http\nPOST /auth/otp\n{\"phone\": \"0707070707\", \"audience\": \"customer\"}\n\n→ 202\n{\"message\": \"Si ce numéro est autorisé, un code vient d'être envoyé par SMS.\", \"data\": {\"expires_in\": 300, \"resend_in\": 60}}\n```\n\n```http\nPOST /auth/verify\n{\"phone\": \"0707070707\", \"audience\": \"customer\", \"code\": \"482913\", \"device_name\": \"Tecno Spark 10\"}\n\n→ 200\n{\"data\": {\n  \"token\": \"253|Xy7…\", \"token_type\": \"Bearer\", \"abilities\": [\"customer\"],\n  \"next_step\": \"complete_profile\", \"is_new_account\": true, \"profile_completed\": false, \"must_change_password\": false,\n  \"user\": {\"type\": \"customer\", \"id\": 143, \"phone\": \"+2250707070707\", \"first_name\": null, \"last_name\": null, \"email\": null, \"locale\": \"fr\", \"profile_completed\": false}\n}}\n```\n\n```http\nPUT /me/profile\nAuthorization: Bearer 253|Xy7…\n{\"first_name\": \"Awa\", \"last_name\": \"Koné\", \"email\": \"awa.kone@exemple.ci\"}\n\n→ 200\n{\"data\": {\"type\": \"customer\", \"id\": 143, \"phone\": \"+2250707070707\", \"first_name\": \"Awa\", \"last_name\": \"Koné\", \"email\": \"awa.kone@exemple.ci\", \"locale\": \"fr\", \"profile_completed\": true}}\n```\n\nSpectateur déjà inscrit avec son nom : même `POST /auth/otp` puis `POST /auth/verify`, avec `\"next_step\": \"home\"` et `\"is_new_account\": false` ; ouvrir directement l'accueil.\n\n**Par mot de passe** (spectateur et personnel) : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas. Le spectateur choisit son mot de passe avec `POST /auth/otp` puis `POST /auth/register` (`phone`, `code`, `password`, `password_confirmation`, `device_name` ; **409** `ACCOUNT_EXISTS` si le numéro a déjà un mot de passe).\n\n**Mot de passe oublié** : `POST /auth/otp` puis `POST /auth/password/reset` avec `phone`, `audience`, `code`, `password`, `password_confirmation` et `device_name`. Les autres appareils sont déconnectés, celui-ci est connecté.\n\nEnvoyer ensuite `Authorization: Bearer <jeton>` sur chaque requête protégée (bouton **Authorize** pour essayer ici).\n\n**Personnel** : le convoyeur et le technicien reçoivent de leur exploitation un **mot de passe initial**. Tant que `must_change_password` vaut `true` dans la réponse du login, ouvrir l'écran « Nouveau mot de passe » : `POST /auth/password` avec `current_password`, `password` et `password_confirmation`. Avant ce changement, les appels de mission et de panne répondent **403** `PASSWORD_CHANGE_REQUIRED`.\n\n**Changer son mot de passe** (profil, tous) : `POST /auth/password`, connecté. Les autres appareils sont déconnectés.\n\n**Suppression du compte** (exigée par les stores) : bouton « Supprimer mon compte » dans le profil, qui appelle `DELETE /me` après confirmation ; page web équivalente à déclarer dans les stores : `/suppression-compte`. Politique de confidentialité : `/confidentialite`. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Hors login, une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.\n\nLe jeton porte une **capacité** selon le profil : `customer`, `conveyor` ou `tech`. Il ne donne accès qu'aux appels de son application. Pour le personnel, la demande de code répond toujours la même chose, que le numéro existe ou non ; les chauffeurs n'ont pas d'accès mobile.\n\nNuméros acceptés : numéro ivoirien à 10 chiffres (`0707070707`, `07 07 07 07 07`) ou format international (`+2250707070707`, `+33 6 12 34 56 78`).\n\n## Terminaux du personnel\n\nLes applications convoyeur et technique envoient, sur **tous** leurs appels, deux en-têtes en plus du jeton :\n\n| En-tête | Exemple | Rôle |\n|---|---|---|\n| `X-Device-Serial` | `TC21-0042` | Numéro de série du PDA. Un terminal enregistré puis bloqué par l'exploitation reçoit **403** `DEVICE_BLOCKED` : déconnecter l'utilisateur. Un smartphone personnel non enregistré est accepté. |\n| `X-App-Version` | `1.4.0` | Version installée, affichée à l'exploitation avec la dernière synchronisation du terminal. |\n\n## Parcours d'achat (app spectateur)\n\n1. `GET /events` puis `GET /events/{event}` : points d'embarquement (zone, heure de convocation), offres, prix par zone (`offers[].prices`), places restantes (`offers[].remaining`), liens des CGV (`terms`).\n2. `POST /orders/quote` à chaque changement de point, d'offre, de type ou de quantité : total frais de paiement compris (2 %).\n3. Connexion si besoin, en gardant la sélection.\n4. `POST /orders` avec `accept_terms: true` (case « J'accepte les CGV et la politique de confidentialité ») : les places sont **bloquées 15 minutes** (`expires_at`) ; afficher le compte à rebours.\n5. `POST /orders/{order}/pay` : Mobile Money (afficher `instructions.message`, validation sur le téléphone) ou carte (ouvrir `instructions.redirect_url`, 3-D Secure).\n6. `GET /orders/{order}` toutes les 3 secondes, 2 minutes au plus, jusqu'à `payee` (ouvrir « Mes Pass »), `echouee` (autre moyen de paiement) ou `expiree` (recommencer). `a_rembourser` : paiement arrivé trop tard, places revendues, le spectateur est remboursé.\n7. `GET /me/passes` : enregistrer chaque `qr_token` sur le téléphone pour afficher le QR **sans réseau**.\n\nNe jamais considérer un paiement comme réussi à partir du retour de l'écran de paiement : seul le statut de la commande fait foi (webhook signé de l'agrégateur). En recette, le paiement est simulé : `instructions.simulator_url` ouvre une page pour l'accepter ou le refuser.\n\n**Après l'achat** : offrir le Pass (`POST /passes/{pass}/transfer` ; l'ancien QR devient invalide, le retirer du téléphone), suivre son bus (`GET /passes/{pass}/trip`, toutes les 15 à 30 s), annuler (`POST /passes/{pass}/cancel`, selon `cancellation`), donner son avis (`review.available`), faire une réclamation (`POST /passes/{pass}/complaints`, suivi dans `GET /me/complaints`).\n\n**Annulation** : jusqu'à 24 h avant le départ aller, Pass non scanné, 8 % du total retenus (3 060 FCFA payés → 2 815 remboursés). Événement reporté : remboursement intégral, sans frais. Afficher les montants de `cancellation` et demander confirmation ; le bouton n'apparaît que si `cancellation.allowed`.\n\n## Contrôle hors ligne (app convoyeur)\n\nL'application convoyeur doit tenir **une journée entière sans réseau**.\n\n1. **Avant le départ**, dès qu'il y a du réseau : `GET /me/missions`, puis `GET /missions/{mission}/manifest` pour chaque mission.\n2. **Vérifier un QR sans réseau** : signature Ed25519 avec `public_key` du manifeste ; Pass présent dans `passes` avec la même `token_version` ; absent de `revoked` ; trajet pas encore utilisé sur ce terminal.\n3. **Décider la couleur** avec les mêmes règles qu'en ligne : `vert` (montée), `orange` (montée, à signaler : prévu dans un autre bus du même point ou autre point), `rouge` (refus, avec motif).\n4. **Mettre en file** chaque scan avec un `client_uuid` généré et son heure `scanned_at`.\n5. **Au retour du réseau** : `POST /scans/sync` (1 000 scans par lot au plus). Les réponses font foi ; `conflict: true` signale un même Pass accepté sur deux terminaux (le scan le plus ancien l'emporte).\n\nEn ligne, `POST /scans` contrôle immédiatement. Rejouer un même `client_uuid` ne compte jamais deux fois.\n\n**Format du QR** : `ET1.<données>.<signature>` en base64url. Les données (JSON) : `p` identifiant du Pass, `e` événement, `b` point d'embarquement, `o` offre, `t` type de Pass, `v` version (augmente quand le Pass est offert : un QR d'une ancienne version est refusé). La signature Ed25519 porte sur la chaîne `ET1.<données>`. Le convoyeur peut aussi saisir le code lisible du Pass (`ET-AAMM-NNNN-COM`), vérifié en ligne.\n\n**Mission** : `POST /missions/{mission}/boarding-started`, puis `…/depart` (l'heure réelle sert à la ponctualité : à l'heure jusqu'à +10 min ; au-delà de +20 min, une réclamation collective est ouverte automatiquement), positions toutes les 15 s par `POST /missions/{mission}/positions` (en file sans réseau), arrivée détectée à l'entrée de la zone de dépose ou confirmée par `…/arrive`. N'envoyer des positions que pendant une mission (loi ivoirienne n° 2013-450) : celles reçues hors mission sont ignorées.\n\n## Pannes (apps convoyeur et technique)\n\n1. Le convoyeur envoie `POST /breakdowns` (jusqu'à 4 photos). L'alerte est **urgente** d'office s'il y a des passagers à bord, ou en cas d'accident. Sans data : SMS `PANNE <n° du bus> <TYPE> [précisions]` au numéro de secours, par exemple `PANNE 27 MOTEUR fumée`.\n2. Les techniciens des équipes mobilisées reçoivent une notification push (sonnerie si urgente) ; `GET /tech/alerts` liste les alertes, les urgentes d'abord, avec distance et temps estimé (après `POST /tech/position`).\n3. Une seule équipe prend l'alerte : `POST /tech/alerts/{alert}/take` (sinon **409** `ALERT_ALREADY_TAKEN`, avec le code de l'équipe dans le message).\n4. Étapes horodatées, sans retour en arrière : `POST /tech/interventions/{intervention}/steps` avec `en_route`, `sur_place`, `diagnostic`.\n5. Clôture : `repare` (le bus repart), `remplace` (avec `replacement_bus_id`, choisi dans `GET /tech/reserve-buses?alert=…` : les Pass passent sur le bus de réserve, les passagers sont prévenus, le convoyeur fait un scan de contrôle à la montée) ou `remorquage`.\n\n## Erreurs\n\nUne erreur a toujours un `message` lisible, à afficher tel quel.\n\n- **Erreur métier** : `message` + `code` stable. Testez le `code`, jamais le texte.\n- **Champ invalide (422)** : `message` + `errors` (pour chaque champ, la liste des messages à placer sous le champ).\n- **401** non connecté · **403** pas le droit · **404** introuvable ou appartenant à un autre compte · **429** trop de requêtes (attendre l'en-tête `Retry-After`) · **5xx** réessayer plus tard.\n\n| Code | HTTP | Signification et conduite à tenir |\n|---|---|---|\n| `OTP_RESEND_TOO_SOON` | 429 | Un code vient d'être envoyé : attendre `resend_in` secondes. |\n| `OTP_NOT_FOUND` | 422 | Aucun code en cours pour ce numéro. |\n| `OTP_INVALID` | 422 | Code incorrect. |\n| `OTP_EXPIRED` | 422 | Code expiré : en redemander un. |\n| `OTP_TOO_MANY_ATTEMPTS` | 429 | 5 essais ratés : en redemander un. |\n| `SMS_NOT_SENT` | 503 | L'opérateur SMS a refusé le message : réessayer. |\n| `ACCOUNT_NOT_ALLOWED` | 403 | Compte de personnel inactif ou sans accès mobile. |\n| `INVALID_CREDENTIALS` | 401 | Login : numéro ou mot de passe incorrect. Proposer « Mot de passe oublié ». |\n| `ACCOUNT_EXISTS` | 409 | Inscription : ce numéro a déjà un mot de passe. Proposer la connexion ou « Mot de passe oublié ». |\n| `INVALID_CURRENT_PASSWORD` | 422 | Changement : le mot de passe actuel est faux. |\n| `PASSWORD_LOGIN_REQUIRED` | 403 | `POST /auth/verify` est réservé aux spectateurs : le personnel utilise `POST /auth/login`. |\n| `PASSWORD_CHANGE_REQUIRED` | 403 | Personnel : remplacer d'abord le mot de passe remis par l'exploitation (`POST /auth/password`). |\n| `EVENT_NOT_ON_SALE` | 422 | L'événement n'est plus en vente. |\n| `CHANNEL_CLOSED` | 422 | Vente par l'application fermée pour cet événement. |\n| `BOARDING_POINT_NOT_FOUND` | 404 | Point d'embarquement inconnu pour cet événement. |\n| `DEPARTURE_CANCELLED` | 409 | Départ annulé : proposer un autre point. |\n| `OFFER_UNAVAILABLE` | 422 | Offre non proposée pour cet événement. |\n| `PRICE_UNAVAILABLE` | 422 | Ce type de Pass n'est pas vendu depuis ce point. |\n| `QUANTITY_OUT_OF_RANGE` | 422 | De 1 à 10 Pass par commande. |\n| `CAPACITY_REACHED` | 409 | Plus assez de places dans cette offre : afficher « complet ». |\n| `ORDER_NOT_PAYABLE` | 422 | Commande expirée ou déjà payée : recommencer la réservation. |\n| `INVALID_MSISDN` | 422 | Numéro Mobile Money invalide. |\n| `PASS_NOT_OWNED` | 403 | Ce Pass n'appartient pas au spectateur connecté. |\n| `PASS_NOT_TRANSFERABLE` | 422 | Pass déjà utilisé à l'aller, annulé ou terminé. |\n| `PASS_SAME_HOLDER` | 422 | Le numéro est déjà celui du détenteur. |\n| `PASS_NOT_CANCELLABLE` | 409 | Annulation impossible ; le message dit pourquoi (scanné, moins de 24 h, déjà annulé). |\n| `PAYMENT_NOT_FOUND` | 409 | Paiement d'origine introuvable : contacter le support. |\n| `REVIEW_NOT_AVAILABLE` | 422 | Avis possible seulement après un trajet scanné. |\n| `REVIEW_ALREADY_SENT` | 409 | Un avis existe déjà pour ce Pass. |\n| `COMPLAINT_NOT_ALLOWED` | 422 | Ce Pass ne permet pas de réclamation. |\n| `COMPLAINT_LIMIT` | 429 | Déjà 3 réclamations en cours pour ce Pass. |\n| `DEVICE_BLOCKED` | 403 | Terminal bloqué par l'exploitation : déconnecter l'utilisateur. |\n| `MISSION_NOT_ASSIGNED` | 403 | Mission non affectée à ce convoyeur. |\n| `MISSION_STATUS_INVALID` | 409 | Action impossible dans le statut actuel de la mission. |\n| `NO_TEAM` | 403 | Technicien rattaché à aucune équipe. |\n| `TEAM_NOT_ASSIGNED` | 403 | Équipe non mobilisée sur l'événement de cette panne. |\n| `ALERT_ALREADY_TAKEN` | 409 | Une autre équipe a déjà pris l'alerte. |\n| `INTERVENTION_OTHER_TEAM` | 403 | Intervention d'une autre équipe. |\n| `INTERVENTION_STEP_INVALID` | 409 | Étape hors ordre. |\n| `INTERVENTION_CLOSED` | 409 | Intervention déjà clôturée. |\n| `ACCOUNT_HAS_UPCOMING_PASSES` | 409 | Suppression de compte impossible : un Pass est à venir. Le message dit quoi faire. |\n\n## Limites de requêtes\n\nAu-delà, réponse **429** avec l'en-tête `Retry-After` (secondes). Limite générale : **300 appels par minute par compte**, 600 par adresse IP sans connexion. Les limites propres à certaines routes sont indiquées dans leur réponse 429.\n\n## Changements\n\n| Date | Changement |\n|---|---|\n| 13/11/2026 | **Obligatoire** : `POST /orders` exige `accept_terms: true` (CGV et politique de confidentialité) ; liens dans `terms` du détail d'un événement. |\n| 13/11/2026 | Annulation et remboursement (`POST /passes/{pass}/cancel`, champs `cancellation` et `refund`), avis et réclamations, API du service technique, réponse 503 `SMS_NOT_SENT`. |\n"
+        "description": "API REST d'**ACCES TRANS**, le Pass transport des grands événements (ACCES EVENT × SOTRA). Elle est consommée par trois applications mobiles : **spectateur** (acheter, montrer et suivre son Pass), **convoyeur** (contrôler les Pass à la montée, même sans réseau, et conduire la mission) et **service technique** (prendre en charge les pannes). Toutes les règles métier vivent côté serveur : l'application affiche et envoie, le serveur contrôle.\n\n## Conventions\n\n| Sujet | Règle |\n|---|---|\n| Adresse | `https://<domaine>/api/v1` (recette et production : adresses communiquées par ACCES EVENT ; en local `http://localhost:8000/api/v1`). Un changement incompatible donnera `/api/v2`. |\n| Format | JSON, champs en `snake_case`, dates ISO 8601 avec fuseau (`2026-11-15T18:00:00+00:00`), montants en **FCFA entiers**. |\n| En-têtes | `Accept: application/json` sur **toutes** les requêtes (sinon les erreurs reviennent en HTML). `Content-Type: application/json`, sauf l'envoi de photos (`multipart/form-data`). |\n| Langue | Messages d'erreur et champs `*_label` en français, prêts à afficher. |\n| Enveloppe | Les données sont dans `data`. |\n| Identifiants | Un Pass s'identifie par son **code** (`ET-2611-0315-COC`), une commande par sa **référence** (`CMD-57MR68NR`), le reste par un entier. |\n\n## Connexion (login)\n\nLa documentation regroupe ces appels en trois sections : **Register / login par OTP (spectateur)**, **Connexion par mot de passe** et **Mon compte**.\n\n**Spectateur : register / login par OTP** (parcours principal, sans mot de passe). Le code SMS (fournisseur MTarget) a 6 chiffres, il est valable 5 minutes, accepte 5 essais, et un nouveau code peut être demandé après 60 secondes. Si l'opérateur SMS refuse l'envoi, l'API répond **503** `SMS_NOT_SENT` : proposer de réessayer tout de suite.\n\n| Étape | Spectateur déjà inscrit | Nouveau spectateur |\n|---|---|---|\n| 1. Écran « Numéro » | `POST /auth/otp` | `POST /auth/otp` |\n| 2. Écran « Code » | `POST /auth/verify` → `status: logged_in` + `token` : **connecté**, ouvrir l'accueil | `POST /auth/verify` → `status: registration_required` + `registration_token` : ouvrir « Mes informations » |\n| 3. Écran « Mes informations » | — | `POST /auth/register/complete` → `status: logged_in` + `token` : **connecté automatiquement**, ouvrir l'accueil |\n\nAprès `POST /auth/verify`, tester seulement `data.status`. Le `registration_token` n'est **pas** un jeton de connexion : il prouve que le numéro a été vérifié, vaut 15 minutes et ne sert qu'une fois. Expiré ou déjà utilisé : **422** `REGISTRATION_EXPIRED`, recommencer à l'étape 1. Le jeton de connexion (`token`) est à conserver dans le stockage sécurisé du téléphone (Keychain, Keystore).\n\n**Exemple : nouveau spectateur**\n\n```http\nPOST /auth/otp\n{\"phone\": \"0707070707\", \"audience\": \"customer\"}\n\n→ 202\n{\"message\": \"Si ce numéro est autorisé, un code vient d'être envoyé par SMS.\", \"data\": {\"expires_in\": 300, \"resend_in\": 60}}\n```\n\n```http\nPOST /auth/verify\n{\"phone\": \"0707070707\", \"audience\": \"customer\", \"code\": \"482913\", \"device_name\": \"Tecno Spark 10\"}\n\n→ 200\n{\"data\": {\"status\": \"registration_required\", \"registration_token\": \"q8Vn…(64 caractères)\", \"registration_expires_in\": 900, \"phone\": \"+2250707070707\"}}\n```\n\n```http\nPOST /auth/register/complete\n{\"registration_token\": \"q8Vn…\", \"first_name\": \"Awa\", \"last_name\": \"Koné\", \"email\": \"awa.kone@exemple.ci\", \"device_name\": \"Tecno Spark 10\"}\n\n→ 200\n{\"data\": {\n  \"status\": \"logged_in\", \"token\": \"253|Xy7…\", \"token_type\": \"Bearer\", \"abilities\": [\"customer\"],\n  \"next_step\": \"home\", \"is_new_account\": true, \"profile_completed\": true, \"must_change_password\": false,\n  \"user\": {\"type\": \"customer\", \"id\": 143, \"phone\": \"+2250707070707\", \"first_name\": \"Awa\", \"last_name\": \"Koné\", \"email\": \"awa.kone@exemple.ci\", \"locale\": \"fr\", \"profile_completed\": true}\n}}\n```\n\n**Exemple : spectateur déjà inscrit** : même `POST /auth/otp`, puis\n\n```http\nPOST /auth/verify\n{\"phone\": \"0707070707\", \"audience\": \"customer\", \"code\": \"193847\", \"device_name\": \"Tecno Spark 10\"}\n\n→ 200\n{\"data\": {\"status\": \"logged_in\", \"token\": \"254|Ab3…\", \"token_type\": \"Bearer\", \"abilities\": [\"customer\"], \"next_step\": \"home\", \"is_new_account\": false, \"profile_completed\": true, \"must_change_password\": false, \"user\": {\"type\": \"customer\", \"id\": 143, \"first_name\": \"Awa\", \"…\": \"…\"}}}\n```\n\nUn compte créé sans nom (sur le site web, par exemple) suit le parcours « nouveau spectateur » : `POST /auth/register/complete` complète ce compte. Plus tard, le spectateur modifie ses informations depuis le profil avec `PUT /me/profile`.\n\n**Par mot de passe** (spectateur et personnel) : `POST /auth/login` avec `phone`, `audience` (`customer` pour le spectateur, `staff` pour le convoyeur et le technicien), `password` et `device_name`. Numéro inconnu ou mot de passe faux : **401** `INVALID_CREDENTIALS`, même réponse dans les deux cas. Le spectateur choisit son mot de passe avec `POST /auth/otp` puis `POST /auth/register` (`phone`, `code`, `password`, `password_confirmation`, `device_name` ; **409** `ACCOUNT_EXISTS` si le numéro a déjà un mot de passe).\n\n**Mot de passe oublié** : `POST /auth/otp` puis `POST /auth/password/reset` avec `phone`, `audience`, `code`, `password`, `password_confirmation` et `device_name`. Les autres appareils sont déconnectés, celui-ci est connecté.\n\nEnvoyer ensuite `Authorization: Bearer <jeton>` sur chaque requête protégée (bouton **Authorize** pour essayer ici).\n\n**Personnel** : le convoyeur et le technicien reçoivent de leur exploitation un **mot de passe initial**. Tant que `must_change_password` vaut `true` dans la réponse du login, ouvrir l'écran « Nouveau mot de passe » : `POST /auth/password` avec `current_password`, `password` et `password_confirmation`. Avant ce changement, les appels de mission et de panne répondent **403** `PASSWORD_CHANGE_REQUIRED`.\n\n**Changer son mot de passe** (profil, tous) : `POST /auth/password`, connecté. Les autres appareils sont déconnectés.\n\n**Suppression du compte** (exigée par les stores) : bouton « Supprimer mon compte » dans le profil, qui appelle `DELETE /me` après confirmation ; page web équivalente à déclarer dans les stores : `/suppression-compte`. Politique de confidentialité : `/confidentialite`. Le jeton n'expire pas ; `POST /auth/logout` le révoque. Hors login, une réponse **401** (ou **403** sans `code` métier) signifie qu'il faut revenir à l'écran de connexion.\n\nLe jeton porte une **capacité** selon le profil : `customer`, `conveyor` ou `tech`. Il ne donne accès qu'aux appels de son application. Pour le personnel, la demande de code répond toujours la même chose, que le numéro existe ou non ; les chauffeurs n'ont pas d'accès mobile.\n\nNuméros acceptés : numéro ivoirien à 10 chiffres (`0707070707`, `07 07 07 07 07`) ou format international (`+2250707070707`, `+33 6 12 34 56 78`).\n\n## Terminaux du personnel\n\nLes applications convoyeur et technique envoient, sur **tous** leurs appels, deux en-têtes en plus du jeton :\n\n| En-tête | Exemple | Rôle |\n|---|---|---|\n| `X-Device-Serial` | `TC21-0042` | Numéro de série du PDA. Un terminal enregistré puis bloqué par l'exploitation reçoit **403** `DEVICE_BLOCKED` : déconnecter l'utilisateur. Un smartphone personnel non enregistré est accepté. |\n| `X-App-Version` | `1.4.0` | Version installée, affichée à l'exploitation avec la dernière synchronisation du terminal. |\n\n## Parcours d'achat (app spectateur)\n\n1. `GET /events` puis `GET /events/{event}` : points d'embarquement (zone, heure de convocation), offres, prix par zone (`offers[].prices`), places restantes (`offers[].remaining`), liens des CGV (`terms`).\n2. `POST /orders/quote` à chaque changement de point, d'offre, de type ou de quantité : total frais de paiement compris (2 %).\n3. Connexion si besoin, en gardant la sélection.\n4. `POST /orders` avec `accept_terms: true` (case « J'accepte les CGV et la politique de confidentialité ») : les places sont **bloquées 15 minutes** (`expires_at`) ; afficher le compte à rebours.\n5. `POST /orders/{order}/pay` : Mobile Money (afficher `instructions.message`, validation sur le téléphone) ou carte (ouvrir `instructions.redirect_url`, 3-D Secure).\n6. `GET /orders/{order}` toutes les 3 secondes, 2 minutes au plus, jusqu'à `payee` (ouvrir « Mes Pass »), `echouee` (autre moyen de paiement) ou `expiree` (recommencer). `a_rembourser` : paiement arrivé trop tard, places revendues, le spectateur est remboursé.\n7. `GET /me/passes` : enregistrer chaque `qr_token` sur le téléphone pour afficher le QR **sans réseau**.\n\nNe jamais considérer un paiement comme réussi à partir du retour de l'écran de paiement : seul le statut de la commande fait foi (webhook signé de l'agrégateur). En recette, le paiement est simulé : `instructions.simulator_url` ouvre une page pour l'accepter ou le refuser.\n\n**Après l'achat** : offrir le Pass (`POST /passes/{pass}/transfer` ; l'ancien QR devient invalide, le retirer du téléphone), suivre son bus (`GET /passes/{pass}/trip`, toutes les 15 à 30 s), annuler (`POST /passes/{pass}/cancel`, selon `cancellation`), donner son avis (`review.available`), faire une réclamation (`POST /passes/{pass}/complaints`, suivi dans `GET /me/complaints`).\n\n**Annulation** : jusqu'à 24 h avant le départ aller, Pass non scanné, 8 % du total retenus (3 060 FCFA payés → 2 815 remboursés). Événement reporté : remboursement intégral, sans frais. Afficher les montants de `cancellation` et demander confirmation ; le bouton n'apparaît que si `cancellation.allowed`.\n\n## Contrôle hors ligne (app convoyeur)\n\nL'application convoyeur doit tenir **une journée entière sans réseau**.\n\n1. **Avant le départ**, dès qu'il y a du réseau : `GET /me/missions`, puis `GET /missions/{mission}/manifest` pour chaque mission.\n2. **Vérifier un QR sans réseau** : signature Ed25519 avec `public_key` du manifeste ; Pass présent dans `passes` avec la même `token_version` ; absent de `revoked` ; trajet pas encore utilisé sur ce terminal.\n3. **Décider la couleur** avec les mêmes règles qu'en ligne : `vert` (montée), `orange` (montée, à signaler : prévu dans un autre bus du même point ou autre point), `rouge` (refus, avec motif).\n4. **Mettre en file** chaque scan avec un `client_uuid` généré et son heure `scanned_at`.\n5. **Au retour du réseau** : `POST /scans/sync` (1 000 scans par lot au plus). Les réponses font foi ; `conflict: true` signale un même Pass accepté sur deux terminaux (le scan le plus ancien l'emporte).\n\nEn ligne, `POST /scans` contrôle immédiatement. Rejouer un même `client_uuid` ne compte jamais deux fois.\n\n**Format du QR** : `ET1.<données>.<signature>` en base64url. Les données (JSON) : `p` identifiant du Pass, `e` événement, `b` point d'embarquement, `o` offre, `t` type de Pass, `v` version (augmente quand le Pass est offert : un QR d'une ancienne version est refusé). La signature Ed25519 porte sur la chaîne `ET1.<données>`. Le convoyeur peut aussi saisir le code lisible du Pass (`ET-AAMM-NNNN-COM`), vérifié en ligne.\n\n**Mission** : `POST /missions/{mission}/boarding-started`, puis `…/depart` (l'heure réelle sert à la ponctualité : à l'heure jusqu'à +10 min ; au-delà de +20 min, une réclamation collective est ouverte automatiquement), positions toutes les 15 s par `POST /missions/{mission}/positions` (en file sans réseau), arrivée détectée à l'entrée de la zone de dépose ou confirmée par `…/arrive`. N'envoyer des positions que pendant une mission (loi ivoirienne n° 2013-450) : celles reçues hors mission sont ignorées.\n\n## Pannes (apps convoyeur et technique)\n\n1. Le convoyeur envoie `POST /breakdowns` (jusqu'à 4 photos). L'alerte est **urgente** d'office s'il y a des passagers à bord, ou en cas d'accident. Sans data : SMS `PANNE <n° du bus> <TYPE> [précisions]` au numéro de secours, par exemple `PANNE 27 MOTEUR fumée`.\n2. Les techniciens des équipes mobilisées reçoivent une notification push (sonnerie si urgente) ; `GET /tech/alerts` liste les alertes, les urgentes d'abord, avec distance et temps estimé (après `POST /tech/position`).\n3. Une seule équipe prend l'alerte : `POST /tech/alerts/{alert}/take` (sinon **409** `ALERT_ALREADY_TAKEN`, avec le code de l'équipe dans le message).\n4. Étapes horodatées, sans retour en arrière : `POST /tech/interventions/{intervention}/steps` avec `en_route`, `sur_place`, `diagnostic`.\n5. Clôture : `repare` (le bus repart), `remplace` (avec `replacement_bus_id`, choisi dans `GET /tech/reserve-buses?alert=…` : les Pass passent sur le bus de réserve, les passagers sont prévenus, le convoyeur fait un scan de contrôle à la montée) ou `remorquage`.\n\n## Erreurs\n\nUne erreur a toujours un `message` lisible, à afficher tel quel.\n\n- **Erreur métier** : `message` + `code` stable. Testez le `code`, jamais le texte.\n- **Champ invalide (422)** : `message` + `errors` (pour chaque champ, la liste des messages à placer sous le champ).\n- **401** non connecté · **403** pas le droit · **404** introuvable ou appartenant à un autre compte · **429** trop de requêtes (attendre l'en-tête `Retry-After`) · **5xx** réessayer plus tard.\n\n| Code | HTTP | Signification et conduite à tenir |\n|---|---|---|\n| `OTP_RESEND_TOO_SOON` | 429 | Un code vient d'être envoyé : attendre `resend_in` secondes. |\n| `OTP_NOT_FOUND` | 422 | Aucun code en cours pour ce numéro. |\n| `OTP_INVALID` | 422 | Code incorrect. |\n| `OTP_EXPIRED` | 422 | Code expiré : en redemander un. |\n| `OTP_TOO_MANY_ATTEMPTS` | 429 | 5 essais ratés : en redemander un. |\n| `SMS_NOT_SENT` | 503 | L'opérateur SMS a refusé le message : réessayer. |\n| `ACCOUNT_NOT_ALLOWED` | 403 | Compte de personnel inactif ou sans accès mobile. |\n| `INVALID_CREDENTIALS` | 401 | Login : numéro ou mot de passe incorrect. Proposer « Mot de passe oublié ». |\n| `ACCOUNT_EXISTS` | 409 | Inscription : ce numéro a déjà un mot de passe. Proposer la connexion ou « Mot de passe oublié ». |\n| `INVALID_CURRENT_PASSWORD` | 422 | Changement : le mot de passe actuel est faux. |\n| `REGISTRATION_EXPIRED` | 422 | Inscription : jeton d'inscription expiré (15 min) ou déjà utilisé. Recommencer à `POST /auth/otp`. |\n| `PASSWORD_LOGIN_REQUIRED` | 403 | `POST /auth/verify` est réservé aux spectateurs : le personnel utilise `POST /auth/login`. |\n| `PASSWORD_CHANGE_REQUIRED` | 403 | Personnel : remplacer d'abord le mot de passe remis par l'exploitation (`POST /auth/password`). |\n| `EVENT_NOT_ON_SALE` | 422 | L'événement n'est plus en vente. |\n| `CHANNEL_CLOSED` | 422 | Vente par l'application fermée pour cet événement. |\n| `BOARDING_POINT_NOT_FOUND` | 404 | Point d'embarquement inconnu pour cet événement. |\n| `DEPARTURE_CANCELLED` | 409 | Départ annulé : proposer un autre point. |\n| `OFFER_UNAVAILABLE` | 422 | Offre non proposée pour cet événement. |\n| `PRICE_UNAVAILABLE` | 422 | Ce type de Pass n'est pas vendu depuis ce point. |\n| `QUANTITY_OUT_OF_RANGE` | 422 | De 1 à 10 Pass par commande. |\n| `CAPACITY_REACHED` | 409 | Plus assez de places dans cette offre : afficher « complet ». |\n| `ORDER_NOT_PAYABLE` | 422 | Commande expirée ou déjà payée : recommencer la réservation. |\n| `INVALID_MSISDN` | 422 | Numéro Mobile Money invalide. |\n| `PASS_NOT_OWNED` | 403 | Ce Pass n'appartient pas au spectateur connecté. |\n| `PASS_NOT_TRANSFERABLE` | 422 | Pass déjà utilisé à l'aller, annulé ou terminé. |\n| `PASS_SAME_HOLDER` | 422 | Le numéro est déjà celui du détenteur. |\n| `PASS_NOT_CANCELLABLE` | 409 | Annulation impossible ; le message dit pourquoi (scanné, moins de 24 h, déjà annulé). |\n| `PAYMENT_NOT_FOUND` | 409 | Paiement d'origine introuvable : contacter le support. |\n| `REVIEW_NOT_AVAILABLE` | 422 | Avis possible seulement après un trajet scanné. |\n| `REVIEW_ALREADY_SENT` | 409 | Un avis existe déjà pour ce Pass. |\n| `COMPLAINT_NOT_ALLOWED` | 422 | Ce Pass ne permet pas de réclamation. |\n| `COMPLAINT_LIMIT` | 429 | Déjà 3 réclamations en cours pour ce Pass. |\n| `DEVICE_BLOCKED` | 403 | Terminal bloqué par l'exploitation : déconnecter l'utilisateur. |\n| `MISSION_NOT_ASSIGNED` | 403 | Mission non affectée à ce convoyeur. |\n| `MISSION_STATUS_INVALID` | 409 | Action impossible dans le statut actuel de la mission. |\n| `NO_TEAM` | 403 | Technicien rattaché à aucune équipe. |\n| `TEAM_NOT_ASSIGNED` | 403 | Équipe non mobilisée sur l'événement de cette panne. |\n| `ALERT_ALREADY_TAKEN` | 409 | Une autre équipe a déjà pris l'alerte. |\n| `INTERVENTION_OTHER_TEAM` | 403 | Intervention d'une autre équipe. |\n| `INTERVENTION_STEP_INVALID` | 409 | Étape hors ordre. |\n| `INTERVENTION_CLOSED` | 409 | Intervention déjà clôturée. |\n| `ACCOUNT_HAS_UPCOMING_PASSES` | 409 | Suppression de compte impossible : un Pass est à venir. Le message dit quoi faire. |\n\n## Limites de requêtes\n\nAu-delà, réponse **429** avec l'en-tête `Retry-After` (secondes). Limite générale : **300 appels par minute par compte**, 600 par adresse IP sans connexion. Les limites propres à certaines routes sont indiquées dans leur réponse 429.\n\n## Changements\n\n| Date | Changement |\n|---|---|\n| 13/11/2026 | **Obligatoire** : `POST /orders` exige `accept_terms: true` (CGV et politique de confidentialité) ; liens dans `terms` du détail d'un événement. |\n| 13/11/2026 | Annulation et remboursement (`POST /passes/{pass}/cancel`, champs `cancellation` et `refund`), avis et réclamations, API du service technique, réponse 503 `SMS_NOT_SENT`. |\n"
     },
     "servers": [
         {
@@ -13,8 +13,8 @@
     ],
     "tags": [
         {
-            "name": "Connexion par code SMS (spectateur)",
-            "description": "**Parcours principal de l'app spectateur : inscription et connexion en un seul parcours, sans mot de passe.**\n\n1. **Écran « Numéro »** : `POST /auth/otp` avec `phone` et `audience: customer`. Un code à 6 chiffres part par SMS (valable 5 min, 5 essais, renvoi possible après `resend_in` secondes).\n2. **Écran « Code »** : `POST /auth/verify` avec `phone`, `audience: customer`, `code` et `device_name`. La réponse contient le jeton et indique l'écran suivant :\n\n| `next_step` | Cas | Écran à ouvrir |\n|---|---|---|\n| `complete_profile` | Nouveau compte (`is_new_account: true`), ou compte existant sans nom (`profile_completed: false`) | « Mes informations » |\n| `home` | Compte existant au profil complet | Accueil |\n\n3. **Écran « Mes informations »** (si `complete_profile`) : `PUT /me/profile` avec `first_name`, `last_name` et, facultatif, `email`, en envoyant le jeton. La réponse renvoie `profile_completed: true` : ouvrir l'accueil."
+            "name": "Register / login par OTP (spectateur)",
+            "description": "**Parcours principal de l'app spectateur : inscription et connexion par code SMS, sans mot de passe.**\n\n**Spectateur déjà inscrit**\n1. `POST /auth/otp` : envoyer le code.\n2. `POST /auth/verify` : vérifier le code → `status: logged_in`, `token` → **connecté**, ouvrir l'accueil.\n\n**Nouveau spectateur**\n1. `POST /auth/otp` : envoyer le code.\n2. `POST /auth/verify` : vérifier le code → `status: registration_required`, `registration_token` (aucun compte créé, pas encore connecté) → ouvrir l'écran « Mes informations ».\n3. `POST /auth/register/complete` avec `registration_token`, `first_name`, `last_name`, `email` (facultatif) et `device_name` → compte créé, `status: logged_in`, `token` → **connecté automatiquement**, ouvrir l'accueil.\n\nAprès `POST /auth/verify`, l'application n'a qu'un champ à tester : `data.status`. Plus tard, les informations se modifient depuis le profil avec `PUT /me/profile` (section « Mon compte »)."
         },
         {
             "name": "Connexion par mot de passe",
@@ -71,9 +71,9 @@
             "post": {
                 "operationId": "v1.auth.otp",
                 "description": "**Public — sans jeton.**\n\nPremière étape de l'inscription ou connexion par code (`POST /auth/verify`), de l'inscription avec mot de passe\n(`POST /auth/register`) et du mot de passe oublié (`POST /auth/password/reset`).\nRéponse identique que le numéro soit connu ou non, pour ne pas révéler les comptes du personnel.",
-                "summary": "Register / login OTP — 1. Envoyer le code SMS",
+                "summary": "Register / login OTP — 1. Envoyer le code",
                 "tags": [
-                    "Connexion par code SMS (spectateur)"
+                    "Register / login par OTP (spectateur)"
                 ],
                 "requestBody": {
                     "required": true,
@@ -174,10 +174,10 @@
         "/auth/verify": {
             "post": {
                 "operationId": "v1.auth.verify",
-                "description": "**Public — sans jeton.**\n\nVérifie seulement le code reçu par SMS après `POST /auth/otp` (audience `customer`) et remet le jeton.\nNuméro inconnu : le compte est créé, vide. Numéro connu : le spectateur est connecté. `next_step` indique\nl'écran suivant : `complete_profile` (enregistrer les informations avec `PUT /me/profile`) ou `home`.\nRéservé aux spectateurs : le personnel se connecte avec son mot de passe (`POST /auth/login`),\n403 `PASSWORD_LOGIN_REQUIRED` sinon.",
-                "summary": "Register / login OTP — 2. Valider le code (spectateur)",
+                "description": "**Public — sans jeton.**\n\nAprès `POST /auth/otp` (audience `customer`). Tester `data.status` :\n\n- `logged_in` : spectateur déjà inscrit, il est **connecté** (`token`, `user`) → ouvrir l'accueil.\n- `registration_required` : nouveau numéro (ou compte sans nom), **aucun compte n'est encore créé** ni connecté.\n  Garder `registration_token` (valable `registration_expires_in` secondes, une seule fois) → ouvrir l'écran\n  « Mes informations », puis `POST /auth/register/complete`.\n\nRéservé aux spectateurs : le personnel se connecte avec son mot de passe (`POST /auth/login`),\n403 `PASSWORD_LOGIN_REQUIRED` sinon.",
+                "summary": "Register / login OTP — 2. Vérifier le code",
                 "tags": [
-                    "Connexion par code SMS (spectateur)"
+                    "Register / login par OTP (spectateur)"
                 ],
                 "requestBody": {
                     "required": true,
@@ -195,12 +195,225 @@
                         "content": {
                             "application/json": {
                                 "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "object",
+                                                    "description": "Contenu de la réponse.",
+                                                    "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`registration_required` : numéro vérifié, compte à créer avec `POST /auth/register/complete`.",
+                                                            "const": "registration_required"
+                                                        },
+                                                        "registration_token": {
+                                                            "type": "string",
+                                                            "description": "Jeton d'inscription, à renvoyer à `POST /auth/register/complete`. Ce n'est pas un jeton de connexion."
+                                                        },
+                                                        "registration_expires_in": {
+                                                            "type": "integer",
+                                                            "description": "Validité du jeton d'inscription en secondes : au-delà, recommencer à `POST /auth/otp`.",
+                                                            "const": 900
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "description": "Numéro vérifié, au format international.",
+                                                            "examples": [
+                                                                "0707070707"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "status",
+                                                        "registration_token",
+                                                        "registration_expires_in",
+                                                        "phone"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "object",
+                                                    "description": "Contenu de la réponse.",
+                                                    "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                            "const": "logged_in"
+                                                        },
+                                                        "token": {
+                                                            "type": "string",
+                                                            "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
+                                                            "examples": [
+                                                                "253|Xy7…"
+                                                            ]
+                                                        },
+                                                        "token_type": {
+                                                            "type": "string",
+                                                            "description": "Toujours `Bearer`.",
+                                                            "const": "Bearer",
+                                                            "examples": [
+                                                                "Bearer"
+                                                            ]
+                                                        },
+                                                        "abilities": {
+                                                            "type": "array",
+                                                            "description": "Capacité du jeton : `customer`, `conveyor` ou `tech`.",
+                                                            "examples": [
+                                                                [
+                                                                    "customer"
+                                                                ]
+                                                            ],
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "customer"
+                                                                }
+                                                            ],
+                                                            "minItems": 1,
+                                                            "maxItems": 1
+                                                        },
+                                                        "next_step": {
+                                                            "type": "string",
+                                                            "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
+                                                            "enum": [
+                                                                "home",
+                                                                "complete_profile"
+                                                            ],
+                                                            "examples": [
+                                                                "home"
+                                                            ]
+                                                        },
+                                                        "is_new_account": {
+                                                            "type": "boolean",
+                                                            "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
+                                                            "examples": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "profile_completed": {
+                                                            "type": "boolean",
+                                                            "description": "`true` quand le prénom et le nom du spectateur sont enregistrés. Toujours `true` pour le personnel.",
+                                                            "examples": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "must_change_password": {
+                                                            "type": "boolean",
+                                                            "description": "`true` pour un membre du personnel qui doit remplacer le mot de passe remis par l’exploitation : ouvrir l’écran de changement (`POST /auth/password`).",
+                                                            "examples": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "user": {
+                                                            "$ref": "#/components/schemas/CustomerResource"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "status",
+                                                        "token",
+                                                        "token_type",
+                                                        "abilities",
+                                                        "next_step",
+                                                        "is_new_account",
+                                                        "profile_completed",
+                                                        "must_change_password",
+                                                        "user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Trop de requêtes. 10 vérifications par minute et par adresse IP. Chaque code accepte 5 essais. Limite générale : 300 appels par minute et par compte (600 par adresse IP sans connexion). Attendre la durée indiquée par l’en-tête `Retry-After` avant de réessayer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Message prêt à afficher.",
+                                            "examples": [
+                                                "Trop de tentatives. Veuillez réessayer dans 60 secondes."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Nombre de secondes à attendre avant de réessayer.",
+                                "schema": {
+                                    "type": "integer",
+                                    "examples": [
+                                        60
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/register/complete": {
+            "post": {
+                "operationId": "v1.auth.register.complete",
+                "description": "**Public — sans jeton.**\n\nAprès `POST /auth/verify` qui a répondu `registration_required`. Crée le compte avec le prénom, le nom et\nl'e-mail facultatif, puis **connecte automatiquement** le spectateur : même réponse qu'une connexion\n(`status: logged_in`, `token`, `user`). Jeton d'inscription inconnu, déjà utilisé ou expiré :\n422 `REGISTRATION_EXPIRED`, recommencer à `POST /auth/otp`.",
+                "summary": "Register / login OTP — 3. Enregistrer mes informations (nouveau spectateur)",
+                "tags": [
+                    "Register / login par OTP (spectateur)"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompleteRegistrationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
                                     "type": "object",
                                     "properties": {
                                         "data": {
                                             "type": "object",
                                             "description": "Contenu de la réponse.",
                                             "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                    "const": "logged_in"
+                                                },
                                                 "token": {
                                                     "type": "string",
                                                     "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -235,18 +448,18 @@
                                                 },
                                                 "next_step": {
                                                     "type": "string",
-                                                    "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                    "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                     "enum": [
                                                         "home",
                                                         "complete_profile"
                                                     ],
                                                     "examples": [
-                                                        "complete_profile"
+                                                        "home"
                                                     ]
                                                 },
                                                 "is_new_account": {
                                                     "type": "string",
-                                                    "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                    "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                     "examples": [
                                                         false
                                                     ]
@@ -270,6 +483,7 @@
                                                 }
                                             },
                                             "required": [
+                                                "status",
                                                 "token",
                                                 "token_type",
                                                 "abilities",
@@ -360,6 +574,11 @@
                                                     "type": "object",
                                                     "description": "Contenu de la réponse.",
                                                     "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                            "const": "logged_in"
+                                                        },
                                                         "token": {
                                                             "type": "string",
                                                             "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -394,18 +613,18 @@
                                                         },
                                                         "next_step": {
                                                             "type": "string",
-                                                            "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                            "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                             "enum": [
                                                                 "home",
                                                                 "complete_profile"
                                                             ],
                                                             "examples": [
-                                                                "complete_profile"
+                                                                "home"
                                                             ]
                                                         },
                                                         "is_new_account": {
                                                             "type": "boolean",
-                                                            "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                            "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                             "examples": [
                                                                 false
                                                             ]
@@ -429,6 +648,7 @@
                                                         }
                                                     },
                                                     "required": [
+                                                        "status",
                                                         "token",
                                                         "token_type",
                                                         "abilities",
@@ -451,6 +671,11 @@
                                                     "type": "object",
                                                     "description": "Contenu de la réponse.",
                                                     "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                            "const": "logged_in"
+                                                        },
                                                         "token": {
                                                             "type": "string",
                                                             "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -492,18 +717,18 @@
                                                         },
                                                         "next_step": {
                                                             "type": "string",
-                                                            "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                            "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                             "enum": [
                                                                 "change_password",
                                                                 "home"
                                                             ],
                                                             "examples": [
-                                                                "complete_profile"
+                                                                "home"
                                                             ]
                                                         },
                                                         "is_new_account": {
                                                             "type": "boolean",
-                                                            "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                            "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                             "examples": [
                                                                 false
                                                             ]
@@ -527,6 +752,7 @@
                                                         }
                                                     },
                                                     "required": [
+                                                        "status",
                                                         "token",
                                                         "token_type",
                                                         "abilities",
@@ -617,6 +843,11 @@
                                             "type": "object",
                                             "description": "Contenu de la réponse.",
                                             "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                    "const": "logged_in"
+                                                },
                                                 "token": {
                                                     "type": "string",
                                                     "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -651,18 +882,18 @@
                                                 },
                                                 "next_step": {
                                                     "type": "string",
-                                                    "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                    "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                     "enum": [
                                                         "home",
                                                         "complete_profile"
                                                     ],
                                                     "examples": [
-                                                        "complete_profile"
+                                                        "home"
                                                     ]
                                                 },
                                                 "is_new_account": {
                                                     "type": "string",
-                                                    "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                    "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                     "examples": [
                                                         false
                                                     ]
@@ -686,6 +917,7 @@
                                                 }
                                             },
                                             "required": [
+                                                "status",
                                                 "token",
                                                 "token_type",
                                                 "abilities",
@@ -776,6 +1008,11 @@
                                                     "type": "object",
                                                     "description": "Contenu de la réponse.",
                                                     "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                            "const": "logged_in"
+                                                        },
                                                         "token": {
                                                             "type": "string",
                                                             "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -817,18 +1054,18 @@
                                                         },
                                                         "next_step": {
                                                             "type": "string",
-                                                            "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                            "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                             "enum": [
                                                                 "change_password",
                                                                 "home"
                                                             ],
                                                             "examples": [
-                                                                "complete_profile"
+                                                                "home"
                                                             ]
                                                         },
                                                         "is_new_account": {
                                                             "type": "boolean",
-                                                            "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                            "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                             "examples": [
                                                                 false
                                                             ]
@@ -852,6 +1089,7 @@
                                                         }
                                                     },
                                                     "required": [
+                                                        "status",
                                                         "token",
                                                         "token_type",
                                                         "abilities",
@@ -874,6 +1112,11 @@
                                                     "type": "object",
                                                     "description": "Contenu de la réponse.",
                                                     "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "description": "`logged_in` : l'utilisateur est connecté, garder `token`.",
+                                                            "const": "logged_in"
+                                                        },
                                                         "token": {
                                                             "type": "string",
                                                             "description": "Jeton à envoyer dans `Authorization: Bearer <jeton>`. À conserver dans le stockage sécurisé du téléphone.",
@@ -908,18 +1151,18 @@
                                                         },
                                                         "next_step": {
                                                             "type": "string",
-                                                            "description": "Écran à ouvrir après la connexion : `complete_profile` (« Mes informations », puis `PUT /me/profile`), `change_password` (personnel, `POST /auth/password`) ou `home` (accueil).",
+                                                            "description": "Écran à ouvrir après la connexion : `home` (accueil), `change_password` (personnel, `POST /auth/password`) ou `complete_profile` (spectateur connecté par mot de passe sans nom : `PUT /me/profile`).",
                                                             "enum": [
                                                                 "home",
                                                                 "complete_profile"
                                                             ],
                                                             "examples": [
-                                                                "complete_profile"
+                                                                "home"
                                                             ]
                                                         },
                                                         "is_new_account": {
                                                             "type": "boolean",
-                                                            "description": "`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).",
+                                                            "description": "`true` quand le compte spectateur vient d’être créé (`POST /auth/register/complete`).",
                                                             "examples": [
                                                                 false
                                                             ]
@@ -943,6 +1186,7 @@
                                                         }
                                                     },
                                                     "required": [
+                                                        "status",
                                                         "token",
                                                         "token_type",
                                                         "abilities",
@@ -1370,8 +1614,8 @@
         "/me/profile": {
             "put": {
                 "operationId": "v1.me.profile",
-                "description": "**App spectateur — jeton de capacité `customer`.**\n\nÉcran « Mes informations », ouvert après `POST /auth/verify` quand `next_step` vaut `complete_profile`, puis\ndepuis le profil. Le prénom et le nom sont obligatoires, l'e-mail facultatif (envoyer `null` pour l'effacer).\nLe numéro de téléphone ne se modifie pas : c'est l'identifiant du compte. Réponse : le profil à jour, avec\n`profile_completed: true`.",
-                "summary": "Enregistrer ou modifier mes informations (spectateur)",
+                "description": "**App spectateur — jeton de capacité `customer`.**\n\nDepuis le profil, une fois connecté. À l'inscription, les informations s'envoient avec\n`POST /auth/register/complete`. Le prénom et le nom sont obligatoires, l'e-mail facultatif (envoyer `null` pour l'effacer).\nLe numéro de téléphone ne se modifie pas : c'est l'identifiant du compte. Réponse : le profil à jour, avec\n`profile_completed: true`.",
+                "summary": "Modifier mes informations (spectateur)",
                 "tags": [
                     "Mon compte"
                 ],
@@ -7983,6 +8227,64 @@
                     "resolved_at"
                 ],
                 "title": "ComplaintResource"
+            },
+            "CompleteRegistrationRequest": {
+                "type": "object",
+                "description": "Création du compte d'un nouveau spectateur après la vérification de son code SMS.",
+                "properties": {
+                    "registration_token": {
+                        "type": "string",
+                        "description": "Jeton d’inscription reçu de `POST /auth/verify` (`status: registration_required`).",
+                        "examples": [
+                            "q8Vn…"
+                        ],
+                        "minLength": 64,
+                        "maxLength": 64
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "description": "Prénom.",
+                        "examples": [
+                            "Awa"
+                        ],
+                        "maxLength": 80
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "description": "Nom.",
+                        "examples": [
+                            "Traoré"
+                        ],
+                        "maxLength": 80
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "description": "Facultatif : adresse e-mail du spectateur.",
+                        "examples": [
+                            "awa.kone@exemple.ci"
+                        ],
+                        "maxLength": 150
+                    },
+                    "device_name": {
+                        "type": "string",
+                        "description": "Nom de l’appareil, affiché dans la liste des connexions.",
+                        "examples": [
+                            "Tecno Spark 10"
+                        ],
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "registration_token",
+                    "first_name",
+                    "last_name",
+                    "device_name"
+                ],
+                "title": "CompleteRegistrationRequest"
             },
             "CreateOrderRequest": {
                 "type": "object",
