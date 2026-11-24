@@ -101,6 +101,7 @@ return [
         'ChangePasswordRequest.password' => ['Nouveau mot de passe : 8 caractères au moins, avec des lettres et des chiffres, différent de l’actuel.', 'Plateau2027'],
         'password_confirmation' => ['Le même mot de passe, saisi une seconde fois.', 'Abidjan2026'],
         'current_password' => ['Mot de passe actuel (pour le personnel : celui remis par l’exploitation).', 'Abidjan2026'],
+        'is_new_account' => ['`true` quand le compte spectateur vient d’être créé : afficher l’écran de profil (nom, prénom).', false],
         'must_change_password' => ['`true` pour un membre du personnel qui doit remplacer le mot de passe remis par l’exploitation : ouvrir l’écran de changement (`POST /auth/password`).', false],
         'expires_in' => ['Validité du code en secondes.', 300],
         'resend_in' => ['Délai en secondes avant de pouvoir redemander un code : à afficher en compte à rebours.', 60],

@@ -21,12 +21,12 @@ trait IssuesAccessTokens
         return Staff::query()->withoutGlobalScopes()->where('phone', $phone->e164)->first();
     }
 
-    protected function customerToken(Customer $customer, string $deviceName): JsonResponse
+    protected function customerToken(Customer $customer, string $deviceName, bool $isNewAccount = false): JsonResponse
     {
         $customer->forceFill(['last_login_at' => now()])->save();
         $abilities = [TokenAbility::Customer->value];
 
-        return $this->tokenResponse($customer->createToken($deviceName, $abilities)->plainTextToken, $abilities, new CustomerResource($customer), false);
+        return $this->tokenResponse($customer->createToken($deviceName, $abilities)->plainTextToken, $abilities, new CustomerResource($customer), false, $isNewAccount);
     }
 
     protected function staffToken(?Staff $staff, string $deviceName): JsonResponse
@@ -44,19 +44,21 @@ trait IssuesAccessTokens
             [$ability->value],
             new StaffResource($staff->load('company')),
             $staff->must_change_password,
+            false,
         );
     }
 
     /**
      * @param  list<string>  $abilities
      */
-    private function tokenResponse(string $token, array $abilities, CustomerResource|StaffResource $user, bool $mustChangePassword): JsonResponse
+    private function tokenResponse(string $token, array $abilities, CustomerResource|StaffResource $user, bool $mustChangePassword, bool $isNewAccount): JsonResponse
     {
         return response()->json([
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'abilities' => $abilities,
+                'is_new_account' => $isNewAccount,
                 'must_change_password' => $mustChangePassword,
                 'user' => $user,
             ],

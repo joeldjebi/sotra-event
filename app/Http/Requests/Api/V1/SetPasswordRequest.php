@@ -16,8 +16,6 @@ class SetPasswordRequest extends VerifyOtpRequest
     {
         return array_merge(parent::rules(), [
             'password' => ['required', 'string', 'confirmed', self::passwordRule()],
-            'first_name' => ['nullable', 'string', 'max:80'],
-            'last_name' => ['nullable', 'string', 'max:80'],
         ]);
     }
 

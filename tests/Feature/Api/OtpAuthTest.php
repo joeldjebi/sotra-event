@@ -104,25 +104,43 @@ it('impose un délai avant de renvoyer un code', function () {
     requestOtp('0707080839')->assertStatus(202);
 });
 
-it('connecte un convoyeur avec la capacité conveyor', function () {
-    $staff = Staff::factory()->role(StaffRole::Conveyor)->create(['phone' => '+2250700000001']);
+it('réserve la connexion par code au spectateur : le personnel passe par son mot de passe', function () {
+    Staff::factory()->role(StaffRole::Conveyor)->create(['phone' => '+2250700000001']);
 
     requestOtp('0700000001', 'staff')->assertStatus(202);
+    $code = lastOtpSentTo('+2250700000001');
 
-    verifyOtp('0700000001', lastOtpSentTo('+2250700000001'), 'staff')
-        ->assertOk()
-        ->assertJsonPath('data.abilities', ['conveyor'])
-        ->assertJsonPath('data.user.short_name', $staff->shortName())
-        ->assertJsonPath('data.user.company.id', $staff->company_id);
+    verifyOtp('0700000001', $code, 'staff')
+        ->assertStatus(403)
+        ->assertJsonPath('code', 'PASSWORD_LOGIN_REQUIRED');
+
+    expect(OtpCode::query()->whereNull('consumed_at')->count())->toBe(1);
 });
 
-it('connecte un technicien avec la capacité tech', function () {
-    Staff::factory()->role(StaffRole::Technician)->create(['phone' => '+2250700000003']);
-    requestOtp('0700000003', 'staff');
+it('signale un nouveau compte et enregistre le nom facultatif, sans écraser un nom existant', function () {
+    requestOtp('0707080839');
 
-    verifyOtp('0700000003', lastOtpSentTo('+2250700000003'), 'staff')
+    $this->postJson('/api/v1/auth/verify', [
+        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
+        'device_name' => 'Pixel 8', 'first_name' => 'Awa', 'last_name' => 'Koné',
+    ])
         ->assertOk()
-        ->assertJsonPath('data.abilities', ['tech']);
+        ->assertJsonPath('data.is_new_account', true)
+        ->assertJsonPath('data.user.first_name', 'Awa')
+        ->assertJsonPath('data.user.last_name', 'Koné');
+
+    $this->travel(61)->seconds();
+    requestOtp('0707080839');
+
+    $this->postJson('/api/v1/auth/verify', [
+        'phone' => '0707080839', 'audience' => 'customer', 'code' => lastOtpSentTo('+2250707080839'),
+        'device_name' => 'Pixel 8', 'first_name' => 'Autre',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.is_new_account', false)
+        ->assertJsonPath('data.user.first_name', 'Awa');
+
+    expect(Customer::query()->count())->toBe(1);
 });
 
 it('n\'envoie pas de code au personnel inconnu, inactif ou chauffeur, sans le révéler', function (?Closure $makeStaff) {

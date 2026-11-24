@@ -81,7 +81,7 @@ class PasswordController extends Controller
             'last_name' => $request->filled('last_name') ? $request->string('last_name')->trim()->toString() : null,
         ], fn (?string $value): bool => $value !== null))->save();
 
-        return $this->customerToken($customer, $request->string('device_name')->toString());
+        return $this->customerToken($customer, $request->string('device_name')->toString(), $customer->wasRecentlyCreated);
     }
 
     /**
