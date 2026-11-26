@@ -8,15 +8,17 @@ use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\Company;
 use App\Models\CompanyLine;
 use App\Models\Scopes\CompanyScope;
+use App\Models\Venue;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
 
 /**
- * Espace compagnie · Exploitation · Lignes par défaut : dans chacune des 13 communes d'Abidjan, le lieu
- * d'embarquement habituel et le nombre de bus par offre, plus les places par bus de chaque offre.
- * Une compagnie qui a défini ses lignes accepte d'office les événements qu'on lui confie.
+ * Espace compagnie · Exploitation · Lignes par défaut : dans les 13 communes d'Abidjan, les lieux d'embarquement
+ * habituels (plusieurs par commune), chacun vers une destination (un lieu d'événement, ou tous les lieux), avec
+ * ses bus par offre ; plus les places par bus de chaque offre. Une compagnie qui a des lignes vers le lieu d'un
+ * événement accepte d'office cet événement.
  */
 class DefaultLines extends Component
 {
@@ -24,7 +26,12 @@ class DefaultLines extends Component
 
     public bool $showForm = false;
 
+    public ?int $editingId = null;
+
     public string $commune_code = '';
+
+    /** Destination : id du lieu d'événement ('' : tous les lieux). */
+    public string $venue_id = '';
 
     public string $place = '';
 
@@ -57,22 +64,28 @@ class DefaultLines extends Component
         }
     }
 
-    public function edit(string $communeCode): void
+    public function create(string $communeCode = ''): void
     {
         $this->authorizeManage();
-        abort_unless(array_key_exists($communeCode, $this->communes()), 404);
-
-        $line = CompanyLine::query()->where('commune_code', $communeCode)->first();
+        $this->reset(['editingId', 'commune_code', 'venue_id', 'place', 'latitude', 'longitude']);
+        $this->commune_code = array_key_exists($communeCode, $this->communes()) ? $communeCode : '';
+        $this->buses = collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => '0'])->all();
         $this->resetValidation();
-        $this->commune_code = $communeCode;
-        $this->place = $line->place ?? '';
-        $this->latitude = $line ? (string) $line->location->getLatitude() : '';
-        $this->longitude = $line ? (string) $line->location->getLongitude() : '';
+        $this->showForm = true;
+    }
 
-        foreach (Offer::cases() as $offer) {
-            $this->buses[$offer->value] = (string) ($line?->busesFor($offer) ?? 0);
-        }
-
+    public function edit(int $lineId): void
+    {
+        $this->authorizeManage();
+        $line = CompanyLine::query()->findOrFail($lineId);
+        $this->resetValidation();
+        $this->editingId = $line->id;
+        $this->commune_code = $line->commune_code;
+        $this->venue_id = (string) $line->venue_id;
+        $this->place = $line->place;
+        $this->latitude = (string) $line->location->getLatitude();
+        $this->longitude = (string) $line->location->getLongitude();
+        $this->buses = collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => (string) $line->busesFor($offer)])->all();
         $this->showForm = true;
     }
 
@@ -81,33 +94,41 @@ class DefaultLines extends Component
         $this->authorizeManage();
         $this->validate([
             'commune_code' => ['required', Rule::in(array_keys($this->communes()))],
-            'place' => ['required', 'string', 'max:120'],
+            'venue_id' => ['nullable', Rule::exists('venues', 'id')],
+            'place' => [
+                'required', 'string', 'max:120',
+                Rule::unique('company_lines', 'place')
+                    ->where('company_id', CompanyScope::currentCompanyId())
+                    ->where('commune_code', $this->commune_code)
+                    ->where(fn ($query) => $this->venue_id === '' ? $query->whereNull('venue_id') : $query->where('venue_id', (int) $this->venue_id))
+                    ->ignore($this->editingId),
+            ],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'buses' => ['required', 'array'],
             'buses.*' => ['required', 'integer', 'between:0,200'],
-        ], attributes: ['place' => 'lieu d\'embarquement', 'buses.*' => 'nombre de bus']);
+        ], [
+            'place.unique' => 'Cette ligne existe déjà (même lieu d\'embarquement et même destination).',
+        ], ['commune_code' => 'commune', 'venue_id' => 'destination', 'place' => 'lieu d\'embarquement', 'buses.*' => 'nombre de bus']);
 
-        $busCounts = collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => (int) ($this->buses[$offer->value] ?? 0)])->all();
-
-        CompanyLine::query()->updateOrCreate(
-            ['company_id' => CompanyScope::currentCompanyId(), 'commune_code' => $this->commune_code],
-            [
-                'place' => $this->place,
-                'location' => Point::makeGeodetic((float) $this->latitude, (float) $this->longitude),
-                'bus_counts' => $busCounts,
-            ],
-        );
+        $line = CompanyLine::query()->updateOrCreate(['id' => $this->editingId], [
+            'commune_code' => $this->commune_code,
+            'venue_id' => $this->venue_id !== '' ? (int) $this->venue_id : null,
+            'place' => $this->place,
+            'location' => Point::makeGeodetic((float) $this->latitude, (float) $this->longitude),
+            'bus_counts' => collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => (int) ($this->buses[$offer->value] ?? 0)])->all(),
+        ]);
 
         $this->showForm = false;
-        $this->notify("Ligne de {$this->communes()[$this->commune_code]} enregistrée.");
+        $this->notify("Ligne {$line->label()} enregistrée.");
     }
 
-    public function delete(string $communeCode): void
+    public function delete(int $lineId): void
     {
         $this->authorizeManage();
-        CompanyLine::query()->where('commune_code', $communeCode)->firstOrFail()->delete();
-        $this->notify('Ligne supprimée.');
+        $line = CompanyLine::query()->findOrFail($lineId);
+        $line->delete();
+        $this->notify("Ligne {$line->label()} supprimée.");
     }
 
     public function saveSeats(): void
@@ -140,13 +161,15 @@ class DefaultLines extends Component
 
     public function render(): View
     {
-        $lines = CompanyLine::query()->get()->keyBy('commune_code');
+        $lines = CompanyLine::query()->with('venue')->orderBy('place')->get()->groupBy('commune_code');
 
         return view('livewire.company.default-lines', [
             'communes' => $this->communes(),
-            'lines' => $lines,
+            'linesByCommune' => $lines,
+            'venues' => Venue::query()->orderBy('name')->pluck('name', 'id')->mapWithKeys(fn (string $name, int $id) => [(string) $id => $name])->all(),
             'offers' => Offer::cases(),
-            'totals' => collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => $lines->sum(fn (CompanyLine $line) => $line->busesFor($offer))])->all(),
+            'totals' => collect(Offer::cases())->mapWithKeys(fn (Offer $offer) => [$offer->value => $lines->flatten()->sum(fn (CompanyLine $line) => $line->busesFor($offer))])->all(),
+            'lineCount' => $lines->flatten()->count(),
         ]);
     }
 }

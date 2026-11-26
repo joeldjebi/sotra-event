@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $event_id
+ * @property int|null $company_line_id ligne par défaut de la compagnie dont le point est issu
  * @property string $commune
  * @property string $commune_code
  * @property string $place
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $cancellation_reason
  */
 #[Fillable([
-    'event_id', 'commune', 'commune_code', 'place', 'location', 'distance_km', 'zone', 'zone_forced',
+    'event_id', 'company_line_id', 'commune', 'commune_code', 'place', 'location', 'distance_km', 'zone', 'zone_forced',
     'zone_justification', 'departure_at', 'return_departure_at', 'travel_minutes', 'position', 'cancelled_at', 'cancellation_reason',
 ])]
 class BoardingPoint extends Model

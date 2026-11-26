@@ -7,8 +7,8 @@
             </div>
             @unless ($locked)
                 <div class="flex flex-wrap gap-2">
-                    @if ($defaultLinesCount > 0)
-                        <x-ui.button variant="secondary" type="button" wire:click="importDefaultLines" icon="route">Reprendre les lignes de {{ $event->company->name }} ({{ $defaultLinesCount }})</x-ui.button>
+                    @if ($servingLines !== [])
+                        <x-ui.button variant="secondary" type="button" wire:click="importDefaultLines" icon="route">Reprendre les lignes de {{ $event->company->name }} ({{ count($servingLines) }})</x-ui.button>
                     @endif
                     <x-ui.button type="button" wire:click="create" icon="map-pin">Ajouter un point</x-ui.button>
                 </div>
@@ -61,7 +61,10 @@
 
     <x-ui.sheet model="showForm" width="max-w-2xl" :title="$editingId ? 'Modifier le point' : 'Nouveau point d\'embarquement'" subtitle="La distance au lieu est calculée à l'enregistrement.">
         <form id="point-form" wire:submit="save" class="space-y-4">
-            <x-ui.select label="Commune" name="commune_code" wire:model.live="commune_code" :options="$communes" placeholder="Choisir" />
+            @if ($servingLines !== [])
+                <x-ui.select label="Lieu habituel de {{ $event->company->name }}" name="company_line_id" wire:model.live="company_line_id" :options="$servingLines" placeholder="Aucun : saisir un autre lieu" />
+            @endif
+            <x-ui.select label="Commune" name="commune_code" wire:model="commune_code" :options="$communes" placeholder="Choisir" />
             <x-ui.input label="Lieu de montée" name="place" wire:model="place" placeholder="Gare Siporex" />
             <x-ui.location-picker lat="latitude" lng="longitude" place="place" />
             <div class="grid gap-4 sm:grid-cols-2">

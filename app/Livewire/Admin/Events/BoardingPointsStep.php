@@ -5,10 +5,12 @@ namespace App\Livewire\Admin\Events;
 use App\Enums\Permission;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\BoardingPoint;
+use App\Models\CompanyLine;
 use App\Models\Event;
 use App\Services\CompanyDefaultLines;
 use App\Services\ZoneResolver;
 use Clickbar\Magellan\Data\Geometries\Point;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +30,9 @@ class BoardingPointsStep extends Component
     public bool $showForm = false;
 
     public ?int $editingId = null;
+
+    /** Ligne par défaut de la compagnie dont le point est issu ('' : point saisi librement). */
+    public string $company_line_id = '';
 
     public string $commune_code = '';
 
@@ -62,7 +67,7 @@ class BoardingPointsStep extends Component
     public function create(): void
     {
         $this->ensureEditable();
-        $this->reset(['editingId', 'commune_code', 'place', 'latitude', 'longitude', 'departure_time', 'return_time', 'travel_minutes', 'zone_forced', 'forced_zone', 'zone_justification']);
+        $this->reset(['editingId', 'company_line_id', 'commune_code', 'place', 'latitude', 'longitude', 'departure_time', 'return_time', 'travel_minutes', 'zone_forced', 'forced_zone', 'zone_justification']);
         $this->resetValidation();
         $this->showForm = true;
     }
@@ -73,6 +78,7 @@ class BoardingPointsStep extends Component
         $point = $this->event->boardingPoints()->findOrFail($pointId);
         $this->resetValidation();
         $this->editingId = $point->id;
+        $this->company_line_id = (string) $point->company_line_id;
         $this->commune_code = $point->commune_code;
         $this->place = $point->place;
         $this->latitude = (string) $point->location->getLatitude();
@@ -87,21 +93,22 @@ class BoardingPointsStep extends Component
     }
 
     /**
-     * Nouveau point : reprend le lieu habituel de la compagnie dans la commune choisie, s'il est défini.
+     * Lieu habituel choisi : commune, nom et position repris de la ligne de la compagnie (modifiables ensuite).
      */
-    public function updatedCommuneCode(string $communeCode): void
+    public function updatedCompanyLineId(string $lineId): void
     {
-        if ($this->editingId !== null) {
+        $line = $lineId === '' ? null : $this->servingLines()->firstWhere('id', (int) $lineId);
+
+        if ($line === null) {
+            $this->company_line_id = '';
+
             return;
         }
 
-        $line = $this->event->company->lines()->where('commune_code', $communeCode)->first();
-
-        if ($line !== null) {
-            $this->place = $line->place;
-            $this->latitude = (string) $line->location->getLatitude();
-            $this->longitude = (string) $line->location->getLongitude();
-        }
+        $this->commune_code = $line->commune_code;
+        $this->place = $line->place;
+        $this->latitude = (string) $line->location->getLatitude();
+        $this->longitude = (string) $line->location->getLongitude();
     }
 
     /**
@@ -114,7 +121,7 @@ class BoardingPointsStep extends Component
         $this->dispatch('event-updated');
         $this->notify($created > 0
             ? "{$created} point(s) repris des lignes de {$this->event->company->name}. Vérifiez les horaires."
-            : 'Toutes les communes des lignes par défaut ont déjà un point.', $created > 0 ? 'success' : 'info');
+            : 'Toutes les lignes de la compagnie pour ce lieu sont déjà reprises.', $created > 0 ? 'success' : 'info');
     }
 
     public function save(ZoneResolver $zones): void
@@ -122,6 +129,7 @@ class BoardingPointsStep extends Component
         $this->ensureEditable();
 
         $this->validate([
+            'company_line_id' => ['nullable', Rule::in($this->servingLines()->pluck('id')->map(fn (int $id) => (string) $id)->all())],
             'commune_code' => ['required', Rule::in(array_keys((array) config('eventtrans.communes')))],
             'place' => ['required', 'string', 'max:120'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -133,7 +141,7 @@ class BoardingPointsStep extends Component
             'forced_zone' => [Rule::requiredIf($this->zone_forced), Rule::in(array_map('strval', ZoneResolver::zones()))],
             'zone_justification' => [Rule::requiredIf($this->zone_forced), 'nullable', 'string', 'max:255'],
         ], attributes: [
-            'commune_code' => 'commune', 'place' => 'lieu de montée', 'departure_time' => 'départ aller',
+            'company_line_id' => 'lieu habituel', 'commune_code' => 'commune', 'place' => 'lieu de montée', 'departure_time' => 'départ aller',
             'return_time' => 'départ retour', 'travel_minutes' => 'durée de trajet', 'zone_justification' => 'justification',
         ]);
 
@@ -143,6 +151,7 @@ class BoardingPointsStep extends Component
         $distance = $zones->distanceKm($this->event->venue->location, $location);
 
         $point = BoardingPoint::query()->updateOrCreate(['id' => $this->editingId, 'event_id' => $this->event->id], [
+            'company_line_id' => $this->company_line_id !== '' ? (int) $this->company_line_id : null,
             'commune' => config('eventtrans.communes')[$this->commune_code],
             'commune_code' => $this->commune_code,
             'place' => $this->place,
@@ -203,6 +212,16 @@ class BoardingPointsStep extends Component
         return [$departureAt, $returnAt];
     }
 
+    /**
+     * Lignes de la compagnie qui desservent le lieu de l'événement.
+     *
+     * @return Collection<int, CompanyLine>
+     */
+    private function servingLines(): Collection
+    {
+        return once(fn () => $this->event->company->lines()->serving($this->event->venue_id)->orderBy('commune_code')->orderBy('place')->get());
+    }
+
     private function ensureEditable(): void
     {
         abort_unless($this->event->status->isEditable(), 403, 'Événement verrouillé : il a été proposé à la compagnie.');
@@ -215,7 +234,7 @@ class BoardingPointsStep extends Component
             'communes' => collect((array) config('eventtrans.communes'))->mapWithKeys(fn ($name, $code) => [$code => "{$name} ({$code})"])->all(),
             'zoneOptions' => collect(ZoneResolver::zones())->mapWithKeys(fn (int $zone) => [(string) $zone => "Zone {$zone} · ".ZoneResolver::zoneLabel($zone)])->all(),
             'locked' => ! $this->event->status->isEditable(),
-            'defaultLinesCount' => $this->event->company->lines()->count(),
+            'servingLines' => $this->servingLines()->mapWithKeys(fn (CompanyLine $line) => [(string) $line->id => $line->label()])->all(),
             'leadMinutes' => (int) config('eventtrans.events.boarding_lead_minutes'),
         ]);
     }

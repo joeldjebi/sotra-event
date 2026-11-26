@@ -183,7 +183,7 @@ class EventReadiness
             if (! $automatic) {
                 $problems[] = "{$offer->offer->label()} : la compagnie doit indiquer le nombre de bus et de places par bus (RG-08).";
             } elseif ($this->defaultLines->capacityFor($event, $offer->offer) === null) {
-                $problems[] = "{$offer->offer->label()} : aucun bus dans les lignes par défaut de la compagnie pour les communes de l'événement.";
+                $problems[] = "{$offer->offer->label()} : aucun bus dans les lignes de la compagnie reprises comme points d'embarquement.";
             }
         }
 

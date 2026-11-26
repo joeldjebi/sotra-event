@@ -13,6 +13,7 @@ use App\Models\Company;
 use App\Models\CompanyLine;
 use App\Models\Event;
 use App\Models\Promoter;
+use App\Models\Venue;
 use App\Services\CompanyDefaultLines;
 use App\Services\EventReadiness;
 use Clickbar\Magellan\Data\Geometries\Point;
@@ -50,59 +51,95 @@ function prepareEventWithoutPoints(Event $event, array $offers = [Offer::Standar
     ]);
 }
 
-it('permet à l\'exploitation de la compagnie de définir une ligne et les places par bus', function () {
+it('permet plusieurs lieux d\'embarquement par commune, chacun vers une destination', function () {
     $this->actingAs(userWithRole(Role::Operations, ['company_id' => $this->company->id]));
     CompanyLine::factory()->create(['commune_code' => 'ABO', 'place' => 'Gare d\'une autre compagnie']);
 
-    Livewire::test(DefaultLines::class)
+    $component = Livewire::test(DefaultLines::class)
         ->assertSee('Abobo')
-        ->assertSee('Yopougon')
         ->assertDontSee('Gare d\'une autre compagnie')
-        ->call('edit', 'YOP')
+        ->call('create', 'YOP')
+        ->assertSet('commune_code', 'YOP')
         ->set('place', 'Gare Siporex')
         ->set('latitude', '5.34')
         ->set('longitude', '-4.08')
         ->set('buses.standard', '6')
         ->set('buses.premium', '2')
-        ->set('buses.gold', '0')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->call('create', 'YOP')
+        ->set('venue_id', (string) $this->event->venue_id)
+        ->set('place', 'Carrefour Zone industrielle')
+        ->set('latitude', '5.36')
+        ->set('longitude', '-4.09')
+        ->set('buses.standard', '3')
         ->call('save')
         ->assertHasNoErrors()
         ->set('seats.premium', '40')
         ->call('saveSeats')
         ->assertHasNoErrors();
 
-    $line = CompanyLine::query()->where('company_id', $this->company->id)->sole();
+    $lines = CompanyLine::query()->where('company_id', $this->company->id)->orderBy('id')->get();
 
-    expect($line->commune_code)->toBe('YOP')
-        ->and($line->place)->toBe('Gare Siporex')
-        ->and($line->busesFor(Offer::Standard))->toBe(6)
-        ->and($line->busesFor(Offer::Premium))->toBe(2)
+    expect($lines)->toHaveCount(2)
+        ->and($lines->pluck('commune_code')->unique()->all())->toBe(['YOP'])
+        ->and($lines[0]->venue_id)->toBeNull()
+        ->and($lines[1]->venue_id)->toBe($this->event->venue_id)
+        ->and($lines[0]->busesFor(Offer::Premium))->toBe(2)
+        ->and($lines[1]->busesFor(Offer::Standard))->toBe(3)
         ->and($this->company->fresh()->seatsPerBus(Offer::Premium))->toBe(40)
         ->and($this->company->fresh()->seatsPerBus(Offer::Standard))->toBe(50);
+
+    $component->call('edit', $lines[0]->id)
+        ->set('buses.standard', '8')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->call('create', 'YOP')
+        ->set('place', 'Gare Siporex')
+        ->set('latitude', '5.34')
+        ->set('longitude', '-4.08')
+        ->call('save')
+        ->assertHasErrors(['place' => 'unique']);
+
+    expect($lines[0]->fresh()->busesFor(Offer::Standard))->toBe(8);
 });
 
-it('refuse une commune hors des 13 communes et la saisie sans droit de gestion', function () {
+it('refuse une commune hors des 13 communes, la ligne d\'une autre compagnie et la saisie sans droit', function () {
     $this->actingAs(userWithRole(Role::Operations, ['company_id' => $this->company->id]));
-    Livewire::test(DefaultLines::class)->call('edit', 'XXX')->assertNotFound();
+    $foreign = CompanyLine::factory()->create();
+
+    Livewire::test(DefaultLines::class)
+        ->call('create', 'XXX')
+        ->assertSet('commune_code', '')
+        ->set('place', 'Gare')
+        ->set('latitude', '5.34')
+        ->set('longitude', '-4.08')
+        ->call('save')
+        ->assertHasErrors(['commune_code' => 'required']);
+
+    Livewire::test(DefaultLines::class)->call('edit', $foreign->id)->assertNotFound();
 
     $this->actingAs(userWithRole(Role::Commercial, ['company_id' => $this->company->id]));
     Livewire::test(DefaultLines::class)->assertForbidden();
 });
 
-it('reprend les lignes de la compagnie comme points d\'embarquement, avec des horaires valides', function () {
+it('reprend les lignes vers le lieu de l\'événement comme points d\'embarquement, avec des horaires valides', function () {
     CompanyLine::factory()->for($this->company)->create(['commune_code' => 'YOP', 'place' => 'Gare Siporex']);
+    CompanyLine::factory()->for($this->company)->create(['commune_code' => 'YOP', 'venue_id' => $this->event->venue_id, 'place' => 'Carrefour Zone industrielle', 'location' => Point::makeGeodetic(5.36, -4.09)]);
     CompanyLine::factory()->for($this->company)->create(['commune_code' => 'ABO', 'place' => 'Gare d\'Abobo', 'location' => Point::makeGeodetic(5.42, -4.02)]);
+    CompanyLine::factory()->for($this->company)->create(['commune_code' => 'COC', 'venue_id' => Venue::factory(), 'place' => 'Vers un autre lieu']);
     $this->actingAs(userWithRole(Role::Operator));
 
     Livewire::test(BoardingPointsStep::class, ['event' => $this->event])
-        ->assertSee('Reprendre les lignes de '.$this->company->name)
+        ->assertSee('Reprendre les lignes de '.$this->company->name.' (3)')
         ->call('importDefaultLines')
         ->call('importDefaultLines');
 
-    $points = $this->event->boardingPoints()->orderBy('commune_code')->get();
+    $points = $this->event->boardingPoints()->orderBy('commune_code')->orderBy('place')->get();
 
-    expect($points->pluck('commune_code')->all())->toBe(['ABO', 'YOP'])
-        ->and($points->firstWhere('commune_code', 'YOP')->place)->toBe('Gare Siporex');
+    expect($points->map(fn ($point) => "{$point->commune_code} {$point->place}")->all())
+        ->toBe(['ABO Gare d\'Abobo', 'YOP Carrefour Zone industrielle', 'YOP Gare Siporex'])
+        ->and($points->pluck('company_line_id')->filter())->toHaveCount(3);
 
     foreach ($points as $point) {
         expect($point->departure_at->lt($this->event->starts_at))->toBeTrue()
@@ -111,17 +148,29 @@ it('reprend les lignes de la compagnie comme points d\'embarquement, avec des ho
     }
 });
 
-it('pré-remplit le lieu habituel quand l\'admin choisit une commune desservie', function () {
-    CompanyLine::factory()->for($this->company)->create(['commune_code' => 'YOP', 'place' => 'Gare Siporex', 'location' => Point::makeGeodetic(5.34, -4.08)]);
+it('reprend un lieu habituel choisi dans le formulaire et le rattache à sa ligne', function () {
+    $line = CompanyLine::factory()->for($this->company)->create(['commune_code' => 'YOP', 'place' => 'Gare Siporex', 'location' => Point::makeGeodetic(5.34, -4.08)]);
     $this->actingAs(userWithRole(Role::Operator));
 
     Livewire::test(BoardingPointsStep::class, ['event' => $this->event])
         ->call('create')
-        ->set('commune_code', 'YOP')
+        ->set('company_line_id', (string) $line->id)
+        ->assertSet('commune_code', 'YOP')
         ->assertSet('place', 'Gare Siporex')
         ->assertSet('latitude', '5.34')
-        ->set('commune_code', 'COC')
-        ->assertSet('place', 'Gare Siporex');
+        ->set('departure_time', '16:00')
+        ->set('return_time', '23:30')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($this->event->boardingPoints()->sole()->company_line_id)->toBe($line->id);
+});
+
+it('n\'accepte pas d\'office quand les lignes de la compagnie vont vers d\'autres lieux', function () {
+    CompanyLine::factory()->for($this->company)->create(['venue_id' => Venue::factory()]);
+
+    expect(app(CompanyDefaultLines::class)->acceptsAutomatically($this->event))->toBeFalse()
+        ->and(app(EventReadiness::class)->checks($this->event)['acceptance']['ok'])->toBeFalse();
 });
 
 it('coche d\'office l\'acceptation et la capacité, puis valide l\'événement en « accepté »', function () {
@@ -163,7 +212,7 @@ it('signale une offre sans bus dans les lignes des communes de l\'événement', 
     $capacity = app(EventReadiness::class)->checks($this->event->fresh())['capacity'];
 
     expect($capacity['ok'])->toBeFalse()
-        ->and($capacity['problems'])->toBe(['Gold : aucun bus dans les lignes par défaut de la compagnie pour les communes de l\'événement.']);
+        ->and($capacity['problems'])->toBe(['Gold : aucun bus dans les lignes de la compagnie reprises comme points d\'embarquement.']);
 });
 
 it('garde la proposition et la négociation pour une compagnie sans lignes par défaut', function () {

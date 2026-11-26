@@ -11,9 +11,10 @@ use Illuminate\Support\Collection;
 
 /**
  * Lignes par défaut d'une compagnie appliquées à un événement :
- * - acceptation d'office quand la compagnie a défini ses lignes ;
- * - capacité par offre = somme des bus des communes desservies × places par bus de l'offre (RG-08) ;
- * - points d'embarquement repris des lieux habituels de la compagnie.
+ * - lignes applicables : celles qui vont au lieu de l'événement et celles sans destination précise ;
+ * - acceptation d'office quand la compagnie a au moins une ligne applicable ;
+ * - capacité par offre = somme des bus des lignes reprises comme points d'embarquement × places par bus (RG-08) ;
+ * - points d'embarquement repris des lignes (un point par ligne).
  */
 class CompanyDefaultLines
 {
@@ -30,24 +31,23 @@ class CompanyDefaultLines
      */
     public function linesFor(Event $event): Collection
     {
-        return $event->company->lines()->orderBy('commune_code')->get();
+        return $event->company->lines()->serving($event->venue_id)->orderBy('commune_code')->orderBy('place')->get();
     }
 
     public function acceptsAutomatically(Event $event): bool
     {
-        return $event->company->lines()->exists();
+        return $event->company->lines()->serving($event->venue_id)->exists();
     }
 
     /**
-     * Capacité par défaut d'une offre sur les communes où l'événement a un point d'embarquement.
+     * Capacité par défaut d'une offre : bus des lignes dont sont issus les points d'embarquement de l'événement.
      *
      * @return array{bus_count: int, seats_per_bus: int}|null
      */
     public function capacityFor(Event $event, Offer $offer): ?array
     {
-        $communes = $event->boardingPoints->pluck('commune_code')->unique();
-        $busCount = $this->linesFor($event)
-            ->filter(fn (CompanyLine $line) => $communes->contains($line->commune_code))
+        $lineIds = $event->boardingPoints->pluck('company_line_id')->filter()->unique();
+        $busCount = $lineIds->isEmpty() ? 0 : (int) $event->company->lines()->whereKey($lineIds)->get()
             ->sum(fn (CompanyLine $line) => $line->busesFor($offer));
 
         return $busCount > 0 ? ['bus_count' => $busCount, 'seats_per_bus' => $event->company->seatsPerBus($offer)] : null;
@@ -74,19 +74,19 @@ class CompanyDefaultLines
     }
 
     /**
-     * Crée un point d'embarquement pour chaque ligne dont la commune n'en a pas encore. Horaires proposés :
+     * Crée un point d'embarquement pour chaque ligne applicable pas encore reprise. Horaires proposés :
      * aller = début − trajet − marge (au quart d'heure), retour = fin prévue + délai ; modifiables ensuite.
      *
      * @return int nombre de points créés
      */
     public function importBoardingPoints(Event $event): int
     {
-        $existing = $event->boardingPoints()->pluck('commune_code');
+        $existing = $event->boardingPoints()->pluck('company_line_id');
         $position = (int) $event->boardingPoints()->max('position');
         $created = 0;
 
         foreach ($this->linesFor($event) as $line) {
-            if ($existing->contains($line->commune_code)) {
+            if ($existing->contains($line->id)) {
                 continue;
             }
 
@@ -96,6 +96,7 @@ class CompanyDefaultLines
 
             BoardingPoint::query()->create([
                 'event_id' => $event->id,
+                'company_line_id' => $line->id,
                 'commune' => $line->communeName(),
                 'commune_code' => $line->commune_code,
                 'place' => $line->place,

@@ -1,14 +1,14 @@
 <div class="space-y-6">
     <x-ui.alert tone="info">
-        Définissez, dans chaque commune d'Abidjan, votre lieu d'embarquement habituel et le nombre de bus par offre.
-        Dès qu'une ligne existe, les événements qu'ACCES EVENT vous confie sont <strong>acceptés d'office</strong> : leurs points d'embarquement
-        et leur capacité (bus × places) sont repris de ces lignes. Vous pouvez ensuite ajuster la capacité d'un événement dans le plan de transport.
+        Définissez vos lignes habituelles : dans chaque commune, un ou plusieurs lieux d'embarquement, chacun vers une destination
+        (un lieu d'événement, ou tous les lieux) avec son nombre de bus par offre. Un événement dont le lieu est desservi par vos lignes
+        est <strong>accepté d'office</strong> : ses points d'embarquement et sa capacité (bus × places) sont repris de ces lignes. Vous pouvez ensuite ajuster la capacité d'un événement dans le plan de transport.
     </x-ui.alert>
 
     <x-ui.card>
         <form wire:submit="saveSeats">
             <h2 class="text-title-3">Places par bus</h2>
-            <p class="text-[13px] text-ink-secondary">Capacité d'un bus de chaque offre. Capacité d'une offre pour un événement = bus des communes desservies × places par bus.</p>
+            <p class="text-[13px] text-ink-secondary">Capacité d'un bus de chaque offre. Capacité d'une offre pour un événement = bus des lignes reprises × places par bus.</p>
             <div class="mt-4 grid gap-4 sm:grid-cols-3">
                 @foreach ($offers as $offer)
                     <x-ui.input wire:key="seats-{{ $offer->value }}" :label="$offer->label()" name="seats.{{ $offer->value }}" type="number" min="10" max="200" wire:model="seats.{{ $offer->value }}" :disabled="! $this->canManage()" />
@@ -24,38 +24,51 @@
         <x-slot:head>
             <th>Commune</th>
             <th>Lieu d'embarquement</th>
+            <th>Destination</th>
             @foreach ($offers as $offer)
                 <th class="text-right">Bus {{ $offer->label() }}</th>
             @endforeach
             <th></th>
         </x-slot:head>
         @foreach ($communes as $code => $name)
-            @php($line = $lines->get($code))
-            <tr wire:key="line-{{ $code }}" class="hover:bg-fill-subtle">
-                <td class="font-medium">{{ $name }} <span class="text-[12px] text-ink-tertiary">{{ $code }}</span></td>
-                <td>
-                    @if ($line)
-                        {{ $line->place }}
-                    @else
-                        <x-ui.badge tone="neutral">Non desservie</x-ui.badge>
+            @php($communeLines = $linesByCommune->get($code, collect()))
+            @forelse ($communeLines as $line)
+                <tr wire:key="line-{{ $line->id }}" class="hover:bg-fill-subtle">
+                    @if ($loop->first)
+                        <td rowspan="{{ $communeLines->count() }}" class="!align-top font-medium">
+                            {{ $name }} <span class="text-[12px] text-ink-tertiary">{{ $code }}</span>
+                            @if ($this->canManage())
+                                <button type="button" wire:click="create('{{ $code }}')" class="mt-1 block text-[12px] font-medium text-brand-text hover:underline">+ Ajouter un lieu</button>
+                            @endif
+                        </td>
                     @endif
-                </td>
-                @foreach ($offers as $offer)
-                    <td class="text-right tabular-nums">{{ $line ? $line->busesFor($offer) : '—' }}</td>
-                @endforeach
-                <td class="text-right whitespace-nowrap">
-                    @if ($this->canManage())
-                        @if ($line)
-                            <x-ui.button variant="ghost" size="sm" type="button" wire:click="delete('{{ $code }}')" wire:confirm="Supprimer la ligne de {{ $name }} ?">Supprimer</x-ui.button>
+                    <td>{{ $line->place }}</td>
+                    <td class="text-ink-secondary">{{ $line->venue?->name ?? 'Tous les lieux' }}</td>
+                    @foreach ($offers as $offer)
+                        <td class="text-right tabular-nums">{{ $line->busesFor($offer) }}</td>
+                    @endforeach
+                    <td class="text-right whitespace-nowrap">
+                        @if ($this->canManage())
+                            <x-ui.button variant="ghost" size="sm" type="button" wire:click="delete({{ $line->id }})" wire:confirm="Supprimer la ligne {{ $line->place }} ?">Supprimer</x-ui.button>
+                            <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit({{ $line->id }})">Modifier</x-ui.button>
                         @endif
-                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="edit('{{ $code }}')">{{ $line ? 'Modifier' : 'Définir' }}</x-ui.button>
-                    @endif
-                </td>
-            </tr>
+                    </td>
+                </tr>
+            @empty
+                <tr wire:key="commune-{{ $code }}" class="hover:bg-fill-subtle">
+                    <td class="font-medium">{{ $name }} <span class="text-[12px] text-ink-tertiary">{{ $code }}</span></td>
+                    <td colspan="{{ 2 + count($offers) }}"><x-ui.badge tone="neutral">Non desservie</x-ui.badge></td>
+                    <td class="text-right">
+                        @if ($this->canManage())
+                            <x-ui.button variant="secondary" size="sm" type="button" wire:click="create('{{ $code }}')">Ajouter un lieu</x-ui.button>
+                        @endif
+                    </td>
+                </tr>
+            @endforelse
         @endforeach
         <x-slot:footer>
             <div class="flex flex-wrap justify-end gap-x-6 gap-y-1 text-[13px] text-ink-secondary">
-                <span>{{ $lines->count() }} / {{ count($communes) }} communes desservies</span>
+                <span>{{ $lineCount }} ligne(s) · {{ $linesByCommune->count() }} / {{ count($communes) }} communes desservies</span>
                 @foreach ($offers as $offer)
                     <span>{{ $offer->label() }} : <strong class="tabular-nums text-ink">{{ $totals[$offer->value] }}</strong> bus</span>
                 @endforeach
@@ -63,8 +76,12 @@
         </x-slot:footer>
     </x-ui.table>
 
-    <x-ui.sheet model="showForm" width="max-w-2xl" :title="'Ligne · '.($communes[$commune_code] ?? '')" subtitle="Lieu de montée habituel et bus engagés par offre dans cette commune.">
+    <x-ui.sheet model="showForm" width="max-w-2xl" :title="$editingId ? 'Modifier la ligne' : 'Nouvelle ligne'" subtitle="Lieu de montée habituel, destination et bus engagés par offre.">
         <form id="line-form" wire:submit="save" class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.select label="Commune" name="commune_code" wire:model="commune_code" :options="$communes" placeholder="Choisir" />
+                <x-ui.select label="Destination" name="venue_id" wire:model="venue_id" :options="$venues" placeholder="Tous les lieux" hint="Lieu d'événement desservi par cette ligne." />
+            </div>
             <x-ui.input label="Lieu d'embarquement" name="place" wire:model="place" placeholder="Gare Siporex" />
             <x-ui.location-picker lat="latitude" lng="longitude" place="place" />
             <div class="grid gap-4 sm:grid-cols-2">
