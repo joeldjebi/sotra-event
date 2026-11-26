@@ -68,6 +68,7 @@ final class Navigation
                 ['Direction de l\'exploitation', [
                     ['Exploitation en direct', 'map', 'company.live', Permission::OperationsView],
                     ['Plan de transport', 'route', 'company.transport-plan', Permission::OperationsView],
+                    ['Lignes par défaut', 'map-pin', 'company.lines', Permission::OperationsView],
                     ['Bus & affectations', 'bus', 'company.assignments', Permission::FleetView],
                     ['Dépôts', 'building', 'company.depots', Permission::FleetView],
                     ['Chauffeurs & convoyeurs', 'id-card', 'company.staff', Permission::StaffView],

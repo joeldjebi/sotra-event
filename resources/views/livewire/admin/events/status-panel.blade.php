@@ -36,9 +36,16 @@
         <div class="mt-5 space-y-2">
             @if ($canPropose)
                 <x-ui.textarea label="Message à la compagnie (facultatif)" name="proposalMessage" rows="2" wire:model="proposalMessage" />
-                <x-ui.button type="button" class="w-full" wire:click="propose" wire:confirm="Proposer cet événement à {{ $event->company->name }} ? Les informations, points et grille seront verrouillés.">
-                    {{ $event->status === \App\Enums\EventStatus::Negotiating ? 'Renvoyer la proposition' : 'Proposer à la compagnie' }}
-                </x-ui.button>
+                @if ($acceptsAutomatically)
+                    <x-ui.button type="button" class="w-full" wire:click="propose" wire:confirm="Valider cet événement ? {{ $event->company->name }} l'accepte d'office (lignes par défaut) ; les informations, points et grille seront verrouillés.">
+                        Valider l'événement
+                    </x-ui.button>
+                    <p class="text-center text-[12px] text-ink-tertiary">Accepté d'office : {{ $event->company->name }} a défini ses lignes par défaut. Bus et places repris de ces lignes.</p>
+                @else
+                    <x-ui.button type="button" class="w-full" wire:click="propose" wire:confirm="Proposer cet événement à {{ $event->company->name }} ? Les informations, points et grille seront verrouillés.">
+                        {{ $event->status === \App\Enums\EventStatus::Negotiating ? 'Renvoyer la proposition' : 'Proposer à la compagnie' }}
+                    </x-ui.button>
+                @endif
             @endif
             @if (in_array($event->status, [\App\Enums\EventStatus::Accepted, \App\Enums\EventStatus::OnSale], true))
                 <x-ui.button variant="ghost" class="w-full" :href="route('admin.events.disruption', $event)">Annuler ou reporter…</x-ui.button>

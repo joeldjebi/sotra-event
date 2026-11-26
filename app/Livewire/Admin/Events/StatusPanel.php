@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\Event;
 use App\Models\User;
+use App\Services\CompanyDefaultLines;
 use App\Services\EventReadiness;
 use App\Services\EventWorkflow;
 use Illuminate\View\View;
@@ -53,7 +54,9 @@ class StatusPanel extends Component
         $this->validate(['proposalMessage' => ['nullable', 'string', 'max:2000']]);
         $workflow->propose($this->event, $this->actor(), $this->proposalMessage);
         $this->proposalMessage = '';
-        session()->flash('flash', 'Événement proposé à '.$this->event->company->name.'.');
+        session()->flash('flash', $this->event->status === EventStatus::Accepted
+            ? 'Événement validé : accepté d\'office par '.$this->event->company->name.'.'
+            : 'Événement proposé à '.$this->event->company->name.'.');
         $this->redirectRoute('admin.events.edit', ['event' => $this->event, 'etape' => $this->step]);
     }
 
@@ -80,12 +83,13 @@ class StatusPanel extends Component
         return $user;
     }
 
-    public function render(EventReadiness $readiness): View
+    public function render(EventReadiness $readiness, CompanyDefaultLines $defaultLines): View
     {
         return view('livewire.admin.events.status-panel', [
             'checks' => $readiness->checks($this->event),
             'checkSteps' => self::CHECK_STEPS,
             'canPropose' => $readiness->canPropose($this->event),
+            'acceptsAutomatically' => $defaultLines->acceptsAutomatically($this->event),
             'canOpenSale' => $readiness->canOpenSale($this->event),
             'messages' => $this->event->negotiations()->with('user')->get(),
             'canReply' => in_array($this->event->status, [EventStatus::Proposed, EventStatus::Negotiating, EventStatus::Accepted], true),

@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Livewire\Concerns\AuthorizesPermission;
 use App\Models\BoardingPoint;
 use App\Models\Event;
+use App\Services\CompanyDefaultLines;
 use App\Services\ZoneResolver;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Support\Carbon;
@@ -83,6 +84,37 @@ class BoardingPointsStep extends Component
         $this->forced_zone = (string) $point->zone;
         $this->zone_justification = (string) $point->zone_justification;
         $this->showForm = true;
+    }
+
+    /**
+     * Nouveau point : reprend le lieu habituel de la compagnie dans la commune choisie, s'il est défini.
+     */
+    public function updatedCommuneCode(string $communeCode): void
+    {
+        if ($this->editingId !== null) {
+            return;
+        }
+
+        $line = $this->event->company->lines()->where('commune_code', $communeCode)->first();
+
+        if ($line !== null) {
+            $this->place = $line->place;
+            $this->latitude = (string) $line->location->getLatitude();
+            $this->longitude = (string) $line->location->getLongitude();
+        }
+    }
+
+    /**
+     * Crée les points des communes où la compagnie a une ligne par défaut et qui n'en ont pas encore.
+     */
+    public function importDefaultLines(CompanyDefaultLines $defaultLines): void
+    {
+        $this->ensureEditable();
+        $created = $defaultLines->importBoardingPoints($this->event);
+        $this->dispatch('event-updated');
+        $this->notify($created > 0
+            ? "{$created} point(s) repris des lignes de {$this->event->company->name}. Vérifiez les horaires."
+            : 'Toutes les communes des lignes par défaut ont déjà un point.', $created > 0 ? 'success' : 'info');
     }
 
     public function save(ZoneResolver $zones): void
@@ -183,6 +215,7 @@ class BoardingPointsStep extends Component
             'communes' => collect((array) config('eventtrans.communes'))->mapWithKeys(fn ($name, $code) => [$code => "{$name} ({$code})"])->all(),
             'zoneOptions' => collect(ZoneResolver::zones())->mapWithKeys(fn (int $zone) => [(string) $zone => "Zone {$zone} · ".ZoneResolver::zoneLabel($zone)])->all(),
             'locked' => ! $this->event->status->isEditable(),
+            'defaultLinesCount' => $this->event->company->lines()->count(),
             'leadMinutes' => (int) config('eventtrans.events.boarding_lead_minutes'),
         ]);
     }

@@ -129,6 +129,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
             LivewirePage::route('evenements-proposes', 'proposed-events', 'company.proposed-events', 'Événements proposés', Permission::ProposedEventsView);
             LivewirePage::route('plan-de-transport', 'transport-plan', 'company.transport-plan', 'Plan de transport', Permission::OperationsView);
+            LivewirePage::route('lignes-par-defaut', 'lines', 'company.default-lines', 'Lignes par défaut', Permission::OperationsView);
             LivewirePage::route('exploitation-en-direct', 'live', 'company.live-operations', 'Exploitation en direct', Permission::OperationsView);
             LivewirePage::route('pannes', 'breakdowns', 'company.breakdowns-table', 'Pannes & interventions', Permission::BreakdownsView);
             LivewirePage::route('ventes', 'sales', 'company.sales-report', 'Ventes', Permission::SalesView);

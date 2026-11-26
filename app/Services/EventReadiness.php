@@ -13,21 +13,24 @@ use App\Models\Event;
  */
 class EventReadiness
 {
+    public function __construct(private readonly CompanyDefaultLines $defaultLines) {}
+
     /**
      * @return array<string, array{label: string, ok: bool, problems: list<string>}>
      */
     public function checks(Event $event): array
     {
-        $event->loadMissing(['offers', 'boardingPoints', 'prices', 'dropZones']);
+        $event->loadMissing(['offers', 'boardingPoints', 'prices', 'dropZones', 'company']);
+        $automatic = $this->defaultLines->acceptsAutomatically($event);
 
         return [
             'informations' => $this->section('Informations', $this->informationProblems($event)),
             'points' => $this->section('Points d\'embarquement', $this->pointProblems($event)),
             'pricing' => $this->section('Grille tarifaire', $this->pricingProblems($event)),
             'publication' => $this->section('Canaux & publication', $this->publicationProblems($event)),
-            'acceptance' => $this->section('Acceptation par la compagnie', in_array($event->status, [EventStatus::Accepted, EventStatus::OnSale], true)
+            'acceptance' => $this->section('Acceptation par la compagnie', $automatic || in_array($event->status, [EventStatus::Accepted, EventStatus::OnSale], true)
                 ? [] : ['La compagnie n\'a pas encore accepté l\'événement.']),
-            'capacity' => $this->section('Bus et places par offre', $this->capacityProblems($event)),
+            'capacity' => $this->section('Bus et places par offre', $this->capacityProblems($event, $automatic)),
         ];
     }
 
@@ -164,7 +167,7 @@ class EventReadiness
     /**
      * @return list<string>
      */
-    private function capacityProblems(Event $event): array
+    private function capacityProblems(Event $event, bool $automatic): array
     {
         if ($event->offers->isEmpty()) {
             return ['Aucune offre active.'];
@@ -173,8 +176,14 @@ class EventReadiness
         $problems = [];
 
         foreach ($event->offers as $offer) {
-            if ($offer->capacity() === null) {
+            if ($offer->capacity() !== null) {
+                continue;
+            }
+
+            if (! $automatic) {
                 $problems[] = "{$offer->offer->label()} : la compagnie doit indiquer le nombre de bus et de places par bus (RG-08).";
+            } elseif ($this->defaultLines->capacityFor($event, $offer->offer) === null) {
+                $problems[] = "{$offer->offer->label()} : aucun bus dans les lignes par défaut de la compagnie pour les communes de l'événement.";
             }
         }
 

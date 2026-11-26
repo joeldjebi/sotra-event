@@ -17,7 +17,10 @@ use Illuminate\Validation\ValidationException;
  */
 class EventWorkflow
 {
-    public function __construct(private readonly EventReadiness $readiness) {}
+    public function __construct(
+        private readonly EventReadiness $readiness,
+        private readonly CompanyDefaultLines $defaultLines,
+    ) {}
 
     public function propose(Event $event, User $by, ?string $message = null): void
     {
@@ -25,7 +28,28 @@ class EventWorkflow
             throw ValidationException::withMessages(['event' => 'Complétez les informations, les points d\'embarquement et la grille avant de proposer l\'événement.']);
         }
 
+        if ($this->defaultLines->acceptsAutomatically($event)) {
+            $this->acceptAutomatically($event, $by, $message);
+
+            return;
+        }
+
         $this->transition($event, EventStatus::Proposed, $by, EventNegotiation::SIDE_ACCES_EVENT, NegotiationSubject::Proposal, $message, ['proposed_at' => now()]);
+    }
+
+    /**
+     * La compagnie a défini ses lignes par défaut : l'événement est accepté d'office et la capacité des offres
+     * est reprise de ces lignes. La compagnie peut ensuite l'ajuster dans son plan de transport.
+     */
+    private function acceptAutomatically(Event $event, User $by, ?string $message): void
+    {
+        DB::transaction(function () use ($event, $by, $message): void {
+            $note = "Accepté d'office : lignes par défaut de {$event->company->name}.";
+            $this->transition($event, EventStatus::Accepted, $by, EventNegotiation::SIDE_ACCES_EVENT, NegotiationSubject::Acceptance,
+                $message !== null && trim($message) !== '' ? $note."\n\n".trim($message) : $note,
+                ['proposed_at' => now(), 'accepted_at' => now()]);
+            $this->defaultLines->applyCapacity($event);
+        });
     }
 
     public function accept(Event $event, User $by, ?string $message = null): void

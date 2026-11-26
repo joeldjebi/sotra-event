@@ -6,7 +6,12 @@
                 <p class="text-[13px] text-ink-secondary">Zone calculée selon la distance au lieu. Les bus sont répartis selon les ventes : pas de quota par point.</p>
             </div>
             @unless ($locked)
-                <x-ui.button type="button" wire:click="create" icon="map-pin">Ajouter un point</x-ui.button>
+                <div class="flex flex-wrap gap-2">
+                    @if ($defaultLinesCount > 0)
+                        <x-ui.button variant="secondary" type="button" wire:click="importDefaultLines" icon="route">Reprendre les lignes de {{ $event->company->name }} ({{ $defaultLinesCount }})</x-ui.button>
+                    @endif
+                    <x-ui.button type="button" wire:click="create" icon="map-pin">Ajouter un point</x-ui.button>
+                </div>
             @endunless
         </div>
 
@@ -56,7 +61,7 @@
 
     <x-ui.sheet model="showForm" :title="$editingId ? 'Modifier le point' : 'Nouveau point d\'embarquement'" subtitle="La distance au lieu est calculée à l'enregistrement.">
         <form id="point-form" wire:submit="save" class="space-y-4">
-            <x-ui.select label="Commune" name="commune_code" wire:model="commune_code" :options="$communes" placeholder="Choisir" />
+            <x-ui.select label="Commune" name="commune_code" wire:model.live="commune_code" :options="$communes" placeholder="Choisir" />
             <x-ui.input label="Lieu de montée" name="place" wire:model="place" placeholder="Gare Siporex" />
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-ui.input label="Latitude" name="latitude" wire:model="latitude" inputmode="decimal" />
