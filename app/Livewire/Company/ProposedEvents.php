@@ -99,16 +99,46 @@ class ProposedEvents extends Component
             ->get();
 
         $viewing = $this->viewingId
-            ? Event::query()->with(['venue', 'promoter', 'boardingPoints', 'prices', 'offers', 'negotiations.user', 'transportLead'])->find($this->viewingId)
+            ? Event::query()
+                ->whereIn('status', EventStatus::visibleToCompany())
+                ->with(['venue', 'promoter', 'boardingPoints', 'prices', 'offers', 'dropZones', 'negotiations.user', 'transportLead'])
+                ->find($this->viewingId)
             : null;
 
         return view('livewire.company.proposed-events', [
             'pending' => $events->filter(fn (Event $event) => in_array($event->status, [EventStatus::Proposed, EventStatus::Negotiating], true)),
             'others' => $events->reject(fn (Event $event) => in_array($event->status, [EventStatus::Proposed, EventStatus::Negotiating], true)),
             'viewing' => $viewing,
+            'grid' => $viewing ? $this->priceGrid($viewing) : [],
             'subjects' => NegotiationSubject::negotiable(),
-            'roundTrip' => PassType::RoundTrip,
             'offers' => Offer::cases(),
         ]);
+    }
+
+    /**
+     * Grille complète, par type de Pass vendu : prix[type][zone][offre]. Un type sans aucun prix n'est pas vendu.
+     *
+     * @return array<string, array{label: string, rows: array<int, array<string, int|null>>}>
+     */
+    private function priceGrid(Event $event): array
+    {
+        $grid = [];
+
+        foreach (PassType::cases() as $passType) {
+            $rows = [];
+
+            foreach ($event->usedZones() as $zone) {
+                foreach ($event->activeOffers() as $offer) {
+                    $price = $event->prices->first(fn ($price) => $price->zone === $zone && $price->offer === $offer && $price->pass_type === $passType);
+                    $rows[$zone][$offer->value] = $price?->price;
+                }
+            }
+
+            if (collect($rows)->flatten()->filter()->isNotEmpty()) {
+                $grid[$passType->value] = ['label' => $passType->label(), 'rows' => $rows];
+            }
+        }
+
+        return $grid;
     }
 }
