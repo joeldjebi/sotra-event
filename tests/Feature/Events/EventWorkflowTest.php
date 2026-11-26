@@ -47,6 +47,18 @@ function completeEvent(Event $event): void
     ]);
 }
 
+it('relie chaque point de la liste de contrôle à son étape de configuration', function () {
+    $this->actingAs($this->admin);
+
+    $component = Livewire::test(StatusPanel::class, ['event' => $this->event, 'step' => 3]);
+
+    foreach ([1, 2, 3, 4] as $step) {
+        $component->assertSeeHtml('href="'.e(route('admin.events.edit', ['event' => $this->event, 'etape' => $step])).'"');
+    }
+
+    $component->assertSee('Acceptation par la compagnie');
+});
+
 it('ne propose pas un événement incomplet', function () {
     $this->actingAs($this->admin);
 

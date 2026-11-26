@@ -13,7 +13,16 @@
                         @if ($check['ok'])<x-ui.icon name="check" class="size-3" stroke-width="3" />@endif
                     </span>
                     <div class="min-w-0">
-                        <p @class(['text-[14px]', 'font-medium' => ! $check['ok']])>{{ $check['label'] }}</p>
+                        @if (isset($checkSteps[$key]))
+                            <a href="{{ route('admin.events.edit', ['event' => $event, 'etape' => $checkSteps[$key]]) }}"
+                               @class(['group inline-flex items-center gap-1 text-[14px] hover:text-brand-text', 'font-medium' => ! $check['ok'], 'text-brand-text' => $checkSteps[$key] === $step])
+                               title="Ouvrir l'étape {{ $checkSteps[$key] }} · {{ $check['label'] }}">
+                                {{ $check['label'] }}
+                                <x-ui.icon name="chevron-right" class="size-3.5 text-ink-tertiary group-hover:text-brand-text" />
+                            </a>
+                        @else
+                            <p @class(['text-[14px]', 'font-medium' => ! $check['ok']])>{{ $check['label'] }}</p>
+                        @endif
                         @foreach (array_slice($check['problems'], 0, 3) as $problem)
                             <p wire:key="problem-{{ $key }}-{{ $loop->index }}" class="text-[12px] text-ink-secondary">{{ $problem }}</p>
                         @endforeach

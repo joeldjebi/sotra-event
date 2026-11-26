@@ -26,6 +26,12 @@ class StatusPanel extends Component
     /** Étape affichée, pour recharger la même page après une transition. */
     public int $step = 1;
 
+    /**
+     * Étape de configuration où se corrige chaque point de la liste de contrôle (lien sur son titre).
+     * L'acceptation et les bus par offre relèvent de la compagnie : pas de lien.
+     */
+    public const CHECK_STEPS = ['informations' => 1, 'points' => 2, 'pricing' => 3, 'publication' => 4];
+
     public string $proposalMessage = '';
 
     public string $reply = '';
@@ -78,6 +84,7 @@ class StatusPanel extends Component
     {
         return view('livewire.admin.events.status-panel', [
             'checks' => $readiness->checks($this->event),
+            'checkSteps' => self::CHECK_STEPS,
             'canPropose' => $readiness->canPropose($this->event),
             'canOpenSale' => $readiness->canOpenSale($this->event),
             'messages' => $this->event->negotiations()->with('user')->get(),
