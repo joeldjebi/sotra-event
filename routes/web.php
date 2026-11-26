@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Admin\PromoterDocumentController;
 use App\Http\Controllers\Web\Company\DashboardController as CompanyDashboardController;
 use App\Http\Controllers\Web\Company\QualityReportController;
 use App\Http\Controllers\Web\Company\SalesExportController;
+use App\Http\Controllers\Web\GeocodeController;
 use App\Http\Controllers\Web\PayoutDocumentController;
 use App\Http\Controllers\Web\Promoter\EventExportController as PromoterEventExportController;
 use App\Http\Controllers\Web\Promoter\PromoKitController;
@@ -73,6 +74,7 @@ Route::middleware('guest:'.config('fortify.guard'))->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/espace', SpaceRedirectController::class)->name('space');
     Route::put('/preferences/theme', ThemePreferenceController::class)->name('preferences.theme');
+    Route::get('/geocodage', GeocodeController::class)->middleware('throttle:30,1')->name('geocode');
     Route::get('/securite/double-authentification', TwoFactorEnrollmentController::class)->name('security.two-factor');
     Route::view('/securite/mot-de-passe', 'security.password')->name('security.password');
     // Suivi de la demande d'un promoteur pas encore validé (ou refusé, suspendu) : hors de l'espace promoteur.

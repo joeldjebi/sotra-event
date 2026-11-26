@@ -63,9 +63,10 @@
         </x-slot:footer>
     </x-ui.table>
 
-    <x-ui.sheet model="showForm" :title="'Ligne · '.($communes[$commune_code] ?? '')" subtitle="Lieu de montée habituel et bus engagés par offre dans cette commune.">
+    <x-ui.sheet model="showForm" width="max-w-2xl" :title="'Ligne · '.($communes[$commune_code] ?? '')" subtitle="Lieu de montée habituel et bus engagés par offre dans cette commune.">
         <form id="line-form" wire:submit="save" class="space-y-4">
             <x-ui.input label="Lieu d'embarquement" name="place" wire:model="place" placeholder="Gare Siporex" />
+            <x-ui.location-picker lat="latitude" lng="longitude" place="place" />
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-ui.input label="Latitude" name="latitude" wire:model="latitude" inputmode="decimal" />
                 <x-ui.input label="Longitude" name="longitude" wire:model="longitude" inputmode="decimal" />

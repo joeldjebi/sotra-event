@@ -59,10 +59,11 @@
         </div>
     </x-ui.card>
 
-    <x-ui.sheet model="showForm" :title="$editingId ? 'Modifier le point' : 'Nouveau point d\'embarquement'" subtitle="La distance au lieu est calculée à l'enregistrement.">
+    <x-ui.sheet model="showForm" width="max-w-2xl" :title="$editingId ? 'Modifier le point' : 'Nouveau point d\'embarquement'" subtitle="La distance au lieu est calculée à l'enregistrement.">
         <form id="point-form" wire:submit="save" class="space-y-4">
             <x-ui.select label="Commune" name="commune_code" wire:model.live="commune_code" :options="$communes" placeholder="Choisir" />
             <x-ui.input label="Lieu de montée" name="place" wire:model="place" placeholder="Gare Siporex" />
+            <x-ui.location-picker lat="latitude" lng="longitude" place="place" />
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-ui.input label="Latitude" name="latitude" wire:model="latitude" inputmode="decimal" />
                 <x-ui.input label="Longitude" name="longitude" wire:model="longitude" inputmode="decimal" />

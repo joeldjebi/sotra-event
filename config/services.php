@@ -47,4 +47,11 @@ return [
         'verify_ssl' => (bool) env('MTARGET_VERIFY_SSL', true),
     ],
 
+    /*
+    | Recherche de lieux (carte des points d'embarquement) : OpenStreetMap Nominatim, appelé par le serveur.
+    */
+    'geocoding' => [
+        'url' => env('GEOCODING_URL', 'https://nominatim.openstreetmap.org/search'),
+    ],
+
 ];

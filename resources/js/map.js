@@ -96,7 +96,142 @@ const liveMap = () => ({
     },
 });
 
-const register = () => window.Alpine.data('liveMap', liveMap);
+/*
+| Sélecteur de lieu (<x-ui.location-picker>) : clic sur la carte, marqueur déplaçable ou recherche par nom.
+| Les coordonnées sont écrites dans les propriétés Livewire indiquées (config.lat, config.lng) ; le nom du lieu
+| trouvé remplit config.place s'il est encore vide. La recherche passe par la route serveur config.searchUrl.
+*/
+const ABIDJAN = [5.345, -4.02];
+
+const locationPicker = (config) => ({
+    map: null,
+    marker: null,
+    query: '',
+    results: [],
+    searching: false,
+    error: '',
+
+    init() {
+        const canvas = this.$el.querySelector('[data-map-canvas]');
+
+        this.map = L.map(canvas, { zoomControl: true, attributionControl: true, scrollWheelZoom: true }).setView(ABIDJAN, 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; contributeurs OpenStreetMap',
+        }).addTo(this.map);
+
+        this.map.on('click', (event) => this.choose(event.latlng.lat, event.latlng.lng));
+
+        // La carte est souvent créée dans une feuille encore fermée : recalcul de la taille à l'ouverture.
+        new ResizeObserver(() => {
+            this.map.invalidateSize();
+            this.sync(true);
+        }).observe(canvas);
+
+        this.$watch(`$wire.${config.lat}`, () => this.sync(true));
+        this.$watch(`$wire.${config.lng}`, () => this.sync(true));
+        this.sync(true);
+
+        this.applyTheme();
+        new MutationObserver(() => this.applyTheme()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    },
+
+    coordinates() {
+        const lat = parseFloat(this.$wire[config.lat]);
+        const lng = parseFloat(this.$wire[config.lng]);
+
+        return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? [lat, lng] : null;
+    },
+
+    sync(recenter) {
+        const position = this.coordinates();
+
+        if (!position) {
+            this.marker?.remove();
+            this.marker = null;
+
+            return;
+        }
+
+        if (this.marker) {
+            this.marker.setLatLng(position);
+        } else {
+            this.marker = L.marker(position, {
+                draggable: true,
+                title: 'Lieu d\'embarquement',
+                icon: L.divIcon({ className: '', html: '<span class="ui-map-pin"></span>', iconSize: [26, 26], iconAnchor: [13, 31] }),
+            }).addTo(this.map);
+            this.marker.on('dragend', () => {
+                const { lat, lng } = this.marker.getLatLng();
+                this.choose(lat, lng);
+            });
+        }
+
+        if (recenter && !this.map.getBounds().pad(-0.1).contains(position)) {
+            this.map.setView(position, Math.max(this.map.getZoom(), 15));
+        }
+    },
+
+    choose(lat, lng, name = null) {
+        this.$wire[config.lat] = lat.toFixed(6);
+        this.$wire[config.lng] = lng.toFixed(6);
+
+        if (name && config.place && !String(this.$wire[config.place] ?? '').trim()) {
+            this.$wire[config.place] = name;
+        }
+
+        this.sync(false);
+    },
+
+    async search() {
+        const query = this.query.trim();
+        this.error = '';
+
+        if (query.length < 3) {
+            this.error = 'Saisissez au moins 3 caractères.';
+
+            return;
+        }
+
+        this.searching = true;
+
+        try {
+            const response = await fetch(`${config.searchUrl}?q=${encodeURIComponent(query)}`, {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const body = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                this.results = [];
+                this.error = response.status === 429 ? 'Trop de recherches : patientez une minute.' : (body.message ?? 'Recherche impossible.');
+
+                return;
+            }
+
+            this.results = body.data ?? [];
+            this.error = this.results.length ? '' : 'Aucun lieu trouvé à Abidjan. Essayez un autre nom ou cliquez sur la carte.';
+        } catch (error) {
+            this.error = 'Recherche impossible. Cliquez directement sur la carte.';
+        } finally {
+            this.searching = false;
+        }
+    },
+
+    pick(result) {
+        this.results = [];
+        this.choose(result.lat, result.lng, result.name);
+        this.map.setView([result.lat, result.lng], 16);
+    },
+
+    applyTheme() {
+        this.$el.classList.toggle('ui-map-dark', root.dataset.theme === 'dark');
+    },
+});
+
+const register = () => {
+    window.Alpine.data('liveMap', liveMap);
+    window.Alpine.data('locationPicker', locationPicker);
+};
 
 if (window.Alpine) {
     register();
